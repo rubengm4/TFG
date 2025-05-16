@@ -3,9 +3,34 @@
   <head>
     <meta charset="UTF-8" />
     <title>Inicio</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/homepage.css' %}" />
   </head>
   <body>
     <h1>Bienvenido a Algovision</h1>
-    <p>Esta es la página de inicio de tu proyecto Django.</p>
+    <p>Aplicación de gestión de algoritmos de IA</p>
+    <div class="container">
+      <div class="row">
+        <form method="post" action="{% url 'set_source_and_login' %}">
+          {% csrf_token %}
+          <input type="hidden" name="source" value="enlace1" />
+          <button type="submit">Enlace 1</button>
+        </form>
+      </div>
+      <div class="row">
+        <form method="post" action="{% url 'set_source_and_login' %}">
+          {% csrf_token %}
+          <input type="hidden" name="source" value="enlace2" />
+          <button type="submit">Enlace 2</button>
+        </form>
+      </div>
+      <div class="row">
+        <form method="post" action="{% url 'set_source_and_login' %}">
+          {% csrf_token %}
+          <input type="hidden" name="source" value="enlace3" />
+          <button type="submit">Enlace 3</button>
+        </form>
+      </div>
+    </div>
   </body>
 </html>

@@ -14,16 +14,15 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from fv_analysis import views
 from django.contrib import admin
 from django.urls import path
+# adjust if needed
+from fv_analysis.views import HomepageView, CustomLoginView, SetSourceAndRedirectToLogin
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-]
-
-
-urlpatterns = [
-    path('', views.homepage, name='homepage'),
-    # Otras rutas de tu aplicación
+    path('', HomepageView.as_view(), name='homepage'),
+    path('login/', CustomLoginView.as_view(), name='custom_login'),
+    path('set-source/', SetSourceAndRedirectToLogin.as_view(),
+         name='set_source_and_login'),
 ]
