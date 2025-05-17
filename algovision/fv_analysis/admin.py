@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Project, User, UserProject, File, Algorithm, Execution, Report
+from django.contrib.auth.models import User
+from .models import Project, UserProject, File, Algorithm, Execution, Report
 
 # ModelAdmin para personalizar la vista de administración de Project
 
@@ -56,7 +57,6 @@ class ReportAdmin(admin.ModelAdmin):
 
 # Registro de los modelos con las clases de administración personalizadas
 admin.site.register(Project, ProjectAdmin)
-admin.site.register(User, UserAdmin)
 admin.site.register(UserProject, UserProjectAdmin)
 admin.site.register(File, FileAdmin)
 admin.site.register(Algorithm, AlgorithmAdmin)

@@ -13,8 +13,9 @@
       <div class="row">
         <form method="post" action="{% url 'set_source_and_login' %}">
           {% csrf_token %}
-          <input type="hidden" name="source" value="enlace1" />
-          <button type="submit">Enlace 1</button>
+          <input type="hidden" name="source" value="fv-analysis" />
+          <button type="submit">FV Analysis</button>
+          <!--TODO: FIX THESE BUTTONS NEED TO BE CENTERED IF NAME IS TOO LONG-->
         </form>
       </div>
       <div class="row">

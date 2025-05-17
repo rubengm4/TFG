@@ -44,3 +44,16 @@ p {
 .row a:hover {
   background-color: #0056b3;
 }
+
+button {
+  padding: 10px;
+  background: #007bff;
+  border: none;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #0056b3;
+}
