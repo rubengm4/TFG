@@ -1,4 +1,3 @@
-from django.contrib.auth.forms import AuthenticationForm
 from django import forms
 from django.views import View
 from django.views.generic.edit import FormView
@@ -6,12 +5,14 @@ from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login
 from django.contrib.auth.models import User
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.contrib import messages
 from django.urls import reverse_lazy
-from django.shortcuts import render
+from fv_analysis.models import Project, UserProject   # make sure you import these
+from django.utils import timezone
 
-# Custom Form
+
+# --- Custom Forms ---
 
 
 class CustomUserCreationForm(UserCreationForm):
@@ -38,8 +39,6 @@ class CustomUserCreationForm(UserCreationForm):
             user.save()
         return user
 
-# Custom Auth Form
-
 
 class CustomAuthenticationForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
@@ -48,14 +47,52 @@ class CustomAuthenticationForm(AuthenticationForm):
             field.widget.attrs['class'] = 'form-control'
 
 
-# Custom registration view
+# --- Views ---
+
+# Project source selector (from homepage)
+class SetSourceAndRedirectToLogin(View):
+    def post(self, request):
+        source = request.POST.get('source', 'default')
+        request.session['login_source'] = source
+        request.session['source'] = source
+
+        # Redirect to the appropriate homepage
+        if source == 'fv-analysis':
+            return redirect('accounts:fv_home')
+        # elif source == 'enlace2':
+        #     return redirect('accounts:enlace2_home')
+        # Add more as needed
+        return redirect('home')
+
+
 class RegisterView(FormView):
     template_name = 'accounts/register.html'
     form_class = CustomUserCreationForm
     success_url = reverse_lazy('accounts:login')
 
     def form_valid(self, form):
+        # Save user to auth_user
         user = form.save()
+
+        # Get current project from session
+        project_slug = self.request.session.get('source')
+        print("DEBUG: project_slug from session:", project_slug)
+        try:
+            project = Project.objects.get(
+                title__iexact=project_slug)
+        except Project.DoesNotExist:
+            messages.error(self.request, "Project does not exist.")
+            user.delete()
+            return self.form_invalid(form)
+
+        # Register the user in UserProject
+        UserProject.objects.create(
+            user=user,
+            project=project,
+            joined_at=timezone.now().date(),
+            role='Member'
+        )
+
         messages.success(self.request, "Registration successful.")
         return super().form_valid(form)
 
@@ -63,8 +100,15 @@ class RegisterView(FormView):
         messages.error(self.request, "Unsuccessful registration.")
         return super().form_invalid(form)
 
+    def dispatch(self, request, *args, **kwargs):
+        if 'login_source' not in request.session:
+            messages.error(
+                request, "Debes seleccionar un proyecto antes de registrarte.")
+            # replace with your actual homepage URL name
+            return redirect('homepage')
+        return super().dispatch(request, *args, **kwargs)
 
-# Custom login view with session source
+
 class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
     authentication_form = CustomAuthenticationForm
@@ -75,12 +119,7 @@ class CustomLoginView(LoginView):
         return context
 
 
-# Logout view: uses Django's built-in class-based LogoutView (no need to subclass unless needed)
-
-
-# Store source before login
-class SetSourceAndRedirectToLogin(View):
-    def post(self, request):
-        source = request.POST.get('source', 'default')
-        request.session['login_source'] = source
-        return redirect('accounts:login')
+# FV Analysis homepage
+def fv_home(request):
+    source = request.session.get('source', 'desconocido')
+    return render(request, 'accounts/fv_home.html', {'source': source})
