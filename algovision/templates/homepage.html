@@ -1,37 +1,37 @@
-<!DOCTYPE html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Inicio</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/homepage.css' %}" />
-  </head>
-  <body>
-    <h1>Bienvenido a Algovision</h1>
-    <p>Aplicación de gestión de algoritmos de IA</p>
-    <div class="container">
-      <div class="row">
-        <form method="post" action="{% url 'set_source_and_login' %}">
-          {% csrf_token %}
-          <input type="hidden" name="source" value="fv-analysis" />
-          <button type="submit">FV Analysis</button>
-          <!--TODO: FIX THESE BUTTONS NEED TO BE CENTERED IF NAME IS TOO LONG-->
-        </form>
-      </div>
-      <div class="row">
-        <form method="post" action="{% url 'set_source_and_login' %}">
-          {% csrf_token %}
-          <input type="hidden" name="source" value="enlace2" />
-          <button type="submit">Enlace 2</button>
-        </form>
-      </div>
-      <div class="row">
-        <form method="post" action="{% url 'set_source_and_login' %}">
-          {% csrf_token %}
-          <input type="hidden" name="source" value="enlace3" />
-          <button type="submit">Enlace 3</button>
-        </form>
-      </div>
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Inicio{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+  <h1 class="mb-3">Bienvenido a Algovision</h1>
+  <p class="lead mb-5">Aplicación de gestión de algoritmos de IA</p>
+
+  <div class="row justify-content-center g-3 mb-4">
+    <div class="col-auto">
+      <form method="post" action="{% url 'accounts:set_source' %}">
+        {% csrf_token %}
+        <input type="hidden" name="source" value="fv-analysis" />
+        <button type="submit" class="btn btn-primary px-4">FV Analysis</button>
+      </form>
     </div>
-  </body>
-</html>
+    <div class="col-auto">
+      <form method="post" action="{% url 'accounts:set_source' %}">
+        {% csrf_token %}
+        <input type="hidden" name="source" value="enlace2" />
+        <button type="submit" class="btn btn-primary px-4">Enlace 2</button>
+      </form>
+    </div>
+    <div class="col-auto">
+      <form method="post" action="{% url 'accounts:set_source' %}">
+        {% csrf_token %}
+        <input type="hidden" name="source" value="enlace3" />
+        <button type="submit" class="btn btn-primary px-4">Enlace 3</button>
+      </form>
+    </div>
+  </div>
+
+  <a href="{% url 'accounts:register' %}" class="btn btn-link">Register</a>
+</div>
+{% endblock %}
