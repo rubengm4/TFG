@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+  <h2>Bienvenido, {{ user.username }}</h2>
+  <p>Estás en el proyecto: <strong>{{ project_slug }}</strong></p>
+
+  <!-- You can add project-specific links, stats, etc. here -->
+</div>
+{% endblock %}

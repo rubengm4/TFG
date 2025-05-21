@@ -1,13 +1,15 @@
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
 from django import forms
 from django.views import View
 from django.views.generic.edit import FormView
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.contrib.auth import login
+from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from django.shortcuts import redirect, render
 from django.contrib import messages
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from fv_analysis.models import Project, UserProject   # make sure you import these
 from django.utils import timezone
 
@@ -42,9 +44,32 @@ class CustomUserCreationForm(UserCreationForm):
 
 class CustomAuthenticationForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.widget.attrs['class'] = 'form-control'
+
+    def confirm_login_allowed(self, user):
+        super().confirm_login_allowed(user)
+
+        if self.request:
+            project_slug = self.request.session.get('source')
+            if not project_slug:
+                raise ValidationError(
+                    "No project context found.", code='invalid_login')
+
+            try:
+                project = Project.objects.get(
+                    title__iexact=project_slug.replace('-', ' '))
+            except Project.DoesNotExist:
+                raise ValidationError(
+                    "Invalid project selected.", code='invalid_login')
+
+            if not UserProject.objects.filter(user=user, project=project).exists():
+                raise ValidationError(
+                    "Este usuario no está registrado en este proyecto.",
+                    code='invalid_login'
+                )
 
 
 # --- Views ---
@@ -113,13 +138,33 @@ class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
     authentication_form = CustomAuthenticationForm
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['request'] = self.request  # Pass the request to the form
+        return kwargs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['source'] = self.request.session.get('login_source', 'default')
         return context
 
+    def get_success_url(self):
+        source = self.request.session.get('login_source', 'default')
+        if source:
+            return reverse('accounts:dashboard')
+        return reverse('default_home')  # fallback
 
-# FV Analysis homepage
+
 def fv_home(request):
     source = request.session.get('source', 'desconocido')
     return render(request, 'accounts/fv_home.html', {'source': source})
+
+
+@login_required
+def dashboard_view(request):
+    project_slug = request.session.get('login_source', 'Sin proyecto')
+    context = {
+        'project_slug': project_slug,
+        'user': request.user
+    }
+    return render(request, 'accounts/dashboard.html', context)

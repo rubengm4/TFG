@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
-from fv_analysis.views import HomepageView  # o donde sea tu vista principal
+# o donde sea tu vista principal
+from fv_analysis.views import HomepageView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
