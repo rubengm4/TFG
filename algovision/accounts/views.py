@@ -168,3 +168,9 @@ def dashboard_view(request):
         'user': request.user
     }
     return render(request, 'accounts/dashboard.html', context)
+
+
+class CustomLogoutView(LogoutView):
+    def dispatch(self, request, *args, **kwargs):
+        request.session.pop('login_source', None)
+        return super().dispatch(request, *args, **kwargs)

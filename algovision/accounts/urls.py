@@ -5,8 +5,8 @@ from .views import (
     SetSourceAndRedirectToLogin,
     fv_home,
     dashboard_view,
+    CustomLogoutView,
 )
-from django.contrib.auth.views import LogoutView
 
 
 app_name = 'accounts'
@@ -14,7 +14,7 @@ app_name = 'accounts'
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', CustomLoginView.as_view(), name='login'),
-    path('logout/', LogoutView.as_view(next_page='accounts:login'), name='logout'),
+    path('logout/', CustomLogoutView.as_view(next_page='accounts:login'), name='logout'),
     path('set-source/', SetSourceAndRedirectToLogin.as_view(),
          name='set_source'),
     path('fv-home/', fv_home, name='fv_home'),
