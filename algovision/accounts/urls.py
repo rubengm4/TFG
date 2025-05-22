@@ -17,6 +17,4 @@ urlpatterns = [
     path('logout/', CustomLogoutView.as_view(next_page='accounts:login'), name='logout'),
     path('set-source/', SetSourceAndRedirectToLogin.as_view(),
          name='set_source'),
-    path('fv-home/', fv_home, name='fv_home'),
-    path('dashboard/', dashboard_view, name='dashboard'),
 ]

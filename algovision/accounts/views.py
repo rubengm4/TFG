@@ -83,7 +83,7 @@ class SetSourceAndRedirectToLogin(View):
 
         # Redirect to the appropriate homepage
         if source == 'fv-analysis':
-            return redirect('accounts:fv_home')
+            return redirect('fv_home')
         # elif source == 'enlace2':
         #     return redirect('accounts:enlace2_home')
         # Add more as needed
@@ -151,7 +151,7 @@ class CustomLoginView(LoginView):
     def get_success_url(self):
         source = self.request.session.get('login_source', 'default')
         if source:
-            return reverse('accounts:dashboard')
+            return reverse('dashboard')
         return reverse('default_home')  # fallback
 
 
