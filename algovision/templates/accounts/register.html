@@ -10,7 +10,11 @@ Register
   <h2 class="text-center mb-4">Register</h2>
   {% if messages %}
     {% for message in messages %}
-      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      {% if messages.tags == error %}
+        <div class="alert alert-danger">{{ message }}</div>
+      {% else %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      {% endif %}
     {% endfor %}
   {% endif %}
 
@@ -25,8 +29,91 @@ Register
         {% endif %}
       </div>
     {% endfor %}
-
+  
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for error in form.non_field_errors %}
+          <div>{{ error }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  
     <button type="submit" class="btn btn-success w-100">Register</button>
-  </form>
+  </form>  
 </div>
 {% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const passwordField = document.getElementById('id_password1');
+  const confirmField = document.getElementById('id_password2');
+  const emailField = document.getElementById('id_email');
+
+  if (!passwordField || !confirmField || !emailField) return;
+
+  // Password rules box
+  const rulesBox = document.createElement('div');
+  rulesBox.className = 'mb-3 text-muted small';
+  rulesBox.innerHTML = `
+    <ul id="password-rules">
+      <li id="rule-length" class="text-danger">At least 8 characters</li>
+      <li id="rule-numeric" class="text-danger">Not entirely numeric</li>
+    </ul>
+  `;
+
+  const passwordDiv = passwordField.parentNode;
+  const confirmDiv = confirmField.parentNode;
+  passwordDiv.parentNode.insertBefore(rulesBox, confirmDiv);
+
+  passwordField.addEventListener('input', function () {
+    const pwd = passwordField.value;
+
+    // Length check
+    document.getElementById('rule-length').className =
+      pwd.length >= 8 ? 'text-success' : 'text-danger';
+
+    // Numeric check
+    document.getElementById('rule-numeric').className =
+      /^\d+$/.test(pwd) ? 'text-danger' : 'text-success';
+
+    // Also check if passwords match on password change
+    checkPasswordMatch();
+  });
+
+  // Email validation message
+  const emailDiv = emailField.parentNode;
+  const emailMsg = document.createElement('div');
+  emailMsg.className = 'text-danger small mt-1';
+  emailDiv.appendChild(emailMsg);
+
+  emailField.addEventListener('input', function () {
+    const email = emailField.value;
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (email === '' || re.test(email)) {
+      emailMsg.textContent = '';
+    } else {
+      emailMsg.textContent = 'Please enter a valid email address.';
+    }
+  });
+
+  // Password confirmation match check message
+  const matchMsg = document.createElement('div');
+  matchMsg.className = 'text-danger small mt-1';
+  confirmDiv.appendChild(matchMsg);
+
+  function checkPasswordMatch() {
+    if (confirmField.value === '') {
+      matchMsg.textContent = '';
+      return;
+    }
+    matchMsg.textContent = passwordField.value === confirmField.value ? '' : 'Passwords do not match.';
+  }
+
+  confirmField.addEventListener('input', checkPasswordMatch);
+});
+</script>
+{% endblock %}
+
+
+
