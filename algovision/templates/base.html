@@ -109,11 +109,22 @@
     const sidebar = document.getElementById('sidebar');
     const mainContent = document.getElementById('mainContent');
 
+    // Restaurar el estado desde localStorage al cargar
+    if (localStorage.getItem('sidebarCollapsed') === 'true') {
+        sidebar.classList.add('collapsed');
+        mainContent.classList.add('expanded');
+    }
+
     toggleBtn.addEventListener('click', () => {
         sidebar.classList.toggle('collapsed');
         mainContent.classList.toggle('expanded');
+
+        // Guardar estado en localStorage
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        localStorage.setItem('sidebarCollapsed', isCollapsed);
     });
 </script>
+
 {% block extra_scripts %}{% endblock %}
 </body>
 </html>

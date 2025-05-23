@@ -5,6 +5,10 @@ Login
 {% endblock %}
 
 {% block content %}
+{% load dynamic_url %}
+<a href="{% dynamic_url source|add:'_home' %}" class="btn btn-outline-secondary ms-5">
+    ← Volver al menú {{ source }}
+</a>
 <div class="card mx-auto shadow-sm p-4" style="max-width: 400px;">
   <h2 class="text-center mb-4">Login</h2>
 
@@ -39,7 +43,13 @@ Login
       {% endif %}
     </div>
 
-    <button type="submit" class="btn btn-primary w-100">Login</button>
+    <button type="submit" class="btn btn-primary w-100">Iniciar sesión</button>
+    <p class="text-center mt-3">
+      <small>
+          ¿No tienes una cuenta?
+          <a href="{% url 'accounts:register' %}" class="text-primary">Regístrate</a>
+      </small>
+    </p>
   </form>
 </div>
 {% endblock %}

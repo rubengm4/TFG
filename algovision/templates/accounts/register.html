@@ -6,6 +6,10 @@ Register
 {% endblock %}
 
 {% block content %}
+{% load dynamic_url %}
+<a href="{% dynamic_url source|add:'_home' %}" class="btn btn-outline-secondary ms-5">
+    ← Volver al menú {{ source }}
+</a>
 <div class="card mx-auto shadow-sm p-4" style="max-width: 500px;">
   <h2 class="text-center mb-4">Register</h2>
   {% if messages %}
@@ -38,8 +42,14 @@ Register
       </div>
     {% endif %}
   
-    <button type="submit" class="btn btn-success w-100">Register</button>
-  </form>  
+    <button type="submit" class="btn btn-primary w-100">Registrarse</button>
+    <p class="text-center mt-3">
+      <small>
+        ¿Ya tienes una cuenta?
+        <a href="{% url 'accounts:login' %}">Inicia sesión aquí</a>
+      </small>
+    </p>  
+  </form>
 </div>
 {% endblock %}
 

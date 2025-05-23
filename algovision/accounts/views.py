@@ -99,7 +99,7 @@ class SetSourceAndRedirectToLogin(View):
 
         # Redirect to the appropriate homepage
         if source == 'fv-analysis':
-            return redirect('fv_home')
+            return redirect('fv_analysis_home')
         # elif source == 'enlace2':
         #     return redirect('accounts:enlace2_home')
         # Add more as needed
@@ -149,6 +149,12 @@ class RegisterView(FormView):
             return redirect('homepage')
         return super().dispatch(request, *args, **kwargs)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Pasa la variable 'source' al template
+        context['source'] = self.request.session.get('login_source', '')
+        return context
+
 
 class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
@@ -168,10 +174,10 @@ class CustomLoginView(LoginView):
         source = self.request.session.get('login_source', 'default')
         if source:
             return reverse('dashboard')
-        return reverse('default_home')  # fallback
+        return reverse('index')  # fallback
 
 
-def fv_home(request):
+def fv_analysis_home(request):
     source = request.session.get('source', 'desconocido')
     return render(request, 'accounts/fv_home.html', {'source': source})
 
@@ -187,6 +193,8 @@ def dashboard_view(request):
 
 
 class CustomLogoutView(LogoutView):
+    next_page = reverse_lazy('index')
+
     def dispatch(self, request, *args, **kwargs):
         request.session.pop('login_source', None)
         return super().dispatch(request, *args, **kwargs)

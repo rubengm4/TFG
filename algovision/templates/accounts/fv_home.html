@@ -4,11 +4,16 @@
 {% block title %}{{ source|title }}{% endblock %}
 
 {% block content %}
+<div>
+  <a href="{% url 'index' %}" class="btn btn-outline-secondary ms-5">
+    ← Volver al menú principal
+  </a>
+</div>
 <div class="container py-5 text-center">
   <h1 class="mb-3">Estás en {{ source|title }}</h1>
   <p class="lead mb-4">Aquí puedes iniciar sesión y gestionar tus algoritmos en el entorno de FV Analysis.</p>
 
   <a href="{% url 'accounts:login' %}" class="btn btn-success px-4">Iniciar sesión</a>
-  <a href="{% url 'accounts:register' %}" class="btn btn-success px-4">Registrar</a>
+  <a href="{% url 'accounts:register' %}" class="btn btn-success px-4">Registrarse</a>
 </div>
 {% endblock %}
