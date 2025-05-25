@@ -2,6 +2,18 @@
 
 {% block title %}Dashboard{% endblock %}
 
+{% block sidebar_links %}
+    <li class="nav-item">
+        <a class="nav-link" href="#">Mis análisis</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#">Mis archivos</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'accounts:logout' %}">Cerrar sesión</a>
+  </li>
+{% endblock %}
+
 {% block content %}
 <div class="container py-5 text-center">
   <h2>Bienvenido, {{ user.username }}</h2>

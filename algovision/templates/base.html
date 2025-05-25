@@ -86,12 +86,15 @@
 
 <!-- Sidebar -->
 <nav class="sidebar" id="sidebar">
-    <a class="navbar-brand text-white px-3 mb-3" href="/">Algovision</a>
-    <!-- Placeholder for future links -->
+    <a class="navbar-brand text-white px-3 mb-3" href="/" style="font-size: 1.5rem;">Algovision</a>
+    <hr class="text-secondary my-2 mx-3">
     <ul class="nav flex-column px-2">
-        <!-- Add navigation items here in the future -->
+        {% block sidebar_links %}
+        <!-- Default links, or empty -->
+        {% endblock %}
     </ul>
 </nav>
+
 
 <!-- Toggle Button -->
 <button id="sidebarToggle">&#9776;</button>

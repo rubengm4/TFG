@@ -3,6 +3,15 @@
 
 {% block title %}{{ source|title }}{% endblock %}
 
+{% block sidebar_links %}
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'accounts:login' %}">Iniciar sesión</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'accounts:register' %}">Registrarse</a>
+    </li>
+{% endblock %}
+
 {% block content %}
 <div>
   <a href="{% url 'index' %}" class="btn btn-outline-secondary ms-5">

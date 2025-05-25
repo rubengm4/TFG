@@ -111,22 +111,35 @@ class RegisterView(FormView):
     form_class = CustomUserCreationForm
     success_url = reverse_lazy('accounts:login')
 
+    def dispatch(self, request, *args, **kwargs):
+        source = request.session.get('login_source')
+
+        if not source or source == 'default':
+            messages.error(
+                request, "Debes seleccionar un proyecto antes de registrarte.")
+            return redirect('index')
+
+        try:
+            Project.objects.get(title__iexact=source)
+        except Project.DoesNotExist:
+            messages.error(request, "El proyecto seleccionado no existe.")
+            return redirect('index')
+
+        return super().dispatch(request, *args, **kwargs)
+
     def form_valid(self, form):
-        # Save user to auth_user
         user = form.save()
 
         # Get current project from session
-        project_slug = self.request.session.get('source')
-        print("DEBUG: project_slug from session:", project_slug)
+        project_slug = self.request.session.get('login_source')
         try:
-            project = Project.objects.get(
-                title__iexact=project_slug)
+            project = Project.objects.get(title__iexact=project_slug)
         except Project.DoesNotExist:
             messages.error(self.request, "Project does not exist.")
             user.delete()
             return self.form_invalid(form)
 
-        # Register the user in UserProject
+        # Link user to project
         UserProject.objects.create(
             user=user,
             project=project,
@@ -134,24 +147,15 @@ class RegisterView(FormView):
             role='Member'
         )
 
-        messages.success(self.request, "Registration successful.")
+        messages.success(self.request, "Registro completado con éxito.")
         return super().form_valid(form)
 
     def form_invalid(self, form):
-        messages.error(self.request, "Unsuccessful registration.")
+        messages.error(self.request, "Registro no válido.")
         return super().form_invalid(form)
-
-    def dispatch(self, request, *args, **kwargs):
-        if 'login_source' not in request.session:
-            messages.error(
-                request, "Debes seleccionar un proyecto antes de registrarte.")
-            # replace with your actual homepage URL name
-            return redirect('homepage')
-        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Pasa la variable 'source' al template
         context['source'] = self.request.session.get('login_source', '')
         return context
 
@@ -159,6 +163,25 @@ class RegisterView(FormView):
 class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
     authentication_form = CustomAuthenticationForm
+
+    def dispatch(self, request, *args, **kwargs):
+        source = request.session.get('login_source')
+
+        if not source or source == 'default':
+            return redirect('index')
+
+        try:
+            project = Project.objects.get(title=source)
+        except Project.DoesNotExist:
+            return redirect('index')
+
+        if request.user.is_authenticated:
+            # Already logged in user not in the project → log out
+            if not UserProject.objects.filter(user=request.user, project=project).exists():
+                logout(request)
+                return redirect('index')
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -184,10 +207,24 @@ def fv_analysis_home(request):
 
 @login_required
 def dashboard_view(request):
-    project_slug = request.session.get('login_source', 'Sin proyecto')
+    project_slug = request.session.get('login_source')
+
+    # If no project selected or it's "Sin proyecto", force selection
+    if not project_slug or project_slug == 'Sin proyecto':
+        return redirect('index')
+
+    try:
+        project = Project.objects.get(title=project_slug)
+    except Project.DoesNotExist:
+        return redirect('index')
+
+    # Check if user is actually in the project
+    if not UserProject.objects.filter(user=request.user, project=project).exists():
+        return redirect('index')
+
     context = {
         'project_slug': project_slug,
-        'user': request.user
+        'user': request.user,
     }
     return render(request, 'accounts/dashboard.html', context)
 
