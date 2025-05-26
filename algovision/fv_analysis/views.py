@@ -11,7 +11,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.generic import TemplateView
 
-from .models import File
+from .models import File, Algorithm
 
 
 ALLOWED_EXTENSIONS = {
@@ -72,3 +72,32 @@ class FileManagerView(LoginRequiredMixin, View):
             messages.error(request, "No se seleccionó ningún archivo.")
 
         return redirect('file_manager')
+
+
+@method_decorator(login_required, name='dispatch')
+class AnalysisView(View):
+    template_name = 'analysis.html'
+
+    def get(self, request):
+        files = File.objects.all()
+        algorithms = Algorithm.objects.all()
+        return render(request, self.template_name, {
+            'files': files,
+            'algorithms': algorithms
+        })
+
+    def post(self, request):
+        file_id = request.POST.get('file')
+        algorithm_id = request.POST.get('algorithm')
+
+        if not file_id or not algorithm_id:
+            messages.error(request, "Debes seleccionar archivo y algoritmo.")
+            return redirect('analysis')
+
+        # TODO: Ejecutar análisis (interpretar archivo python y devolver resultado)
+        file = File.objects.get(id=file_id)
+        algorithm = Algorithm.objects.get(id=algorithm_id)
+        messages.success(
+            request, f"Análisis con {algorithm.name} ejecutado sobre {file.file.name}")
+
+        return redirect('analysis')

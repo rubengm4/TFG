@@ -3,24 +3,27 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block sidebar_links %}
-    <li class="nav-item">
-        <a class="nav-link" href="#">Mis análisis</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="{% url 'file_manager' %}">Mis archivos</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" href="{% url 'accounts:logout' %}">Cerrar sesión</a>
+  <li class="nav-item">
+      <!--TODO: Cambiar link -->
+      <a class="nav-link" href="{% url 'analysis' %}">Mis resultados</a>
+  </li>
+  <li class="nav-item">
+      <a class="nav-link" href="{% url 'file_manager' %}">Mis archivos</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'analysis' %}">Realizar análisis</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:logout' %}">Cerrar sesión</a>
   </li>
 {% endblock %}
 
 {% block content %}
-<div class="container py-5 text-center">
+<div class="d-flex justify-content-end">
+  <a href="{% url 'accounts:logout' %}" class="btn btn-danger">Cerrar sesión</a>
+</div>
+<div class="container py-4 text-center">
   <h2>Bienvenido, {{ user.username }}</h2>
   <p>Estás en el proyecto: <strong>{{ project_slug }}</strong></p>
-
-  <a href="{% url 'accounts:logout' %}" class="btn btn-danger">Cerrar sesión</a>
-
-  <!-- You can add project-specific links, stats, etc. here -->
 </div>
 {% endblock %}

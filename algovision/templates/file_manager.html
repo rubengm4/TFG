@@ -1,8 +1,33 @@
 {% extends 'base.html' %}
 
+{% block sidebar_links %}
+  <li class="nav-item">
+      <!--TODO: Cambiar link -->
+      <a class="nav-link" href="{% url 'analysis' %}">Mis resultados</a>
+  </li>
+  <li class="nav-item">
+      <a class="nav-link" href="{% url 'file_manager' %}">Mis archivos</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'analysis' %}">Realizar análisis</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:logout' %}">Cerrar sesión</a>
+  </li>
+{% endblock %}
+
 {% block content %}
 <div class="container">
-    <h2>Gestor de Archivos</h2>
+  <div>
+    <div class="d-flex justify-content-between align-items-center mt-5">
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+          ← Volver al dashboard
+        </a>
+        <a href="{% url 'accounts:logout' %}" class="btn btn-danger">
+          Cerrar sesión
+        </a>
+    </div>
+    <h2 class="mt-3">Gestor de Archivos</h2>
 
     <!-- Formulario de subida -->
     <form method="post" enctype="multipart/form-data" class="mb-4">
@@ -42,5 +67,11 @@
             {% endfor %}
         </tbody>
     </table>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
 </div>
 {% endblock %}
