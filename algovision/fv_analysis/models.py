@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+import os
 
 # Model: Project
 
@@ -35,12 +36,12 @@ class File(models.Model):
     ]
 
     user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
-    name = models.CharField(max_length=255)
+    file = models.FileField(upload_to='uploads/', null=True, blank=True)
     type = models.CharField(max_length=50, choices=FILE_TYPE_CHOICES)
     upload_date = models.DateField()
 
-    def __str__(self):
-        return self.name
+    def filename(self):
+        return os.path.basename(self.file.name)
 
 # Model: Algorithm
 

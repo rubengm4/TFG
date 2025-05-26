@@ -28,7 +28,7 @@ class UserProjectAdmin(admin.ModelAdmin):
 
 
 class FileAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'type', 'upload_date', 'user')
+    list_display = ('id', 'type', 'upload_date', 'user')
     list_filter = ('type', 'upload_date', 'user')
     search_fields = ('name',)
 
