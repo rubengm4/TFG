@@ -1,17 +1,28 @@
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
 from django import forms
-from django.views import View
-from django.views.generic.edit import FormView
-from django.contrib.auth.views import LoginView, LogoutView
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.core.exceptions import ValidationError
-from django.contrib.auth.models import User
-from django.shortcuts import redirect, render
+from typing import Any
+
+# Django contrib imports
 from django.contrib import messages
+from django.contrib.auth import logout
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.models import User, AbstractBaseUser
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LoginView, LogoutView
+
+# Django core imports
+from django.core.exceptions import ValidationError
+from django.http import HttpRequest
+from django.shortcuts import redirect, render
 from django.urls import reverse_lazy, reverse
-from fv_analysis.models import Project, UserProject   # make sure you import these
 from django.utils import timezone
+
+# Django views imports
+from django.views import View
+from django.views.generic import TemplateView
+from django.views.generic.edit import FormView
+
+# Local app imports
+from fv_analysis.models import Project, UserProject
 
 
 # --- Custom Forms ---
@@ -27,7 +38,7 @@ class CustomUserCreationForm(UserCreationForm):
         fields = ('username', 'email', 'first_name',
                   'last_name', 'password1', 'password2')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.widget.attrs['class'] = 'form-control'
@@ -48,7 +59,7 @@ class CustomUserCreationForm(UserCreationForm):
 
         return cleaned_data
 
-    def save(self, commit=True):
+    def save(self, commit: bool = True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']
         user.first_name = self.cleaned_data.get('first_name', '')
@@ -59,13 +70,13 @@ class CustomUserCreationForm(UserCreationForm):
 
 
 class CustomAuthenticationForm(AuthenticationForm):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         self.request = kwargs.pop('request', None)
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.widget.attrs['class'] = 'form-control'
 
-    def confirm_login_allowed(self, user):
+    def confirm_login_allowed(self, user: AbstractBaseUser):
         super().confirm_login_allowed(user)
 
         if self.request:
@@ -92,7 +103,7 @@ class CustomAuthenticationForm(AuthenticationForm):
 
 # Project source selector (from homepage)
 class SetSourceAndRedirectToLogin(View):
-    def post(self, request):
+    def post(self, request: HttpRequest):
         source = request.POST.get('source', 'default')
         request.session['login_source'] = source
         request.session['source'] = source
@@ -106,12 +117,12 @@ class SetSourceAndRedirectToLogin(View):
         return redirect('home')
 
 
-class RegisterView(FormView):
+class RegisterView(FormView):  # type: ignore
     template_name = 'accounts/register.html'
     form_class = CustomUserCreationForm
     success_url = reverse_lazy('accounts:login')
 
-    def dispatch(self, request, *args, **kwargs):
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any):
         source = request.session.get('login_source')
 
         if not source or source == 'default':
@@ -125,7 +136,7 @@ class RegisterView(FormView):
 
         return super().dispatch(request, *args, **kwargs)
 
-    def form_valid(self, form):
+    def form_valid(self, form: CustomUserCreationForm):
         user = form.save()
 
         # Get current project from session
@@ -146,13 +157,13 @@ class RegisterView(FormView):
         )
 
         messages.success(self.request, "Registro completado con éxito.")
-        return super().form_valid(form)
+        return super().form_valid(form)  # type: ignore
 
-    def form_invalid(self, form):
+    def form_invalid(self, form: CustomUserCreationForm):
         messages.error(self.request, "Registro no válido.")
-        return super().form_invalid(form)
+        return super().form_invalid(form)  # type: ignore
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any):
         context = super().get_context_data(**kwargs)
         context['source'] = self.request.session.get('login_source', '')
         return context
@@ -162,7 +173,7 @@ class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
     authentication_form = CustomAuthenticationForm
 
-    def dispatch(self, request, *args, **kwargs):
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any):
         source = request.session.get('login_source')
 
         if not source or source == 'default':
@@ -186,7 +197,7 @@ class CustomLoginView(LoginView):
         kwargs['request'] = self.request  # Pass the request to the form
         return kwargs
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any):
         context = super().get_context_data(**kwargs)
         context['source'] = self.request.session.get('login_source', 'default')
         return context
@@ -198,38 +209,42 @@ class CustomLoginView(LoginView):
         return reverse('index')  # fallback
 
 
-def fv_analysis_home(request):
-    source = request.session.get('source', 'desconocido')
-    return render(request, 'accounts/fv_home.html', {'source': source})
+class FvAnalysisHomeView(TemplateView):
+    template_name = 'accounts/fv_home.html'
+
+    def get_context_data(self, **kwargs: Any):
+        context = super().get_context_data(**kwargs)
+        context['source'] = self.request.session.get('source', 'desconocido')
+        return context
 
 
-@login_required
-def dashboard_view(request):
-    project_slug = request.session.get('login_source')
+class DashboardView(LoginRequiredMixin, View):
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any):
+        project_slug = request.session.get('login_source')
 
-    # If no project selected or it's "Sin proyecto", force selection
-    if not project_slug or project_slug == 'Sin proyecto':
-        return redirect('index')
+        # If no project selected or it's "Sin proyecto", force selection
+        if not project_slug or project_slug == 'Sin proyecto':
+            return redirect('index')
 
-    try:
-        project = Project.objects.get(title=project_slug)
-    except Project.DoesNotExist:
-        return redirect('index')
+        try:
+            project = Project.objects.get(title=project_slug)
+        except Project.DoesNotExist:
+            return redirect('index')
 
-    # Check if user is actually in the project
-    if not UserProject.objects.filter(user=request.user, project=project).exists():
-        return redirect('index')
+        # Check if user is actually in the project
+        if not UserProject.objects.filter(user=request.user, project=project).exists():
+            return redirect('index')
 
-    context = {
-        'project_slug': project_slug,
-        'user': request.user,
-    }
-    return render(request, 'accounts/dashboard.html', context)
+        context: dict[str, Any] = {
+            'project_slug': project_slug,
+            'user': request.user,
+        }
+        return render(request, 'accounts/dashboard.html', context)
 
 
 class CustomLogoutView(LogoutView):
     next_page = reverse_lazy('index')
 
-    def dispatch(self, request, *args, **kwargs):
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any):
         request.session.pop('login_source', None)
         return super().dispatch(request, *args, **kwargs)

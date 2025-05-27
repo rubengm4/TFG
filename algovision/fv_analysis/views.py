@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpRequest
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -38,11 +38,11 @@ class FileUploadForm(forms.ModelForm):
 class FileManagerView(LoginRequiredMixin, View):
     template_name = 'file_manager.html'
 
-    def get(self, request):
+    def get(self, request: HttpRequest):
         files = File.objects.all().filter(user=request.user).order_by('-upload_date')
         return render(request, self.template_name, {'files': files})
 
-    def post(self, request):
+    def post(self, request: HttpRequest):
         # Verificamos si es una subida o eliminación
         if 'delete_file' in request.POST:
             file_id = request.POST.get('delete_file')
@@ -57,14 +57,13 @@ class FileManagerView(LoginRequiredMixin, View):
             messages.success(request, "Archivo eliminado correctamente.")
             return redirect('file_manager')
 
-        # Subida de archivos
         uploaded_file = request.FILES.get('file')
-        if uploaded_file:
-            file_type = uploaded_file.content_type
-            if file_type.startswith('image/') or file_type.startswith('video/') or uploaded_file.name.endswith('.csv'):
+        if uploaded_file is not None:
+            file_type = getattr(uploaded_file, 'content_type', None)
+            if file_type and (file_type.startswith('image/') or file_type.startswith('video/') or uploaded_file.name.endswith('.csv')):
                 File.objects.create(
                     user=request.user,
-                    file=uploaded_file,  # <-- el archivo real, no el nombre
+                    file=uploaded_file,
                     type=file_type,
                     upload_date=timezone.now()
                 )
@@ -81,7 +80,7 @@ class FileManagerView(LoginRequiredMixin, View):
 class AnalysisView(View):
     template_name = 'analysis.html'
 
-    def get(self, request):
+    def get(self, request: HttpRequest):
         files = File.objects.all().filter(user=request.user)
         algorithms = Algorithm.objects.all()
         return render(request, self.template_name, {
@@ -89,7 +88,7 @@ class AnalysisView(View):
             'algorithms': algorithms
         })
 
-    def post(self, request):
+    def post(self, request: HttpRequest):
         file_id = request.POST.get('file')
         algorithm_id = request.POST.get('algorithm')
 
@@ -108,7 +107,7 @@ class AnalysisView(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class RenameFileView(LoginRequiredMixin, View):
-    def post(self, request, file_id):
+    def post(self, request: HttpRequest, file_id: int):
         file_obj = get_object_or_404(File, id=file_id, user=request.user)
         data = json.loads(request.body)
 
@@ -131,7 +130,7 @@ class RenameFileView(LoginRequiredMixin, View):
         if new_filename == original_filename:
             return JsonResponse({'new_name': base_name})
 
-        user_folder = f"uploads/{request.user.id}"
+        user_folder = f"uploads/{request.user.pk}"
 
         old_relative_path = file_obj.file.name
         old_path = os.path.join(settings.MEDIA_ROOT, old_relative_path)

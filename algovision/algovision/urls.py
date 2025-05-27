@@ -3,14 +3,14 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from fv_analysis.views import HomepageView, FileManagerView, AnalysisView, RenameFileView
-from accounts.views import fv_analysis_home, dashboard_view
+from accounts.views import FvAnalysisHomeView, DashboardView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', HomepageView.as_view(), name='index'),
     path('accounts/', include('accounts.urls')),
-    path('fv-analysis-home/', fv_analysis_home, name='fv_analysis_home'),
-    path('dashboard/', dashboard_view, name='dashboard'),
+    path('fv-analysis-home/', FvAnalysisHomeView.as_view(), name='fv_analysis_home'),
+    path('dashboard/', DashboardView.as_view(), name='dashboard'),
     path('files/', FileManagerView.as_view(), name='file_manager'),
     path('files/rename/<int:file_id>/',
          RenameFileView.as_view(), name='rename_file'),
