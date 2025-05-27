@@ -28,6 +28,10 @@ class UserProject(models.Model):
 # Model: File
 
 
+def user_directory_path(instance, filename):
+    return f'uploads/{instance.user.id}/{filename}'
+
+
 class File(models.Model):
     FILE_TYPE_CHOICES = [
         ('csv', 'CSV'),
@@ -36,9 +40,10 @@ class File(models.Model):
     ]
 
     user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
-    file = models.FileField(upload_to='uploads/', null=True, blank=True)
+    file = models.FileField(
+        upload_to=user_directory_path, null=True, blank=True)
     type = models.CharField(max_length=50, choices=FILE_TYPE_CHOICES)
-    upload_date = models.DateField()
+    upload_date = models.DateTimeField()
 
     def filename(self):
         return os.path.basename(self.file.name)

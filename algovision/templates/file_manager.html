@@ -55,7 +55,7 @@
                     <span class="file-name">{{ file.filename|cut:"media" }}</span>
                 </td>
                 <td>{{ file.type }}</td>
-                <td>{{ file.upload_date }}</td>
+                <td>{{ file.upload_date|date:"d/m/Y H:i" }}</td>
                 <td>
                     <form method="post" style="display:inline;">
                         {% csrf_token %}
@@ -77,11 +77,44 @@
             <div class="alert alert-{{ message.tags }}">{{ message }}</div>
         {% endfor %}
     {% endif %}
+    <div id="alerts-container" style="
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    z-index: 1050;
+    "></div>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
+    function showErrorAlert(message) {
+        const container = document.getElementById('alerts-container');
+        if (!container) return;
+
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+        alertDiv.role = 'alert';
+        alertDiv.textContent = message;
+
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'btn-close';
+        closeBtn.setAttribute('data-bs-dismiss', 'alert');
+        closeBtn.setAttribute('aria-label', 'Close');
+
+        alertDiv.appendChild(closeBtn);
+        container.appendChild(alertDiv);
+
+        setTimeout(() => {
+            alertDiv.classList.remove('show');
+            alertDiv.classList.add('hide');
+            alertDiv.addEventListener('transitionend', () => alertDiv.remove());
+        }, 5000);
+    }
+
     function makeEditable(td, fileId) {
         const span = td.querySelector('.file-name');
         const originalName = span.textContent.trim();
@@ -126,6 +159,14 @@
     }
 
     function saveNewName(fileId, baseName, extension, td, span) {
+        // Validar que baseName no esté vacío
+        if (!baseName) {
+            showErrorAlert('El nombre no puede estar vacío.');
+            td.innerHTML = '';
+            td.appendChild(span);
+            return;
+        }
+
         const newName = baseName + extension;
 
         fetch(`/files/rename/${fileId}/`, {
@@ -136,16 +177,23 @@
             },
             body: JSON.stringify({ new_name: newName })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Error desconocido al renombrar archivo.');
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             td.innerHTML = '';
             const newSpan = document.createElement('span');
             newSpan.classList.add('file-name');
-            newSpan.textContent = data.new_name;  // Aquí mostramos el nombre completo con extensión
+            newSpan.textContent = data.new_name + extension;  // Mostrar nombre completo con extensión
             td.appendChild(newSpan);
-        })        
+        })
         .catch(error => {
-            alert("Error renaming file.");
+            showErrorAlert(error.message);
             td.innerHTML = '';
             td.appendChild(span);
         });
