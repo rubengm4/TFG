@@ -115,8 +115,6 @@ class RegisterView(FormView):
         source = request.session.get('login_source')
 
         if not source or source == 'default':
-            messages.error(
-                request, "Debes seleccionar un proyecto antes de registrarte.")
             return redirect('index')
 
         try:

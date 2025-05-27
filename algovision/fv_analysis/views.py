@@ -5,13 +5,16 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 
 from .models import File, Algorithm
+import json
 
 
 ALLOWED_EXTENSIONS = {
@@ -101,3 +104,42 @@ class AnalysisView(View):
             request, f"Análisis con {algorithm.name} ejecutado sobre {file.file.name}")
 
         return redirect('analysis')
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class RenameFileView(LoginRequiredMixin, View):
+    def post(self, request, file_id):
+        file_obj = get_object_or_404(File, id=file_id, user=request.user)
+        data = json.loads(request.body)
+        new_base_name = data.get('new_name')
+
+        if not new_base_name:
+            return JsonResponse({'error': 'Invalid name'}, status=400)
+
+        # Extraer extensión original
+        original_filename = os.path.basename(file_obj.file.name)
+        _, ext = os.path.splitext(original_filename)
+
+        # Limpiar cualquier extensión que el usuario haya escrito por error
+        base_name, _ = os.path.splitext(new_base_name)
+
+        # Reconstruir nuevo nombre con extensión original
+        new_filename = f"{base_name}{ext}"
+
+        old_relative_path = file_obj.file.name
+        old_path = os.path.join(settings.MEDIA_ROOT, old_relative_path)
+
+        new_relative_path = f"uploads/{new_filename}"
+        new_path = os.path.join(settings.MEDIA_ROOT, new_relative_path)
+
+        if os.path.exists(new_path):
+            return JsonResponse({'error': 'Ya existe un archivo con ese nombre.'}, status=400)
+
+        try:
+            os.rename(old_path, new_path)
+            file_obj.file.name = new_relative_path
+            file_obj.save()
+            # solo nombre base al frontend
+            return JsonResponse({'new_name': base_name})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)

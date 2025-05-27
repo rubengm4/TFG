@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% block title %}File Manager{% endblock %}
+
 {% block sidebar_links %}
   <li class="nav-item">
       <!--TODO: Cambiar link -->
@@ -49,7 +51,9 @@
         <tbody>
             {% for file in files %}
             <tr>
-                <td>{{ file.filename|cut:"media" }}</td>
+                <td ondblclick="makeEditable(this, {{ file.id }})">
+                    <span class="file-name">{{ file.filename|cut:"media" }}</span>
+                </td>
                 <td>{{ file.type }}</td>
                 <td>{{ file.upload_date }}</td>
                 <td>
@@ -75,3 +79,92 @@
     {% endif %}
 </div>
 {% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function makeEditable(td, fileId) {
+        const span = td.querySelector('.file-name');
+        const originalName = span.textContent.trim();
+
+        // Extract base name and extension
+        const lastDotIndex = originalName.lastIndexOf('.');
+        const baseName = originalName.substring(0, lastDotIndex);
+        const extension = originalName.substring(lastDotIndex);
+
+        // Create editable input
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = baseName;
+        input.classList.add('form-control');
+
+        // Create extension label
+        const extSpan = document.createElement('span');
+        extSpan.textContent = extension;
+        extSpan.classList.add('ms-2');
+
+        // Create wrapper
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('d-flex', 'align-items-center', 'gap-1');
+        wrapper.appendChild(input);
+        wrapper.appendChild(extSpan);
+
+        // Replace original cell content
+        td.innerHTML = '';
+        td.appendChild(wrapper);
+
+        // Save on blur or Enter
+        input.onblur = () => saveNewName(fileId, input.value.trim(), extension, td, span);
+        input.onkeydown = (e) => {
+            if (e.key === 'Enter') input.blur();
+            if (e.key === 'Escape') {
+                td.innerHTML = '';
+                td.appendChild(span);
+            }
+        };
+
+        input.focus();
+    }
+
+    function saveNewName(fileId, baseName, extension, td, span) {
+        const newName = baseName + extension;
+
+        fetch(`/files/rename/${fileId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ new_name: newName })
+        })
+        .then(response => response.json())
+        .then(data => {
+            td.innerHTML = '';
+            const newSpan = document.createElement('span');
+            newSpan.classList.add('file-name');
+            newSpan.textContent = data.new_name;  // Aquí mostramos el nombre completo con extensión
+            td.appendChild(newSpan);
+        })        
+        .catch(error => {
+            alert("Error renaming file.");
+            td.innerHTML = '';
+            td.appendChild(span);
+        });
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (const cookie of cookies) {
+                const trimmed = cookie.trim();
+                if (trimmed.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(trimmed.slice(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %}
+
