@@ -40,7 +40,7 @@ class FileManagerView(LoginRequiredMixin, View):
     template_name = 'file_manager.html'
 
     def get(self, request: HttpRequest):
-        files = File.objects.filter(user=request.user).order_by('-upload_date')
+        files = File.objects.filter(user=request.user)
         return render(request, self.template_name, {'files': files})
 
     def post(self, request: HttpRequest):

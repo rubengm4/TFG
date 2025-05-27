@@ -4,7 +4,6 @@
 
 {% block sidebar_links %}
   <li class="nav-item">
-      <!--TODO: Cambiar link -->
       <a class="nav-link" href="{% url 'analysis' %}">Mis resultados</a>
   </li>
   <li class="nav-item">
@@ -42,15 +41,15 @@
     <table class="table table-bordered">
         <thead>
             <tr>
-                <th>Nombre</th>
-                <th>Tipo</th>
-                <th>Fecha de subida</th>
+                <th onclick="sortTableByColumn(0)">Nombre <span class="sort-arrow" data-index="0"></span></th>
+                <th onclick="sortTableByColumn(1)">Tipo <span class="sort-arrow" data-index="1"></span></th>
+                <th onclick="sortTableByColumn(2)">Fecha de subida <span class="sort-arrow" data-index="2"></span></th>                
                 <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
             {% for file in files %}
-            <tr>
+            <tr class="file-row">
                 <td ondblclick="makeEditable(this, {{ file.id }})">
                     <span class="file-name">{{ file.filename|cut:"media" }}</span>
                 </td>
@@ -124,33 +123,27 @@
         const span = td.querySelector('.file-name');
         const originalName = span.textContent.trim();
 
-        // Extract base name and extension
         const lastDotIndex = originalName.lastIndexOf('.');
         const baseName = originalName.substring(0, lastDotIndex);
         const extension = originalName.substring(lastDotIndex);
 
-        // Create editable input
         const input = document.createElement('input');
         input.type = 'text';
         input.value = baseName;
         input.classList.add('form-control');
 
-        // Create extension label
         const extSpan = document.createElement('span');
         extSpan.textContent = extension;
         extSpan.classList.add('ms-2');
 
-        // Create wrapper
         const wrapper = document.createElement('div');
         wrapper.classList.add('d-flex', 'align-items-center', 'gap-1');
         wrapper.appendChild(input);
         wrapper.appendChild(extSpan);
 
-        // Replace original cell content
         td.innerHTML = '';
         td.appendChild(wrapper);
 
-        // Save on blur or Enter
         input.onblur = () => saveNewName(fileId, input.value.trim(), extension, td, span);
         input.onkeydown = (e) => {
             if (e.key === 'Enter') input.blur();
@@ -164,7 +157,6 @@
     }
 
     function saveNewName(fileId, baseName, extension, td, span) {
-        // Validar que baseName no esté vacío
         if (!baseName) {
             showErrorAlert('El nombre no puede estar vacío.');
             td.innerHTML = '';
@@ -194,8 +186,9 @@
             td.innerHTML = '';
             const newSpan = document.createElement('span');
             newSpan.classList.add('file-name');
-            newSpan.textContent = data.new_name + extension;  // Mostrar nombre completo con extensión
+            newSpan.textContent = data.new_name + extension;
             td.appendChild(newSpan);
+            sortTableByColumn(currentSort.column !== null ? currentSort.column : 0);
         })
         .catch(error => {
             showErrorAlert(error.message);
@@ -218,6 +211,58 @@
         }
         return cookieValue;
     }
+
+    let currentSort = {
+        column: 0,
+        ascending: false
+    };
+
+    function sortTableByColumn(colIndex) {
+        const tbody = document.querySelector("table tbody");
+        const rows = Array.from(tbody.querySelectorAll(".file-row"));
+    
+        const isSameColumn = currentSort.column === colIndex;
+        const ascending = isSameColumn ? !currentSort.ascending : true;
+    
+        rows.sort((a, b) => {
+            let aText = a.children[colIndex].textContent.trim().toLowerCase();
+            let bText = b.children[colIndex].textContent.trim().toLowerCase();
+    
+            if (colIndex === 2) {
+                const parseDate = str => {
+                    const [date, time] = str.split(" ");
+                    const [day, month, year] = date.split("/");
+                    return new Date(`${year}-${month}-${day}T${time}`);
+                };
+                aText = parseDate(aText);
+                bText = parseDate(bText);
+            }
+    
+            if (aText < bText) return ascending ? -1 : 1;
+            if (aText > bText) return ascending ? 1 : -1;
+            return 0;
+        });
+    
+        rows.forEach(row => tbody.appendChild(row));
+        currentSort = { column: colIndex, ascending };
+    
+        updateSortArrows();
+    }
+    
+    function updateSortArrows() {
+        const arrows = document.querySelectorAll(".sort-arrow");
+        arrows.forEach(arrow => {
+            const index = parseInt(arrow.dataset.index);
+            if (index === currentSort.column) {
+                arrow.textContent = currentSort.ascending ? "↑" : "↓";
+            } else {
+                arrow.textContent = "";
+            }
+        });
+    }
+    
+    document.addEventListener("DOMContentLoaded", () => {
+        sortTableByColumn(0); // Ordenar por nombre ascendente al cargar
+    });
 </script>
 {% endblock %}
-
