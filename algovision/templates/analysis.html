@@ -38,7 +38,7 @@
             <select name="file" class="form-select" required>
                 <option value="">-- Selecciona un archivo --</option>
                 {% for file in files %}
-                <option value="{{ file.id }}">{{ file.file.name|cut:"uploads/" }}</option>
+                <option value="{{ file.id }}">{{ file.filename|cut:"uploads/" }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -61,7 +61,11 @@
 
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% if messages.tags == error %}
+                <div class="alert alert-danger">{{ message }}</div>
+            {% else %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endif %}
         {% endfor %}
     {% endif %}
 </div>

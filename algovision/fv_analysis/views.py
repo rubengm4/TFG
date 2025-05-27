@@ -15,6 +15,7 @@ from django.views.generic import TemplateView
 
 from .models import File, Algorithm
 import json
+import uuid
 
 
 ALLOWED_EXTENSIONS = {
@@ -39,16 +40,14 @@ class FileManagerView(LoginRequiredMixin, View):
     template_name = 'file_manager.html'
 
     def get(self, request: HttpRequest):
-        files = File.objects.all().filter(user=request.user).order_by('-upload_date')
+        files = File.objects.filter(user=request.user).order_by('-upload_date')
         return render(request, self.template_name, {'files': files})
 
     def post(self, request: HttpRequest):
-        # Verificamos si es una subida o eliminación
         if 'delete_file' in request.POST:
             file_id = request.POST.get('delete_file')
             file_obj = get_object_or_404(File, id=file_id)
 
-            # Eliminamos el archivo del sistema de archivos
             file_path = file_obj.file.path
             if os.path.exists(file_path):
                 os.remove(file_path)
@@ -61,13 +60,39 @@ class FileManagerView(LoginRequiredMixin, View):
         if uploaded_file is not None:
             file_type = getattr(uploaded_file, 'content_type', None)
             if file_type and (file_type.startswith('image/') or file_type.startswith('video/') or uploaded_file.name.endswith('.csv')):
+                # Obtener nombre base y extensión
+                base_name, ext = os.path.splitext(uploaded_file.name)
+
+                # Revisar si ya existe un archivo con el mismo nombre para este usuario
+                existing_names = File.objects.filter(
+                    user=request.user).values_list('file', flat=True)
+                # Los nombres en existing_names pueden ser rutas, extraemos solo el nombre del archivo
+                existing_file_names = [
+                    os.path.basename(n) for n in existing_names]
+
+                final_name = uploaded_file.name
+                was_renamed = False
+
+                if final_name in existing_file_names:
+                    # Generar un nombre único con sufijo aleatorio
+                    final_name = f"{base_name}_{uuid.uuid4().hex[:8]}{ext}"
+                    was_renamed = True
+
+                # Modificar el archivo cargado para cambiarle el nombre en memoria antes de guardar
+                uploaded_file.name = final_name
+
                 File.objects.create(
                     user=request.user,
                     file=uploaded_file,
                     type=file_type,
                     upload_date=timezone.now()
                 )
-                messages.success(request, "Archivo subido exitosamente.")
+
+                if was_renamed:
+                    messages.info(
+                        request, f"El archivo ya existía y fue renombrado a '{final_name}'.")
+                else:
+                    messages.success(request, "Archivo subido exitosamente.")
             else:
                 messages.error(request, "Tipo de archivo no permitido.")
         else:
