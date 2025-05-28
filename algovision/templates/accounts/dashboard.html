@@ -4,14 +4,13 @@
 
 {% block sidebar_links %}
   <li class="nav-item">
-      <!--TODO: Cambiar link -->
-      <a class="nav-link" href="{% url 'analysis' %}">Mis resultados</a>
-  </li>
-  <li class="nav-item">
-      <a class="nav-link" href="{% url 'file_manager' %}">Mis archivos</a>
+    <a class="nav-link" href="{% url 'file_manager' %}">Mis archivos</a>
   </li>
   <li class="nav-item">
     <a class="nav-link" href="{% url 'analysis' %}">Realizar análisis</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'analysis' %}">Mis resultados</a>
   </li>
   <li class="nav-item">
     <a class="nav-link" href="{% url 'accounts:logout' %}">Cerrar sesión</a>

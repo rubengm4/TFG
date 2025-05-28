@@ -36,7 +36,8 @@ class FileAdmin(admin.ModelAdmin):
 
 
 class AlgorithmAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'version')
+    readonly_fields = ('file',)  # file field is read-only
+    list_display = ('id', 'name', 'version', 'file')
     search_fields = ('name', 'version')
 
 # ModelAdmin para personalizar la vista de administración de Execution

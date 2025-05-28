@@ -3,19 +3,19 @@
 {% block title %}Analysis{% endblock %}
 
 {% block sidebar_links %}
-  <li class="nav-item">
-      <!--TODO: Cambiar link -->
-      <a class="nav-link" href="{% url 'analysis' %}">Mis resultados</a>
-  </li>
-  <li class="nav-item">
+    <li class="nav-item">
       <a class="nav-link" href="{% url 'file_manager' %}">Mis archivos</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link" href="{% url 'analysis' %}">Realizar análisis</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link" href="{% url 'accounts:logout' %}">Cerrar sesión</a>
-  </li>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'analysis' %}">Realizar análisis</a>
+    </li>
+    <li class="nav-item">
+        <!--TODO: Cambiar link -->
+        <a class="nav-link" href="{% url 'analysis' %}">Mis resultados</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'accounts:logout' %}">Cerrar sesión</a>
+    </li>
 {% endblock %}
 
 {% block content %}
@@ -48,7 +48,7 @@
             <select name="algorithm" class="form-select" required>
                 <option value="">-- Selecciona un algoritmo --</option>
                 {% for algo in algorithms %}
-                <option value="{{ algo.id }}">{{ algo.name }}</option>
+                <option value="{{ algo.id }}">{{ algo.name }} - {{ algo.description }}</option>
                 {% endfor %}
             </select>
         </div>

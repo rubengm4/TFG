@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 from django import forms
 from django.conf import settings
@@ -106,7 +107,7 @@ class AnalysisView(View):
     template_name = 'analysis.html'
 
     def get(self, request: HttpRequest):
-        files = File.objects.all().filter(user=request.user)
+        files = File.objects.filter(user=request.user)
         algorithms = Algorithm.objects.all()
         return render(request, self.template_name, {
             'files': files,
@@ -121,11 +122,35 @@ class AnalysisView(View):
             messages.error(request, "Debes seleccionar archivo y algoritmo.")
             return redirect('analysis')
 
-        # TODO: Ejecutar análisis (interpretar archivo python y devolver resultado)
         file = File.objects.get(id=file_id)
         algorithm = Algorithm.objects.get(id=algorithm_id)
-        messages.success(
-            request, f"Análisis con {algorithm.name} ejecutado sobre {file.file.name}")
+
+        input_path = file.file.path
+        media_root = settings.MEDIA_ROOT
+
+        rel_path = os.path.relpath(input_path, media_root)
+        parts = rel_path.split(os.sep)
+        user_id = parts[1]
+
+        filename, ext = os.path.splitext(parts[-1])
+        output_dir = os.path.join(media_root, 'outputs', user_id)
+        os.makedirs(output_dir, exist_ok=True)
+
+        output_filename = f"{filename}_output{ext}"
+        output_path = os.path.join(output_dir, output_filename)
+
+        algorithm_script_path = algorithm.file.path  # Asegúrate que la ruta es correcta
+
+        try:
+            # Ejecutar el script python: python script.py input_path output_path
+            subprocess.run(
+                ['python', algorithm_script_path, input_path, output_path],
+                check=True
+            )
+            messages.success(
+                request, f"Análisis con {algorithm.name} ejecutado sobre {file.file.name}. Resultado en {output_path}")
+        except subprocess.CalledProcessError as e:
+            messages.error(request, f"Error al ejecutar el algoritmo: {e}")
 
         return redirect('analysis')
 

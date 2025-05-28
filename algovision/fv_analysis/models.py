@@ -53,6 +53,7 @@ class File(models.Model):
 
 class Algorithm(models.Model):
     name = models.CharField(max_length=255)
+    file = models.FileField(null=True, blank=True, upload_to='algorithms')
     version = models.CharField(max_length=50)
     description = models.TextField()
 
