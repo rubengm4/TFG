@@ -2,7 +2,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
-from fv_analysis.views import HomepageView, FileManagerView, AnalysisView, RenameFileView
+from fv_analysis.views import HomepageView, FileManagerView, AnalysisView, RenameFileView, ResultsView
 from accounts.views import FvAnalysisHomeView, DashboardView
 
 urlpatterns = [
@@ -15,4 +15,5 @@ urlpatterns = [
     path('files/rename/<int:file_id>/',
          RenameFileView.as_view(), name='rename_file'),
     path('analysis/', AnalysisView.as_view(), name='analysis'),
+    path('results/', ResultsView.as_view(), name='results'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

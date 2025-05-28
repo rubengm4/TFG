@@ -1,6 +1,8 @@
 import os
 import subprocess
 
+from datetime import datetime
+
 from django import forms
 from django.conf import settings
 from django.contrib import messages
@@ -136,7 +138,13 @@ class AnalysisView(View):
         output_dir = os.path.join(media_root, 'outputs', user_id)
         os.makedirs(output_dir, exist_ok=True)
 
-        output_filename = f"{filename}_output{ext}"
+        # Obtener la fecha y hora actual
+        now = datetime.now()
+
+        # Formatear como "YYYYMMDD_HHMMSS"
+        timestamp = now.strftime("%Y%m%d_%H%M%S")
+
+        output_filename = f"{filename}_{algorithm.name}_{timestamp}_out{ext}"
         output_path = os.path.join(output_dir, output_filename)
 
         algorithm_script_path = algorithm.file.path  # Asegúrate que la ruta es correcta
@@ -198,3 +206,10 @@ class RenameFileView(LoginRequiredMixin, View):
             return JsonResponse({'new_name': base_name})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
+
+class ResultsView(LoginRequiredMixin, View):
+    template_name = "results.html"
+
+    def get(self, request: HttpRequest):
+        return render(request, self.template_name)

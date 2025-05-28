@@ -1,11 +1,12 @@
 from django.core.management.base import BaseCommand
 from fv_analysis.models import Algorithm
+from typing import Any
 
 
 class Command(BaseCommand):
     help = 'Crear un algoritmo nuevo preguntando por name, version, description y file (ruta dentro de media).'
 
-    def handle(self, *args, **options):
+    def handle(self, *args: Any, **options: Any):
         self.stdout.write("Creando un nuevo algoritmo.")
         name = input("Nombre: ").strip()
         version = input("Versión: ").strip()
