@@ -50,18 +50,25 @@
         <tbody>
             {% for file in files %}
             <tr class="file-row">
-                <td ondblclick="makeEditable(this, {{ file.id }})">
+                <td>
                     <span class="file-name">{{ file.filename|cut:"media" }}</span>
                 </td>
                 <td>{{ file.type }}</td>
                 <td>{{ file.upload_date|date:"d/m/Y H:i" }}</td>
-                <td>
+                <td class="actions-cell">
+                    <button 
+                    type="button" 
+                    class="btn btn-secondary btn-sm ms-1 action-edit-btn"
+                    onclick="makeEditable(this.closest('tr').querySelector('td:first-child'), {{ file.id }})"
+                    >
+                    Editar
+                    </button>
                     <form method="post" style="display:inline;">
                         {% csrf_token %}
                         <input type="hidden" name="delete_file" value="{{ file.id }}">
-                        <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                        <button type="submit" class="btn btn-danger btn-sm action-delete-btn">Eliminar</button>
                     </form>
-                </td>
+                </td>          
             </tr>
             {% empty %}
             <tr>
@@ -144,23 +151,64 @@
         td.innerHTML = '';
         td.appendChild(wrapper);
 
-        input.onblur = () => saveNewName(fileId, input.value.trim(), extension, td, span);
-        input.onkeydown = (e) => {
-            if (e.key === 'Enter') input.blur();
-            if (e.key === 'Escape') {
-                td.innerHTML = '';
-                td.appendChild(span);
+        // Ocultar botones editar y eliminar de TODAS las filas
+        document.querySelectorAll('.action-delete-btn, .action-edit-btn, .confirm-edit-btn').forEach(btn => {
+            btn.style.display = 'none';
+            // También eliminamos cualquier botón confirmar ya existente, por si acaso
+            if (btn.classList.contains('confirm-edit-btn')) {
+                btn.remove();
             }
+        });
+
+        // En esta fila, no ocultamos el td que contiene los botones, solo los botones se ocultan arriba
+        const tr = td.closest('tr');
+
+        // Crear botón Confirmar
+        let confirmBtn = document.createElement('button');
+        confirmBtn.type = 'button';
+        confirmBtn.className = 'btn btn-success btn-sm ms-2 confirm-edit-btn';
+        confirmBtn.textContent = 'Confirmar';
+
+        confirmBtn.onclick = () => {
+            saveNewName(fileId, input.value.trim(), extension, td, span);
         };
 
+        // Añadir botón Confirmar en la celda de acciones
+        let actionsCell = tr.querySelector('.actions-cell');
+        actionsCell.appendChild(confirmBtn);
+
         input.focus();
+
+        input.onkeydown = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                confirmBtn.click();
+            }
+            if (e.key === 'Escape') {
+                cancelEdit(td, span, tr);
+            }
+        };
+    }
+
+
+    function cancelEdit(td, span, tr) {
+        td.innerHTML = '';
+        td.appendChild(span);
+
+        // Restaurar botones eliminar y editar en TODAS las filas
+        document.querySelectorAll('.action-delete-btn, .action-edit-btn').forEach(btn => {
+            btn.style.display = '';
+        });
+
+        // Quitar botón confirmar de esta fila si existe
+        const confirmBtn = tr.querySelector('.confirm-edit-btn');
+        if (confirmBtn) confirmBtn.remove();
     }
 
     function saveNewName(fileId, baseName, extension, td, span) {
         if (!baseName) {
             showErrorAlert('El nombre no puede estar vacío.');
-            td.innerHTML = '';
-            td.appendChild(span);
+            cancelEdit(td, span, td.closest('tr'));
             return;
         }
 
@@ -186,14 +234,26 @@
             td.innerHTML = '';
             const newSpan = document.createElement('span');
             newSpan.classList.add('file-name');
-            newSpan.textContent = data.new_name + extension;
+            newSpan.textContent = data.new_name + extension; //IMPORTANT: IT HAS TO BE LIKE THIS TO SHOW CORRECTLY  IN FRONTEND
             td.appendChild(newSpan);
-            sortTableByColumn(currentSort.column !== null ? currentSort.column : 0);
+
+            const tr = td.closest('tr');
+
+            // Restaurar botones eliminar y editar en TODAS las filas
+            document.querySelectorAll('.action-delete-btn, .action-edit-btn').forEach(btn => {
+                btn.style.display = '';
+            });
+
+            // Quitar botón confirmar si existe
+            const confirmBtn = tr.querySelector('.confirm-edit-btn');
+            if (confirmBtn) confirmBtn.remove();
+
+            // Mantener la misma dirección de orden al refrescar la tabla
+            sortTableByColumn(currentSort.column, currentSort.ascending);
         })
         .catch(error => {
             showErrorAlert(error.message);
-            td.innerHTML = '';
-            td.appendChild(span);
+            cancelEdit(td, span, td.closest('tr'));
         });
     }
 
@@ -217,12 +277,17 @@
         ascending: false
     };
 
-    function sortTableByColumn(colIndex) {
+    function sortTableByColumn(colIndex, forceAscending = null) {
         const tbody = document.querySelector("table tbody");
         const rows = Array.from(tbody.querySelectorAll(".file-row"));
     
         const isSameColumn = currentSort.column === colIndex;
-        const ascending = isSameColumn ? !currentSort.ascending : true;
+    
+        // Si forceAscending es null, hacemos toggle solo si es la misma columna
+        // Si forceAscending es true o false, usamos ese valor directamente
+        const ascending = forceAscending !== null 
+            ? forceAscending 
+            : (isSameColumn ? !currentSort.ascending : true);
     
         rows.sort((a, b) => {
             let aText = a.children[colIndex].textContent.trim().toLowerCase();
@@ -249,6 +314,7 @@
         updateSortArrows();
     }
     
+
     function updateSortArrows() {
         const arrows = document.querySelectorAll(".sort-arrow");
         arrows.forEach(arrow => {
@@ -260,9 +326,10 @@
             }
         });
     }
-    
+
     document.addEventListener("DOMContentLoaded", () => {
-        sortTableByColumn(0); // Ordenar por nombre ascendente al cargar
+        currentSort = { column: 0, ascending: true };
+        sortTableByColumn(0);
     });
 </script>
 {% endblock %}
