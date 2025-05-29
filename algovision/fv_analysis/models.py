@@ -54,6 +54,7 @@ class File(models.Model):
 class Algorithm(models.Model):
     name = models.CharField(max_length=255)
     file = models.FileField(null=True, blank=True, upload_to='algorithms')
+    project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True)
     version = models.CharField(max_length=50)
     description = models.TextField()
 
@@ -80,12 +81,17 @@ class Execution(models.Model):
     def __str__(self):
         return f"Execution {self.id} - {self.status}"
 
-# Model: Report
+# Model: Output
 
 
-class Report(models.Model):
+def output_directory_path(instance, filename):
+    return f'outputs/{instance.user.id}/{filename}'
+
+
+class Output(models.Model):
     execution = models.ForeignKey(Execution, on_delete=models.CASCADE)
-    path = models.TextField()
+    file = models.FileField(
+        upload_to=output_directory_path, null=True, blank=True)
     report_date = models.DateField()
 
     def __str__(self):

@@ -20,7 +20,7 @@
 </div>
 <div class="container py-5 text-center">
   <h1 class="mb-3">Estás en {{ source|title }}</h1>
-  <p class="lead mb-4">Aquí puedes iniciar sesión y gestionar tus algoritmos en el entorno de FV Analysis.</p>
+  <p class="lead mb-4">Aquí puedes iniciar sesión y gestionar tus algoritmos en el entorno de {{source}}.</p>
 
   <a href="{% url 'accounts:login' %}" class="btn btn-success px-4">Iniciar sesión</a>
   <a href="{% url 'accounts:register' %}" class="btn btn-success px-4">Registrarse</a>

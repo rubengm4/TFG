@@ -1,6 +1,5 @@
 from django.contrib import admin
-from django.contrib.auth.models import User
-from .models import Project, UserProject, File, Algorithm, Execution, Report
+from .models import Project, UserProject, File, Algorithm, Execution, Output
 
 # ModelAdmin para personalizar la vista de administración de Project
 
@@ -37,8 +36,8 @@ class FileAdmin(admin.ModelAdmin):
 
 class AlgorithmAdmin(admin.ModelAdmin):
     readonly_fields = ('file',)  # file field is read-only
-    list_display = ('id', 'name', 'version', 'file')
-    search_fields = ('name', 'version')
+    list_display = ('id', 'name', 'version', 'file', 'project')
+    search_fields = ('name', 'version', 'project')
 
 # ModelAdmin para personalizar la vista de administración de Execution
 
@@ -51,9 +50,9 @@ class ExecutionAdmin(admin.ModelAdmin):
 # ModelAdmin para personalizar la vista de administración de Report
 
 
-class ReportAdmin(admin.ModelAdmin):
-    list_display = ('id', 'execution', 'report_date', 'path')
-    search_fields = ('path',)
+class OutputAdmin(admin.ModelAdmin):
+    list_display = ('id', 'execution', 'report_date', 'file')
+    search_fields = ('file',)
 
 
 # Registro de los modelos con las clases de administración personalizadas
@@ -62,4 +61,4 @@ admin.site.register(UserProject, UserProjectAdmin)
 admin.site.register(File, FileAdmin)
 admin.site.register(Algorithm, AlgorithmAdmin)
 admin.site.register(Execution, ExecutionAdmin)
-admin.site.register(Report, ReportAdmin)
+admin.site.register(Output, OutputAdmin)
