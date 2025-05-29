@@ -111,10 +111,10 @@ class SetSourceAndRedirectToLogin(View):
         # Redirect to the appropriate homepage
         if source == 'fv-analysis':
             return redirect('fv_analysis_home')
-        # elif source == 'enlace2':
-        #     return redirect('accounts:enlace2_home')
+        elif source == 'example-project':
+            return redirect('example_project_home')
         # Add more as needed
-        return redirect('home')
+        return redirect('index')
 
 
 class RegisterView(FormView):  # type: ignore
@@ -209,8 +209,8 @@ class CustomLoginView(LoginView):
         return reverse('index')  # fallback
 
 
-class FvAnalysisHomeView(TemplateView):
-    template_name = 'accounts/fv_home.html'
+class LoginHomeView(TemplateView):
+    template_name = 'accounts/login_home.html'
 
     def get_context_data(self, **kwargs: Any):
         context = super().get_context_data(**kwargs)
