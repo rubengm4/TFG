@@ -72,31 +72,33 @@ class CustomUserCreationForm(UserCreationForm):
 class CustomAuthenticationForm(AuthenticationForm):
     def __init__(self, *args: Any, **kwargs: Any):
         self.request = kwargs.pop('request', None)
-        super().__init__(*args, **kwargs)
+        # Pasa request explícitamente a super
+        super().__init__(request=self.request, *args, **kwargs)
+
         for field in self.fields.values():
             field.widget.attrs['class'] = 'form-control'
 
-    def confirm_login_allowed(self, user: AbstractBaseUser):
+    def confirm_login_allowed(self, user):
         super().confirm_login_allowed(user)
 
-        if self.request:
-            project_slug = self.request.session.get('source')
-            if not project_slug:
-                raise ValidationError(
-                    "No project context found.", code='invalid_login')
+        if not self.request:
+            return
 
-            try:
-                project = Project.objects.get(
-                    title__iexact=project_slug.replace('-', ' '))
-            except Project.DoesNotExist:
-                raise ValidationError(
-                    "Invalid project selected.", code='invalid_login')
+        project_slug = self.request.session.get('login_source')
+        if not project_slug:
+            raise ValidationError("No project context found.",
+                                  code='invalid_login')
 
-            if not UserProject.objects.filter(user=user, project=project).exists():
-                raise ValidationError(
-                    "Este usuario no está registrado en este proyecto.",
-                    code='invalid_login'
-                )
+        try:
+            project = Project.objects.get(
+                title__iexact=project_slug)
+        except Project.DoesNotExist:
+            raise ValidationError("Invalid project selected.",
+                                  code='invalid_login')
+
+        if not UserProject.objects.filter(user=user, project=project).exists():
+            raise ValidationError(
+                "Este usuario no está registrado en este proyecto.", code='invalid_login')
 
 
 # --- Views ---
@@ -171,7 +173,7 @@ class RegisterView(FormView):  # type: ignore
 
 class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
-    authentication_form = CustomAuthenticationForm
+    form_class = CustomAuthenticationForm
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any):
         source = request.session.get('login_source')
@@ -185,16 +187,21 @@ class CustomLoginView(LoginView):
             return redirect('index')
 
         if request.user.is_authenticated:
-            # Already logged in user not in the project → log out
             if not UserProject.objects.filter(user=request.user, project=project).exists():
                 logout(request)
                 return redirect('index')
 
         return super().dispatch(request, *args, **kwargs)
 
+    def get_form(self, form_class=None):
+        if form_class is None:
+            form_class = self.get_form_class()
+        form = form_class(**self.get_form_kwargs())
+        return form
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['request'] = self.request  # Pass the request to the form
+        kwargs['request'] = self.request
         return kwargs
 
     def get_context_data(self, **kwargs: Any):
@@ -206,7 +213,10 @@ class CustomLoginView(LoginView):
         source = self.request.session.get('login_source', 'default')
         if source:
             return reverse('dashboard')
-        return reverse('index')  # fallback
+        return reverse('index')
+
+    def form_invalid(self, form):
+        return super().form_invalid(form)
 
 
 class LoginHomeView(TemplateView):

@@ -12,11 +12,22 @@ Login
 <div class="card mx-auto shadow-sm p-4 mt-3" style="max-width: 400px;">
   <h2 class="text-center mb-4">Login</h2>
 
-  {% if form.errors %}
+  {% if form.non_field_errors %}
     <div class="alert alert-danger">
-      Invalid username or password.
+      {% for error in form.non_field_errors %}
+        <p>{{ error }}</p>
+      {% endfor %}
     </div>
   {% endif %}
+
+  {% for field in form %}
+    {% for error in field.errors %}
+      <div class="alert alert-danger">
+        <strong>{{ field.label }}:</strong> {{ error }}
+      </div>
+    {% endfor %}
+  {% endfor %}
+
 
   {% if messages %}
     {% for message in messages %}
@@ -27,6 +38,7 @@ Login
       {% endif %}
     {% endfor %}
   {% endif %}
+
 
   <form method="post" novalidate>
     {% csrf_token %}
