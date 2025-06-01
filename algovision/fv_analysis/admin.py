@@ -51,7 +51,7 @@ class ExecutionAdmin(admin.ModelAdmin):
 
 
 class OutputAdmin(admin.ModelAdmin):
-    list_display = ('id', 'execution', 'report_date', 'file')
+    list_display = ('id', 'execution', 'output_date', 'file')
     search_fields = ('file',)
 
 

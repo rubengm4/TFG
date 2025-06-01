@@ -75,7 +75,7 @@ class Execution(models.Model):
     algorithm = models.ForeignKey(
         Algorithm, null=True, on_delete=models.SET_NULL)
     file = models.ForeignKey(File, null=True, on_delete=models.SET_NULL)
-    execution_date = models.DateField()
+    execution_date = models.DateTimeField()
     status = models.CharField(max_length=50, choices=EXECUTION_STATUS_CHOICES)
 
     def __str__(self):
@@ -92,7 +92,7 @@ class Output(models.Model):
     execution = models.ForeignKey(Execution, on_delete=models.CASCADE)
     file = models.FileField(
         upload_to=output_directory_path, null=True, blank=True)
-    report_date = models.DateField()
+    output_date = models.DateTimeField()
 
     def __str__(self):
-        return f"Report for Execution {self.execution.id}"
+        return f"Output for Execution {self.execution.id}"

@@ -70,6 +70,12 @@ class CustomUserCreationForm(UserCreationForm):
 
 
 class CustomAuthenticationForm(AuthenticationForm):
+    error_messages = {
+        'invalid_login': (
+            "Usuario o contraseña incorrectos. Ten en cuenta que ambos campos distinguen mayúsculas y minúsculas."
+        )
+    }
+
     def __init__(self, *args: Any, **kwargs: Any):
         self.request = kwargs.pop('request', None)
         # Pasa request explícitamente a super
@@ -98,7 +104,7 @@ class CustomAuthenticationForm(AuthenticationForm):
 
         if not UserProject.objects.filter(user=user, project=project).exists():
             raise ValidationError(
-                "Este usuario no está registrado en este proyecto.", code='invalid_login')
+                "Usuario o contraseña incorrectos. Ten en cuenta que ambos campos distinguen mayúsculas y minúsculas.", code='invalid_login')
 
 
 # --- Views ---

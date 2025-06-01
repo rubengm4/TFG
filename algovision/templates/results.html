@@ -43,15 +43,14 @@
           <tr class="result-row">
               <td>{{ result.original_filename }}</td>
               <td>{{ result.algorithm_name }}</td>
-              <td>{{ result.created_at|date:"d/m/Y H:i" }}</td>
+              <td>{{ result.execution_date|date:"d/m/Y H:i" }}</td>
               <td class="actions-cell">
-                  <a href="{% url 'results:download' result.id %}" class="btn btn-primary btn-sm">Descargar</a>
-                  <form method="post" style="display:inline;">
-                      {% csrf_token %}
-                      <input type="hidden" name="delete_result" value="{{ result.id }}">
-                      <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
-                  </form>
-              </td>
+                {% if result.output_id %}
+                    <a href="{% url 'results_download' result.output_id %}" class="btn btn-primary btn-sm">Descargar</a>
+                {% else %}
+                    <span class="text-muted">Pendiente</span>
+                {% endif %}
+            </td>            
           </tr>
           {% empty %}
           <tr>

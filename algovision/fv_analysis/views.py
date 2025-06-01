@@ -1,3 +1,4 @@
+from django.http import FileResponse, Http404
 import os
 import subprocess
 
@@ -16,7 +17,7 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 
-from .models import File, Algorithm, Project
+from .models import File, Algorithm, Project, Execution, Output
 import json
 import uuid
 
@@ -154,14 +155,34 @@ class AnalysisView(View):
         algorithm_script_path = algorithm.file.path  # Asegúrate que la ruta es correcta
 
         try:
+            # Creamos Execution en base de datos
+            exec = Execution.objects.create(execution_date=now, status="IN PROCESS",
+                                            algorithm_id=algorithm_id, file_id=file_id, user=request.user)
             # Ejecutar el script python: python script.py input_path output_path
             subprocess.run(
                 ['python', algorithm_script_path, input_path, output_path],
                 check=True
             )
+
+            # Guardamos los cambios en la base de datos
+            exec.status = "COMPLETED"
+            exec.save(update_fields=['status'])
+
+            # Crear Output
+            # rel_output_path = os.path.relpath(output_path, settings.MEDIA_ROOT)
+            Output.objects.create(
+                execution=exec,
+                file=f"outputs/{user_id}/{output_filename}",
+                output_date=now
+            )
+
             messages.success(
                 request, f"Análisis con {algorithm.name} ejecutado sobre {file.file.name}. Resultado en {output_path}")
         except subprocess.CalledProcessError as e:
+            # Buscamos la ejecución fallida
+            exec = Execution.objects.get(
+                execution_date=now, algorithm_id=algorithm_id, file_id=file_id, user=request.user)
+            exec.status = "FAILED"
             messages.error(request, f"Error al ejecutar el algoritmo: {e}")
 
         return redirect('analysis')
@@ -216,4 +237,34 @@ class ResultsView(LoginRequiredMixin, View):
     template_name = "results.html"
 
     def get(self, request: HttpRequest):
-        return render(request, self.template_name)
+        executions = (
+            Execution.objects
+            .select_related('file', 'algorithm')
+            .filter(user=request.user)
+            .order_by('-execution_date')
+        )
+
+        results = []
+        for execution in executions:
+            output = Output.objects.filter(execution=execution).first()
+            results.append({
+                'id': execution.id,
+                'original_filename': execution.file.filename,
+                'algorithm_name': execution.algorithm.name,
+                'execution_date': execution.execution_date,
+                'output_id': output.id if output else None,
+            })
+
+        return render(request, self.template_name, {'results': results})
+
+
+class DownloadOutputView(LoginRequiredMixin, View):
+    def get(self, request, output_id):
+        try:
+            output = Output.objects.get(
+                pk=output_id, execution__user=request.user)
+            if not output.file:
+                raise Http404("Output sin archivo asociado.")
+            return FileResponse(output.file.open('rb'), as_attachment=True, filename=output.file.name)
+        except Output.DoesNotExist:
+            raise Http404("Output no encontrado.")
