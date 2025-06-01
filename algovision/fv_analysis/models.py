@@ -6,7 +6,7 @@ import os
 
 
 class Project(models.Model):
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255, unique=True)
     description = models.TextField()
     start_date = models.DateField()
 

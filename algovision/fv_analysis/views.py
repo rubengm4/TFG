@@ -16,7 +16,7 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 
-from .models import File, Algorithm
+from .models import File, Algorithm, Project
 import json
 import uuid
 
@@ -109,8 +109,12 @@ class AnalysisView(View):
     template_name = 'analysis.html'
 
     def get(self, request: HttpRequest):
+        # Get the project
+        project_id = request.session.get('login_source')
+        project = Project.objects.get(title=project_id)
+
         files = File.objects.filter(user=request.user)
-        algorithms = Algorithm.objects.all()
+        algorithms = Algorithm.objects.all().filter(project_id=project.pk)
         return render(request, self.template_name, {
             'files': files,
             'algorithms': algorithms
