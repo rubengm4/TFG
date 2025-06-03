@@ -50,6 +50,12 @@
                 {% else %}
                     <span class="text-muted">Pendiente</span>
                 {% endif %}
+
+                <form method="post" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que quieres eliminar esta ejecución?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="delete_execution" value="{{ result.id }}">
+                    <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                </form>
             </td>            
           </tr>
           {% empty %}

@@ -18,7 +18,9 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# Se guardan archivos ahora en mi carpeta de OneDrive en mi ordenador
+MEDIA_ROOT = os.path.expanduser(config('DJANGO_MEDIA_ROOT'))
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_AGE = 1800  # 30 minutes

@@ -11,8 +11,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse, HttpRequest
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
+from django.utils.safestring import mark_safe
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
@@ -177,7 +179,12 @@ class AnalysisView(View):
             )
 
             messages.success(
-                request, f"Análisis con {algorithm.name} ejecutado sobre {file.file.name}. Resultado en {output_path}")
+                request,
+                mark_safe(
+                    f"Análisis con <strong>{algorithm.name}</strong> ejecutado sobre <strong>{file.filename()}</strong>. "
+                    f"<a href='{reverse('results')}' class='btn btn-sm btn-link'>Ver resultados</a>"
+                )
+            )
         except subprocess.CalledProcessError as e:
             # Buscamos la ejecución fallida
             exec = Execution.objects.get(
@@ -256,6 +263,22 @@ class ResultsView(LoginRequiredMixin, View):
             })
 
         return render(request, self.template_name, {'results': results})
+
+    def post(self, request: HttpRequest):
+        execution_id = request.POST.get("delete_execution")
+        if execution_id:
+            try:
+                execution = Execution.objects.get(
+                    pk=execution_id, user=request.user)
+                output = Output.objects.filter(execution=execution).first()
+                # Eliminar archivo del sistema de archivos
+                if output and output.file and os.path.isfile(output.file.path):
+                    os.remove(output.file.path)
+                    output.delete()
+                execution.delete()
+            except Execution.DoesNotExist:
+                pass  # Silenciar si no se encuentra
+        return redirect("results")
 
 
 class DownloadOutputView(LoginRequiredMixin, View):
