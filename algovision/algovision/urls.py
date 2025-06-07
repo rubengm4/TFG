@@ -2,7 +2,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
-from fv_analysis.views import HomepageView, FileManagerView, AnalysisView, RenameFileView, ResultsView, DownloadOutputView
+from fv_analysis.views import HomepageView, FileManagerView, AnalysisView, RenameFileView, ResultsView, DownloadOutputView, CreateAlgorithmView, ManageAlgorithmsView, DeleteAlgorithmView
 from accounts.views import LoginHomeView, DashboardView
 
 urlpatterns = [
@@ -19,5 +19,11 @@ urlpatterns = [
     path('analysis/', AnalysisView.as_view(), name='analysis'),
     path('results/', ResultsView.as_view(), name='results'),
     path('results/download/<int:output_id>/',
-         DownloadOutputView.as_view(), name='results_download')
+         DownloadOutputView.as_view(), name='results_download'),
+    path("algorithms/", ManageAlgorithmsView.as_view(),
+         name="manage_algorithms"),
+    path("algorithms/create/", CreateAlgorithmView.as_view(),
+         name="create_algorithm"),
+    path("algorithms/delete/<int:pk>/",
+         DeleteAlgorithmView.as_view(), name="delete_algorithm"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

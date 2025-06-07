@@ -8,18 +8,19 @@ from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import JsonResponse, HttpRequest
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.safestring import mark_safe
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, CreateView, ListView, DeleteView
 
 from .models import File, Algorithm, Project, Execution, Output
+from .forms import AlgorithmForm
 import json
 import uuid
 
@@ -291,3 +292,40 @@ class DownloadOutputView(LoginRequiredMixin, View):
             return FileResponse(output.file.open('rb'), as_attachment=True, filename=output.file.name)
         except Output.DoesNotExist:
             raise Http404("Output no encontrado.")
+
+
+class CreateAlgorithmView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = Algorithm
+    form_class = AlgorithmForm
+    template_name = "algorithms/create_algorithm.html"
+    # Ajusta a tu vista de listado
+    success_url = reverse_lazy("algorithm_list")
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+
+class AlgorithmListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = Algorithm
+    template_name = "algorithms/algorithm_list.html"
+    context_object_name = "algorithms"
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+
+class ManageAlgorithmsView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = Algorithm
+    template_name = "algorithms/manage_algorithms.html"
+    context_object_name = "algorithms"
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+
+class DeleteAlgorithmView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Algorithm
+    success_url = reverse_lazy("manage_algorithms")
+
+    def test_func(self):
+        return self.request.user.is_superuser

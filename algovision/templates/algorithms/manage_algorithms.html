@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2 class="mt-5">Gestión de Algoritmos</h2>
+
+  <a href="{% url 'create_algorithm' %}" class="btn btn-primary mb-3">Crear nuevo algoritmo</a>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Versión</th>
+        <th>Proyecto</th>
+        <th>Archivo</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for algo in algorithms %}
+        <tr>
+          <td>{{ algo.name }}</td>
+          <td>{{ algo.version }}</td>
+          <td>{{ algo.project.name }}</td>
+          <td>
+            {% if algo.file %}
+              <a href="{{ algo.file.url }}">Descargar</a>
+            {% else %}
+              No subido
+            {% endif %}
+          </td>
+          <td>
+            <a href="#" class="btn btn-secondary btn-sm">Editar</a>
+            <form method="post" action="{% url 'delete_algorithm' algo.id %}" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm">Borrar</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

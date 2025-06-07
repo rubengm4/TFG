@@ -12,6 +12,11 @@
   <li class="nav-item">
     <a class="nav-link" href="{% url 'results' %}">Mis resultados</a>
   </li>
+  {% if user.is_superuser %}
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'manage_algorithms' %}">Gestión de algoritmos</a>
+    </li>
+  {% endif %}
   <li class="nav-item">
     <a class="nav-link" href="{% url 'accounts:logout' %}">Cerrar sesión</a>
   </li>
