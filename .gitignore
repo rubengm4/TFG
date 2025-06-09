@@ -23,6 +23,7 @@ media/
 venv/
 ENV/
 env/
+.algenv/
 
 # IDEs
 .vscode/

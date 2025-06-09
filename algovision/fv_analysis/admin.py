@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Project, UserProject, File, Algorithm, Execution, Output
+from .models import Project, UserProject, File, Algorithm, Execution, Output, FileType
 
 # ModelAdmin para personalizar la vista de administración de Project
 
@@ -35,8 +35,9 @@ class FileAdmin(admin.ModelAdmin):
 
 
 class AlgorithmAdmin(admin.ModelAdmin):
-    readonly_fields = ('file',)  # file field is read-only
-    list_display = ('id', 'name', 'version', 'file', 'project')
+    readonly_fields = ('archive',)  # file field is read-only
+    list_display = ('id', 'name', 'version',
+                    'archive', 'project', 'entrypoint')
     search_fields = ('name', 'version', 'project')
 
 # ModelAdmin para personalizar la vista de administración de Execution
@@ -55,9 +56,15 @@ class OutputAdmin(admin.ModelAdmin):
     search_fields = ('file',)
 
 
+class FileTypeAdmin(admin.ModelAdmin):
+    list_display = ('id', 'code', 'name')
+    search_fields = ('code', 'name')
+
+
 # Registro de los modelos con las clases de administración personalizadas
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(UserProject, UserProjectAdmin)
+admin.site.register(FileType, FileTypeAdmin)
 admin.site.register(File, FileAdmin)
 admin.site.register(Algorithm, AlgorithmAdmin)
 admin.site.register(Execution, ExecutionAdmin)

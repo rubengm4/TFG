@@ -16,6 +16,14 @@ class Project(models.Model):
 # Model: UserProject (many-to-many relationship)
 
 
+class FileType(models.Model):
+    code = models.CharField(max_length=50, unique=True)  # ej: 'csv', 'image'
+    name = models.CharField(max_length=100)  # ej: 'CSV', 'Image'
+
+    def __str__(self):
+        return self.name
+
+
 class UserProject(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -33,16 +41,10 @@ def user_directory_path(instance, filename):
 
 
 class File(models.Model):
-    FILE_TYPE_CHOICES = [
-        ('csv', 'CSV'),
-        ('image', 'Image'),
-        ('video', 'Video'),
-    ]
-
     user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
     file = models.FileField(
         upload_to=user_directory_path, null=True, blank=True)
-    type = models.CharField(max_length=50, choices=FILE_TYPE_CHOICES)
+    type = models.ForeignKey(FileType, on_delete=models.CASCADE)
     upload_date = models.DateTimeField()
 
     def filename(self):
@@ -53,13 +55,17 @@ class File(models.Model):
 
 class Algorithm(models.Model):
     name = models.CharField(max_length=255)
-    file = models.FileField(null=True, blank=True, upload_to='algorithms')
     project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True)
     version = models.CharField(max_length=50)
     description = models.TextField()
+    archive = models.FileField(upload_to='algorithms/')
+    entrypoint = models.CharField(
+        max_length=255, help_text="Archivo principal a ejecutar, por ejemplo: main.py")
+    supported_types = models.ManyToManyField(FileType, blank=True)
 
     def __str__(self):
         return self.name
+
 
 # Model: Execution
 
