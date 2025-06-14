@@ -1,6 +1,9 @@
-from django.http import FileResponse, Http404
 import os
 import subprocess
+import json
+import uuid
+import platform
+import zipfile
 
 from datetime import datetime
 
@@ -9,7 +12,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.http import JsonResponse, HttpRequest
+from django.http import JsonResponse, HttpRequest, Http404, FileResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -19,17 +22,10 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView, CreateView, ListView, DeleteView
 
-from .models import File, Algorithm, Project, Execution, Output
+from pathlib import Path
+
+from .models import File, Algorithm, Project, Execution, Output, FileType
 from .forms import AlgorithmForm
-import json
-import uuid
-
-
-ALLOWED_EXTENSIONS = {
-    'csv': 'CSV',
-    'jpg': 'Image', 'jpeg': 'Image', 'png': 'Image',
-    'mp4': 'Video', 'mov': 'Video', 'avi': 'Video',
-}
 
 
 class HomepageView(TemplateView):
@@ -88,10 +84,13 @@ class FileManagerView(LoginRequiredMixin, View):
                 # Modificar el archivo cargado para cambiarle el nombre en memoria antes de guardar
                 uploaded_file.name = final_name
 
+                type_code, _ = file_type.split("/")
+                type = FileType.objects.get(code=type_code)
+
                 File.objects.create(
                     user=request.user,
                     file=uploaded_file,
-                    type=file_type,
+                    type=type,
                     upload_date=timezone.now()
                 )
 
@@ -113,12 +112,11 @@ class AnalysisView(View):
     template_name = 'analysis.html'
 
     def get(self, request: HttpRequest):
-        # Get the project
         project_id = request.session.get('login_source')
         project = Project.objects.get(title=project_id)
 
         files = File.objects.filter(user=request.user)
-        algorithms = Algorithm.objects.all().filter(project_id=project.pk)
+        algorithms = Algorithm.objects.filter(project_id=project.pk)
         return render(request, self.template_name, {
             'files': files,
             'algorithms': algorithms
@@ -135,44 +133,64 @@ class AnalysisView(View):
         file = File.objects.get(id=file_id)
         algorithm = Algorithm.objects.get(id=algorithm_id)
 
-        input_path = file.file.path
+        input_zip = file.file.path
         media_root = settings.MEDIA_ROOT
 
-        rel_path = os.path.relpath(input_path, media_root)
+        # Resolve user path
+        rel_path = os.path.relpath(input_zip, media_root)
         parts = rel_path.split(os.sep)
         user_id = parts[1]
 
-        filename, ext = os.path.splitext(parts[-1])
+        # Prepare output directory and zip
+        filename, _ = os.path.splitext(parts[-1])
+        now = datetime.now()
+        timestamp = now.strftime("%Y%m%d_%H%M%S")
         output_dir = os.path.join(media_root, 'outputs', user_id)
         os.makedirs(output_dir, exist_ok=True)
-
-        # Obtener la fecha y hora actual
-        now = datetime.now()
-
-        # Formatear como "YYYYMMDD_HHMMSS"
-        timestamp = now.strftime("%Y%m%d_%H%M%S")
-
-        output_filename = f"{filename}_{algorithm.name}_{timestamp}_out{ext}"
-        output_path = os.path.join(output_dir, output_filename)
-
-        algorithm_script_path = algorithm.file.path  # Asegúrate que la ruta es correcta
+        output_filename = f"{filename}_{algorithm.name}_{timestamp}_out.zip"
+        output_zip = os.path.join(output_dir, output_filename)
 
         try:
-            # Creamos Execution en base de datos
-            exec = Execution.objects.create(execution_date=now, status="IN PROCESS",
-                                            algorithm_id=algorithm_id, file_id=file_id, user=request.user)
-            # Ejecutar el script python: python script.py input_path output_path
+            # Register execution
+            exec = Execution.objects.create(
+                execution_date=now,
+                status="IN PROCESS",
+                algorithm_id=algorithm_id,
+                file_id=file_id,
+                user=request.user
+            )
+
+            # Extract the algorithm ZIP into a dedicated directory
+            algorithm_zip = algorithm.archive.path
+            algorithm_stem = Path(algorithm_zip).stem  # e.g. 'my_algorithm'
+            extract_path = os.path.join(
+                settings.MEDIA_ROOT, 'algorithms', algorithm_stem)
+
+            if not os.path.exists(extract_path):
+                os.makedirs(extract_path, exist_ok=True)
+                with zipfile.ZipFile(algorithm_zip, 'r') as zip_ref:
+                    zip_ref.extractall(extract_path)
+
+            # Build full path to the entrypoint script
+            entrypoint = algorithm.entrypoint  # e.g. "main.py" or "subfolder/run.py"
+            script_path = os.path.join(extract_path, entrypoint)
+
+            # Build Python executable path from shared venv
+            shared_venv = Path(script_path).parents[2] / "envs" / ".algenv"
+            if platform.system() == "Windows":
+                python_exec = shared_venv / "Scripts" / "python.exe"
+            else:
+                python_exec = shared_venv / "bin" / "python"
+
+            # Execute the algorithm: python script input_zip output_zip
             subprocess.run(
-                ['python', algorithm_script_path, input_path, output_path],
+                [str(python_exec), str(script_path), input_zip, output_zip],
                 check=True
             )
 
-            # Guardamos los cambios en la base de datos
             exec.status = "COMPLETED"
             exec.save(update_fields=['status'])
 
-            # Crear Output
-            # rel_output_path = os.path.relpath(output_path, settings.MEDIA_ROOT)
             Output.objects.create(
                 execution=exec,
                 file=f"outputs/{user_id}/{output_filename}",
@@ -187,10 +205,8 @@ class AnalysisView(View):
                 )
             )
         except subprocess.CalledProcessError as e:
-            # Buscamos la ejecución fallida
-            exec = Execution.objects.get(
-                execution_date=now, algorithm_id=algorithm_id, file_id=file_id, user=request.user)
             exec.status = "FAILED"
+            exec.save(update_fields=['status'])
             messages.error(request, f"Error al ejecutar el algoritmo: {e}")
 
         return redirect('analysis')
@@ -299,16 +315,7 @@ class CreateAlgorithmView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     form_class = AlgorithmForm
     template_name = "algorithms/create_algorithm.html"
     # Ajusta a tu vista de listado
-    success_url = reverse_lazy("algorithm_list")
-
-    def test_func(self):
-        return self.request.user.is_superuser
-
-
-class AlgorithmListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
-    model = Algorithm
-    template_name = "algorithms/algorithm_list.html"
-    context_object_name = "algorithms"
+    success_url = reverse_lazy("manage_algorithms")
 
     def test_func(self):
         return self.request.user.is_superuser

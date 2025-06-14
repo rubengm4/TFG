@@ -22,8 +22,8 @@
           <td>{{ algo.version }}</td>
           <td>{{ algo.project }}</td>
           <td>
-            {% if algo.file %}
-              <a href="{{ algo.file.url }}">Descargar</a>
+            {% if algo.archive %}
+              <a href="{{ algo.archive.url }}">Descargar</a>
             {% else %}
               No subido
             {% endif %}
