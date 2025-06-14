@@ -133,6 +133,9 @@ class RegisterView(FormView):  # type: ignore
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any):
         source = request.session.get('login_source')
 
+        if request.user.is_authenticated:
+            return redirect('dashboard')
+
         if not source or source == 'default':
             return redirect('index')
 
@@ -183,6 +186,9 @@ class CustomLoginView(LoginView):
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any):
         source = request.session.get('login_source')
+
+        if request.user.is_authenticated:
+            return redirect('dashboard')
 
         if not source or source == 'default':
             return redirect('index')

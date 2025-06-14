@@ -56,6 +56,11 @@
                 <td>{{ file.type }}</td>
                 <td>{{ file.upload_date|date:"d/m/Y H:i" }}</td>
                 <td class="actions-cell">
+                    <form method="post" action="{% url 'analysis' %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="file_id" value="{{ file.id }}">
+                        <button type="submit" class="btn btn-primary btn-sm">Analyze</button>
+                      </form>
                     <button 
                     type="button" 
                     class="btn btn-secondary btn-sm ms-1 action-edit-btn"

@@ -31,6 +31,11 @@ from .forms import AlgorithmForm
 class HomepageView(TemplateView):
     template_name = 'index.html'
 
+    def dispatch(self, request: HttpRequest, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect('dashboard')
+        return super().dispatch(request, *args, **kwargs)
+
 
 class FileUploadForm(forms.ModelForm):
     class Meta:
@@ -117,16 +122,31 @@ class AnalysisView(View):
 
         files = File.objects.filter(user=request.user)
         algorithms = Algorithm.objects.filter(project_id=project.pk)
+
+        # Leer file_id guardado en sesión para preseleccionar
+        selected_file_id = request.session.pop('selected_file_id', None)
+        selected_algorithm_id = request.session.pop(
+            'selected_algorithm_id', None)
         return render(request, self.template_name, {
             'files': files,
-            'algorithms': algorithms
+            'algorithms': algorithms,
+            'selected_file_id': selected_file_id,
+            'selected_algorithm_id': selected_algorithm_id,
         })
 
     def post(self, request: HttpRequest):
-        file_id = request.POST.get('file')
+        file_id = request.POST.get('file_id')
         algorithm_id = request.POST.get('algorithm')
 
+        if file_id and not algorithm_id:
+            # Caso: vengo de /files solo con file_id para preselección
+            request.session['selected_file_id'] = file_id
+            return redirect('analysis')
+
+        # Caso: vengo de formulario análisis para ejecutar (file y algo)
         if not file_id or not algorithm_id:
+            print(file_id)
+            print(algorithm_id)
             messages.error(request, "Debes seleccionar archivo y algoritmo.")
             return redirect('analysis')
 
@@ -149,6 +169,10 @@ class AnalysisView(View):
         os.makedirs(output_dir, exist_ok=True)
         output_filename = f"{filename}_{algorithm.name}_{timestamp}_out.zip"
         output_zip = os.path.join(output_dir, output_filename)
+
+        # Guardar selección para que persista si vuelves a analysis
+        request.session['selected_file_id'] = file_id
+        request.session['selected_algorithm_id'] = algorithm_id
 
         try:
             # Register execution
@@ -293,6 +317,7 @@ class ResultsView(LoginRequiredMixin, View):
                     os.remove(output.file.path)
                     output.delete()
                 execution.delete()
+                # TODO: DECIDIR SI QUEREMOS ELIMINAR EJECUCIONES O MARCAR COMO DELETED
             except Execution.DoesNotExist:
                 pass  # Silenciar si no se encuentra
         return redirect("results")

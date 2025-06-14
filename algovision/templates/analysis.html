@@ -34,12 +34,14 @@
 
         <div class="mb-3">
             <label for="file">Seleccionar archivo:</label>
-            <select name="file" class="form-select" required>
+            <select name="file_id" class="form-select" required>
                 <option value="">-- Selecciona un archivo --</option>
                 {% for file in files %}
-                <option value="{{ file.id }}">{{ file.filename|cut:"uploads/" }}</option>
+                <option value="{{ file.id }}" {% if file.id|stringformat:"s" == selected_file_id|stringformat:"s" %}selected{% endif %}>
+                  {{ file.filename|cut:"uploads/" }}
+                </option>
                 {% endfor %}
-            </select>
+              </select>              
         </div>
 
         <div class="mb-3">
