@@ -153,11 +153,11 @@ class AnalysisView(View):
         file = File.objects.get(id=file_id)
         algorithm = Algorithm.objects.get(id=algorithm_id)
 
-        input_zip = file.file.path
+        input_file = file.file.path
         media_root = settings.MEDIA_ROOT
 
         # Resolve user path
-        rel_path = os.path.relpath(input_zip, media_root)
+        rel_path = os.path.relpath(input_file, media_root)
         parts = rel_path.split(os.sep)
         user_id = parts[1]
 
@@ -173,6 +173,17 @@ class AnalysisView(View):
         # Guardar selección para que persista si vuelves a analysis
         request.session['selected_file_id'] = file_id
         request.session['selected_algorithm_id'] = algorithm_id
+
+        supported_types = algorithm.supported_types.all()
+        supported_names = ', '.join([str(ftype) for ftype in supported_types])
+
+        # Validar compatibilidad del archivo con el algoritmo
+        if file.type not in supported_types:
+            messages.error(
+                request,
+                f"El archivo seleccionado no es compatible con el algoritmo '{algorithm.name}'. El algoritmo solo admite archivos de tipo: {supported_names}"
+            )
+            return redirect('analysis')
 
         try:
             # Register execution
@@ -206,9 +217,9 @@ class AnalysisView(View):
             else:
                 python_exec = shared_venv / "bin" / "python"
 
-            # Execute the algorithm: python script input_zip output_zip
+            # Execute the algorithm: python script input_file output_zip
             subprocess.run(
-                [str(python_exec), str(script_path), input_zip, output_zip],
+                [str(python_exec), str(script_path), input_file, output_zip],
                 check=True
             )
 

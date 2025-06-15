@@ -1,6 +1,34 @@
 {% extends "base.html" %}
 
+{% block sidebar_links %}
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'file_manager' %}">Mis archivos</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'analysis' %}">Realizar análisis</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'results' %}">Mis resultados</a>
+  </li>
+  {% if user.is_superuser %}
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'manage_algorithms' %}">Gestión de algoritmos</a>
+    </li>
+  {% endif %}
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:logout' %}">Cerrar sesión</a>
+  </li>
+{% endblock %}
+
 {% block content %}
+  <div class="d-flex justify-content-between align-items-center mt-5">
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+      ← Volver al dashboard
+    </a>
+    <a href="{% url 'accounts:logout' %}" class="btn btn-danger">
+      Cerrar sesión
+    </a>
+  </div>
   <h2 class="mt-5">Gestión de Algoritmos</h2>
 
   <a href="{% url 'create_algorithm' %}" class="btn btn-primary mb-3">Crear nuevo algoritmo</a>

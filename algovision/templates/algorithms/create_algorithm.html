@@ -1,7 +1,35 @@
 <!-- templates/algorithms/create_algorithm.html -->
 {% extends "base.html" %}
 
+{% block sidebar_links %}
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'file_manager' %}">Mis archivos</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'analysis' %}">Realizar análisis</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'results' %}">Mis resultados</a>
+  </li>
+  {% if user.is_superuser %}
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'manage_algorithms' %}">Gestión de algoritmos</a>
+    </li>
+  {% endif %}
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:logout' %}">Cerrar sesión</a>
+  </li>
+{% endblock %}
+
 {% block content %}
+  <div class="d-flex justify-content-between align-items-center mt-5">
+    <a href="{% url 'manage_algorithms' %}" class="btn btn-outline-secondary">
+      ← Volver a gestión de algoritmos
+    </a>
+    <a href="{% url 'accounts:logout' %}" class="btn btn-danger">
+      Cerrar sesión
+    </a>
+  </div>
   <h2 class="mt-4">Crear nuevo algoritmo</h2>
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
