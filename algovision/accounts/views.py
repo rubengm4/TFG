@@ -5,7 +5,7 @@ from typing import Any
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.contrib.auth.models import User, AbstractBaseUser
+from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
 
@@ -51,6 +51,7 @@ class CustomUserCreationForm(UserCreationForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        assert cleaned_data is not None, "cleaned_data no debería ser None"
         password1 = cleaned_data.get("password1")
         password2 = cleaned_data.get("password2")
 

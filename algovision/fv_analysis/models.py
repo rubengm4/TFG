@@ -36,7 +36,7 @@ class UserProject(models.Model):
 # Model: File
 
 
-def user_directory_path(instance, filename):
+def user_directory_path(instance: 'File', filename: str):
     return f'uploads/{instance.user.id}/{filename}'
 
 
@@ -85,12 +85,12 @@ class Execution(models.Model):
     status = models.CharField(max_length=50, choices=EXECUTION_STATUS_CHOICES)
 
     def __str__(self):
-        return f"Execution {self.id} - {self.status}"
+        return f"Execution {self.pk} - {self.status}"
 
 # Model: Output
 
 
-def output_directory_path(instance, filename):
+def output_directory_path(instance: 'File', filename):
     return f'outputs/{instance.user.id}/{filename}'
 
 
@@ -101,4 +101,4 @@ class Output(models.Model):
     output_date = models.DateTimeField()
 
     def __str__(self):
-        return f"Output for Execution {self.execution.id}"
+        return f"Output for Execution {self.execution.pk}"

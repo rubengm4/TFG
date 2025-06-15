@@ -2,7 +2,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
-from fv_analysis.views import HomepageView, FileManagerView, AnalysisView, RenameFileView, ResultsView, DownloadOutputView, CreateAlgorithmView, ManageAlgorithmsView, DeleteAlgorithmView
+from fv_analysis.views import HomepageView, FileManagerView, AnalysisView, RenameFileView, ResultsView, DownloadOutputView, CreateAlgorithmView, ManageAlgorithmsView, DeleteAlgorithmView, Custom403View, Custom404View
 from accounts.views import LoginHomeView, DashboardView
 
 urlpatterns = [
@@ -27,3 +27,6 @@ urlpatterns = [
     path("algorithms/delete/<int:pk>/",
          DeleteAlgorithmView.as_view(), name="delete_algorithm"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+handler403 = Custom403View.as_view()
+handler404 = Custom404View.as_view()

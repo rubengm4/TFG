@@ -23,6 +23,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView, CreateView, ListView, DeleteView
 
 from pathlib import Path
+from typing import Any, List, Dict
 
 from .models import File, Algorithm, Project, Execution, Output, FileType
 from .forms import AlgorithmForm
@@ -31,7 +32,7 @@ from .forms import AlgorithmForm
 class HomepageView(TemplateView):
     template_name = 'index.html'
 
-    def dispatch(self, request: HttpRequest, *args, **kwargs):
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any):
         if request.user.is_authenticated:
             return redirect('dashboard')
         return super().dispatch(request, *args, **kwargs)
@@ -232,11 +233,12 @@ class AnalysisView(View):
                 output_date=now
             )
 
+            results_url: str = reverse('results')
             messages.success(
                 request,
                 mark_safe(
                     f"Análisis con <strong>{algorithm.name}</strong> ejecutado sobre <strong>{file.filename()}</strong>. "
-                    f"<a href='{reverse('results')}' class='btn btn-sm btn-link'>Ver resultados</a>"
+                    f"<a href='{results_url}' class='btn btn-sm btn-link'>Ver resultados</a>"
                 )
             )
         except subprocess.CalledProcessError as e:
@@ -303,15 +305,15 @@ class ResultsView(LoginRequiredMixin, View):
             .order_by('-execution_date')
         )
 
-        results = []
+        results: List[Dict[str, Any]] = []
         for execution in executions:
             output = Output.objects.filter(execution=execution).first()
             results.append({
-                'id': execution.id,
-                'original_filename': execution.file.filename,
-                'algorithm_name': execution.algorithm.name,
+                'id': execution.pk,
+                'original_filename': execution.file.filename if execution.file else "(sin archivo)",
+                'algorithm_name': execution.algorithm.name if execution.algorithm else "(sin algoritmo)",
                 'execution_date': execution.execution_date,
-                'output_id': output.id if output else None,
+                'output_id': output.pk if output else None,
             })
 
         return render(request, self.template_name, {'results': results})
@@ -335,7 +337,7 @@ class ResultsView(LoginRequiredMixin, View):
 
 
 class DownloadOutputView(LoginRequiredMixin, View):
-    def get(self, request, output_id):
+    def get(self, request: HttpRequest, output_id: int):
         try:
             output = Output.objects.get(
                 pk=output_id, execution__user=request.user)
@@ -372,3 +374,23 @@ class DeleteAlgorithmView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def test_func(self):
         return self.request.user.is_superuser
+
+# Errores
+
+
+class Custom403View(TemplateView):
+    template_name = "403.html"
+
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any):
+        response = super().dispatch(request, *args, **kwargs)
+        response.status_code = 403
+        return response
+
+
+class Custom404View(TemplateView):
+    template_name = "404.html"
+
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any):
+        response = super().dispatch(request, *args, **kwargs)
+        response.status_code = 404
+        return response
