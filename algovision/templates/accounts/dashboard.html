@@ -29,5 +29,66 @@
 <div class="container py-4 text-center">
   <h2>Bienvenido, {{ user.username }}</h2>
   <p>Estás en el proyecto: <strong>{{ project_slug }}</strong></p>
+
+  <div class="row mt-4 g-4">
+    <!-- Archivos subidos -->
+    <div class="col-md-3">
+      <div class="card h-100 shadow-sm border-0 text-primary hover-shadow">
+        <div class="card-body d-flex flex-column align-items-center justify-content-center">
+          <i class="fas fa-file-upload fa-3x mb-3"></i>
+          <h5 class="card-title">Archivos subidos</h5>
+          <p class="display-4 mb-3">{{ files_count }}</p>
+          <a href="{% url 'file_manager' %}" class="btn btn-primary w-75">Ver archivos</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Análisis realizados -->
+    <div class="col-md-3">
+      <div class="card h-100 shadow-sm border-0 text-success hover-shadow">
+        <div class="card-body d-flex flex-column align-items-center justify-content-center">
+          <i class="fas fa-chart-line fa-3x mb-3"></i>
+          <h5 class="card-title">Análisis realizados</h5>
+          <p class="display-4 mb-3">{{ analysis_count }}</p>
+          <a href="{% url 'analysis' %}" class="btn btn-success w-75">Realizar análisis</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resultados recientes -->
+    <div class="col-md-3">
+      <div class="card h-100 shadow-sm border-0 text-info hover-shadow">
+        <div class="card-body d-flex flex-column align-items-center justify-content-center">
+          <i class="fas fa-tasks fa-3x mb-3"></i>
+          <h5 class="card-title">Resultados recientes</h5>
+          {% if recent_results %}
+            <ul class="list-unstyled mb-3 small text-start" style="max-height: 140px; overflow-y: auto;">
+              {% for result in recent_results %}
+                <li>📄 {{ result.file.filename }} - {{ result.execution_date|date:"d M Y" }}</li>
+              {% endfor %}
+            </ul>
+            <a href="{% url 'results' %}" class="btn btn-info w-75">Ver todos</a>
+          {% else %}
+            <p>No hay resultados recientes</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Algoritmos del proyecto -->
+    <div class="col-md-3">
+      <div class="card h-100 shadow-sm border-0 text-warning hover-shadow">
+        <div class="card-body d-flex flex-column align-items-center justify-content-center">
+          <i class="fas fa-cogs fa-3x mb-3"></i>
+          <h5 class="card-title">Algoritmos del proyecto</h5>
+          <p class="display-4 mb-3">{{ algorithms_count }}</p>
+          {% if user.is_superuser %}
+            <a href="{% url 'manage_algorithms' %}" class="btn btn-warning w-75">Gestionar algoritmos</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
+

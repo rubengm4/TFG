@@ -29,3 +29,11 @@ class AlgorithmForm(forms.ModelForm):
                     "Solo se permiten archivos con extensión .zip")
             # Opcional: validar tamaño máximo, tipo MIME, etc.
         return archive
+
+    def clean_supported_types(self):
+        supported_types = self.cleaned_data.get('supported_types')
+        if not supported_types or supported_types.count() == 0:
+            raise forms.ValidationError(
+                "Debes seleccionar al menos un tipo soportado."
+            )
+        return supported_types

@@ -22,7 +22,7 @@ from django.views.generic import TemplateView
 from django.views.generic.edit import FormView
 
 # Local app imports
-from fv_analysis.models import Project, UserProject
+from fv_analysis.models import Project, UserProject, Execution, File, Algorithm
 
 
 # --- Custom Forms ---
@@ -245,7 +245,7 @@ class DashboardView(LoginRequiredMixin, View):
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any):
         project_slug = request.session.get('login_source')
 
-        # If no project selected or it's "Sin proyecto", force selection
+        # Validar proyecto
         if not project_slug or project_slug == 'Sin proyecto':
             return redirect('index')
 
@@ -254,13 +254,32 @@ class DashboardView(LoginRequiredMixin, View):
         except Project.DoesNotExist:
             return redirect('index')
 
-        # Check if user is actually in the project
+        # Validar pertenencia usuario al proyecto
         if not UserProject.objects.filter(user=request.user, project=project).exists():
             return redirect('index')
 
-        context: dict[str, Any] = {
+        # Contar archivos subidos por usuario en el proyecto
+        files_count = File.objects.filter(
+            user=request.user).count()
+
+        # Contar análisis realizados por usuario en el proyecto
+        analysis_count = Execution.objects.filter(
+            user=request.user).count()
+
+        # Obtener últimos 5 resultados
+        recent_results = Execution.objects.filter(
+            user=request.user).order_by('-execution_date')[:5]
+
+        # Contar algoritmos totales
+        algorithms_count = Algorithm.objects.filter(project=project).count()
+
+        context = {
             'project_slug': project_slug,
             'user': request.user,
+            'files_count': files_count,
+            'analysis_count': analysis_count,
+            'recent_results': recent_results,
+            'algorithms_count': algorithms_count,
         }
         return render(request, 'accounts/dashboard.html', context)
 

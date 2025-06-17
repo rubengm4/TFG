@@ -38,9 +38,12 @@
     <!-- Formulario de subida -->
     <form method="post" enctype="multipart/form-data" class="mb-4">
         {% csrf_token %}
-        <input type="file" name="file" accept=".csv,image/*,video/*" required>
-        <button type="submit" class="btn btn-primary">Subir Archivo</button>
-    </form>
+        <div class="mb-3">
+            <label for="fileInput" class="form-label">Selecciona un archivo</label>
+            <input class="form-control" type="file" name="file" id="fileInput" accept=".csv,image/*,video/*" required>
+        </div>
+        <button type="submit" class="btn btn-success">Subir Archivo</button>
+    </form>    
 
     <!-- Lista de archivos -->
     <table class="table table-bordered">
@@ -64,8 +67,8 @@
                     <form method="post" action="{% url 'analysis' %}" style="display:inline;">
                         {% csrf_token %}
                         <input type="hidden" name="file_id" value="{{ file.id }}">
-                        <button type="submit" class="btn btn-primary btn-sm">Analyze</button>
-                      </form>
+                        <button type="submit" class="btn btn-primary btn-sm action-analyze-btn">Analyze</button>
+                    </form>
                     <button 
                     type="button" 
                     class="btn btn-secondary btn-sm ms-1 action-edit-btn"
@@ -162,7 +165,7 @@
         td.appendChild(wrapper);
 
         // Ocultar botones editar y eliminar de TODAS las filas
-        document.querySelectorAll('.action-delete-btn, .action-edit-btn, .confirm-edit-btn').forEach(btn => {
+        document.querySelectorAll('.action-delete-btn, .action-edit-btn, .confirm-edit-btn, .action-analyze-btn').forEach(btn => {
             btn.style.display = 'none';
             // También eliminamos cualquier botón confirmar ya existente, por si acaso
             if (btn.classList.contains('confirm-edit-btn')) {
@@ -206,7 +209,7 @@
         td.appendChild(span);
 
         // Restaurar botones eliminar y editar en TODAS las filas
-        document.querySelectorAll('.action-delete-btn, .action-edit-btn').forEach(btn => {
+        document.querySelectorAll('.action-delete-btn, .action-edit-btn, action-analyze-btn').forEach(btn => {
             btn.style.display = '';
         });
 

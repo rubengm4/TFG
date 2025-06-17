@@ -375,6 +375,19 @@ class DeleteAlgorithmView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def test_func(self):
         return self.request.user.is_superuser
 
+    def form_valid(self, form):
+        # Access the object to be deleted
+        obj = self.get_object()
+
+        # Delete the associated file if it exists
+        if obj.archive:
+            file_path = obj.archive.path
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+
+        # Proceed with the usual deletion (calls obj.delete())
+        return super().form_valid(form)
+
 # Errores
 
 
