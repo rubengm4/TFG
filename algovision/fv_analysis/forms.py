@@ -14,11 +14,15 @@ class AlgorithmForm(forms.ModelForm):
             'entrypoint',
             'supported_types'
         ]
+
         widgets = {
-            'description': forms.Textarea(attrs={'rows': 4}),
-            'entrypoint': forms.TextInput(attrs={'placeholder': 'main.py'}),
-            'supported_types': forms.CheckboxSelectMultiple(),
-            'archive': forms.ClearableFileInput(attrs={'accept': '.zip'})
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'project': forms.Select(attrs={'class': 'form-select'}),
+            'version': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
+            'entrypoint': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'main.py'}),
+            'supported_types': forms.CheckboxSelectMultiple(),  # Este no usa form-control
+            'archive': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.zip'})
         }
 
     def clean_archive(self):

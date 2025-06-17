@@ -29,6 +29,16 @@
       Cerrar sesión
     </a>
   </div>
+  {% if messages %}
+  <div class="container mt-3">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
   <h2 class="mt-5">Gestión de Algoritmos</h2>
 
   <a href="{% url 'create_algorithm' %}" class="btn btn-primary mb-3">Crear nuevo algoritmo</a>
@@ -39,6 +49,7 @@
         <th>Nombre</th>
         <th>Versión</th>
         <th>Proyecto</th>
+        <th>Tipos de archivo admitidos</th>
         <th>Archivo</th>
         <th>Acciones</th>
       </tr>
@@ -49,6 +60,7 @@
           <td>{{ algo.name }}</td>
           <td>{{ algo.version }}</td>
           <td>{{ algo.project }}</td>
+          <td>{{ algo.supported_types.all|join:", " }}</td>
           <td>
             {% if algo.archive %}
               <a href="{{ algo.archive.url }}">Descargar</a>
@@ -57,7 +69,7 @@
             {% endif %}
           </td>
           <td>
-            <a href="#" class="btn btn-secondary btn-sm">Editar</a>
+            <a href="{% url 'edit_algorithm' algo.id %}" class="btn btn-secondary btn-sm">Editar</a>
             <form method="post" action="{% url 'delete_algorithm' algo.id %}" style="display:inline;">
               {% csrf_token %}
               <button type="submit" class="btn btn-danger btn-sm">Borrar</button>

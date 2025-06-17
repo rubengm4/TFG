@@ -20,7 +20,7 @@ from django.utils.decorators import method_decorator
 from django.utils.safestring import mark_safe
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import TemplateView, CreateView, ListView, DeleteView
+from django.views.generic import TemplateView, CreateView, ListView, DeleteView, UpdateView
 
 from pathlib import Path
 from typing import Any, List, Dict
@@ -366,6 +366,20 @@ class ManageAlgorithmsView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 
     def test_func(self):
         return self.request.user.is_superuser
+
+
+class UpdateAlgorithmView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Algorithm
+    form_class = AlgorithmForm
+    template_name = 'algorithms/edit_algorithm.html'
+    success_url = reverse_lazy('manage_algorithms')
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def form_valid(self, form):
+        messages.success(self.request, "Algoritmo editado correctamente.")
+        return super().form_valid(form)
 
 
 class DeleteAlgorithmView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
