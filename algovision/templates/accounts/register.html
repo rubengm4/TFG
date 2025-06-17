@@ -2,7 +2,7 @@
 {% extends "base.html" %}
 
 {% block title %}
-Register
+Algovision | Registro
 {% endblock %}
 
 {% block content %}
@@ -11,7 +11,7 @@ Register
     ← Volver al menú {{ source }}
 </a>
 <div class="card mx-auto shadow-sm p-4 mt-4" style="max-width: 500px;">
-  <h2 class="text-center mb-4">Register</h2>
+  <h2 class="text-center mb-4">Registro</h2>
   {% if messages %}
     {% for message in messages %}
       {% if "error" in message.tags %}
@@ -42,13 +42,19 @@ Register
       </div>
     {% endif %}
   
-    <button type="submit" class="btn btn-primary w-100">Registrarse</button>
+    <button type="submit" class="btn btn-primary w-100">
+      <i class="fas fa-user-plus me-2"></i> Registrarse
+    </button>
+    
     <p class="text-center mt-3">
       <small>
-        ¿Ya tienes una cuenta?
-        <a href="{% url 'accounts:login' %}">Inicia sesión aquí</a>
+        ¿Ya tienes una cuenta? 
+        <a href="{% url 'accounts:login' %}" class="text-decoration-none">
+          <i class="fas fa-sign-in-alt ms-1 me-1"></i> Inicia sesión
+        </a>
       </small>
-    </p>  
+    </p>
+    
   </form>
 </div>
 {% endblock %}

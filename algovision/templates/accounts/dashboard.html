@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Algovision | Dashboard{% endblock %}
 
 {% block sidebar_links %}
   <li class="nav-item">
@@ -14,7 +14,7 @@
   </li>
   {% if user.is_superuser %}
     <li class="nav-item">
-      <a class="nav-link" href="{% url 'manage_algorithms' %}">Gestión de algoritmos</a>
+      <a class="nav-link" href="{% url 'manage_algorithms' %}">Gestionar algoritmos</a>
     </li>
   {% endif %}
   <li class="nav-item">
@@ -24,7 +24,9 @@
 
 {% block content %}
 <div class="d-flex justify-content-end">
-  <a href="{% url 'accounts:logout' %}" class="btn btn-danger">Cerrar sesión</a>
+  <a href="{% url 'accounts:logout' %}" class="btn btn-danger">
+    <i class="fa fa-sign-out-alt me-1"></i> Cerrar sesión
+  </a>
 </div>
 <div class="container py-4 text-center">
   <h2>Bienvenido, {{ user.username }}</h2>
@@ -38,7 +40,9 @@
           <i class="fas fa-file-upload fa-3x mb-3"></i>
           <h5 class="card-title">Archivos subidos</h5>
           <p class="display-4 mb-3">{{ files_count }}</p>
-          <a href="{% url 'file_manager' %}" class="btn btn-primary w-75">Ver archivos</a>
+          <a href="{% url 'file_manager' %}" class="btn btn-primary w-75">
+            <i class="fas fa-folder-open me-1"></i> Mis archivos
+          </a>
         </div>
       </div>
     </div>
@@ -50,7 +54,9 @@
           <i class="fas fa-chart-line fa-3x mb-3"></i>
           <h5 class="card-title">Análisis realizados</h5>
           <p class="display-4 mb-3">{{ analysis_count }}</p>
-          <a href="{% url 'analysis' %}" class="btn btn-success w-75">Realizar análisis</a>
+          <a href="{% url 'analysis' %}" class="btn btn-success w-80">
+            <i class="fas fa-play me-1"></i> Realizar análisis
+          </a>
         </div>
       </div>
     </div>
@@ -64,10 +70,12 @@
           {% if recent_results %}
             <ul class="list-unstyled mb-3 small text-start" style="max-height: 140px; overflow-y: auto;">
               {% for result in recent_results %}
-                <li>📄 {{ result.file.filename }} - {{ result.execution_date|date:"d M Y" }}</li>
+                <li><i class="fas fa-file-alt me-1"></i> {{ result.file.filename }} - {{ result.execution_date|date:"d M Y" }}</li>
               {% endfor %}
             </ul>
-            <a href="{% url 'results' %}" class="btn btn-info w-75">Ver todos</a>
+            <a href="{% url 'results' %}" class="btn btn-info w-75">
+              <i class="fas fa-list me-1"></i> Ver todos
+            </a>
           {% else %}
             <p>No hay resultados recientes</p>
           {% endif %}
@@ -83,7 +91,9 @@
           <h5 class="card-title">Algoritmos del proyecto</h5>
           <p class="display-4 mb-3">{{ algorithms_count }}</p>
           {% if user.is_superuser %}
-            <a href="{% url 'manage_algorithms' %}" class="btn btn-warning w-75">Gestionar algoritmos</a>
+            <a href="{% url 'manage_algorithms' %}" class="btn btn-warning w-75">
+              <i class="fas fa-tools me-1"></i> Gestionar algoritmos
+            </a>
           {% endif %}
         </div>
       </div>

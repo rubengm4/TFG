@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Mis Resultados{% endblock %}
+{% block title %}Algovision | Mis resultados{% endblock %}
 
 {% block sidebar_links %}
   <li class="nav-item">
@@ -29,7 +29,7 @@
         ← Volver al dashboard
       </a>
       <a href="{% url 'accounts:logout' %}" class="btn btn-danger">
-        Cerrar sesión
+        <i class="fa fa-sign-out-alt me-1"></i> Cerrar sesión
       </a>
   </div>
   <h2 class="mt-3">Mis Resultados</h2>
@@ -51,7 +51,9 @@
               <td>{{ result.execution_date|date:"d/m/Y H:i" }}</td>
               <td class="actions-cell">
                 {% if result.output_id %}
-                    <a href="{% url 'results_download' result.output_id %}" class="btn btn-primary btn-sm">Descargar</a>
+                    <a href="{% url 'results_download' result.output_id %}" class="btn btn-outline-primary btn-sm">
+                      <i class="fa fa-download me-1"></i>Descargar
+                    </a>
                 {% else %}
                     <span class="text-muted">Pendiente</span>
                 {% endif %}
@@ -59,7 +61,9 @@
                 <form method="post" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que quieres eliminar esta ejecución?');">
                     {% csrf_token %}
                     <input type="hidden" name="delete_execution" value="{{ result.id }}">
-                    <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                    <button type="submit" class="btn btn-danger btn-sm">
+                      <i class="fa fa-trash-alt me-1"></i>Borrar
+                    </button>
                 </form>
             </td>            
           </tr>

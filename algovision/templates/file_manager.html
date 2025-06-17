@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}File Manager{% endblock %}
+{% block title %}Algovision | Mis archivos{% endblock %}
 
 {% block sidebar_links %}
   <li class="nav-item">
@@ -30,7 +30,7 @@
           ← Volver al dashboard
         </a>
         <a href="{% url 'accounts:logout' %}" class="btn btn-danger">
-          Cerrar sesión
+            <i class="fa fa-sign-out-alt me-1"></i> Cerrar sesión
         </a>
     </div>
     <h2 class="mt-3">Gestor de Archivos</h2>
@@ -42,7 +42,9 @@
             <label for="fileInput" class="form-label">Selecciona un archivo</label>
             <input class="form-control" type="file" name="file" id="fileInput" accept=".csv,image/*,video/*" required>
         </div>
-        <button type="submit" class="btn btn-success">Subir Archivo</button>
+        <button type="submit" class="btn btn-success">
+            <i class="fa fa-cloud-upload-alt me-1"></i> Subir Archivo
+        </button>
     </form>    
 
     <!-- Lista de archivos -->
@@ -67,19 +69,23 @@
                     <form method="post" action="{% url 'analysis' %}" style="display:inline;">
                         {% csrf_token %}
                         <input type="hidden" name="file_id" value="{{ file.id }}">
-                        <button type="submit" class="btn btn-primary btn-sm action-analyze-btn">Analyze</button>
+                        <button type="submit" class="btn btn-primary btn-sm ms-1 action-analyze-btn">
+                            <i class="fa fa-chart-line me-1"></i>Analizar
+                        </button>
                     </form>
                     <button 
                     type="button" 
-                    class="btn btn-secondary btn-sm ms-1 action-edit-btn"
+                    class="btn btn-secondary btn-sm action-edit-btn"
                     onclick="makeEditable(this.closest('tr').querySelector('td:first-child'), {{ file.id }})"
                     >
-                    Editar
+                    <i class="fa fa-pencil-alt me-1"></i>Editar
                     </button>
                     <form method="post" style="display:inline;">
                         {% csrf_token %}
                         <input type="hidden" name="delete_file" value="{{ file.id }}">
-                        <button type="submit" class="btn btn-danger btn-sm action-delete-btn">Eliminar</button>
+                        <button type="submit" class="btn btn-danger btn-sm action-delete-btn">
+                            <i class="fa fa-trash-alt me-1"></i>Borrar
+                        </button>
                     </form>
                 </td>          
             </tr>

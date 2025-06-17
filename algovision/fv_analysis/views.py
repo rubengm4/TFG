@@ -234,13 +234,15 @@ class AnalysisView(View):
             )
 
             results_url: str = reverse('results')
+
             messages.success(
                 request,
                 mark_safe(
                     f"Análisis con <strong>{algorithm.name}</strong> ejecutado sobre <strong>{file.filename()}</strong>. "
-                    f"<a href='{results_url}' class='btn btn-sm btn-link'>Ver resultados</a>"
+                    f"<a href='{results_url}' class='fw-bold text-decoration-none custom-link'>Ver resultados</a>"
                 )
             )
+
         except subprocess.CalledProcessError as e:
             exec.status = "FAILED"
             exec.save(update_fields=['status'])

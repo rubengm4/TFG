@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}
-Login
+Algovision | Inicio de sesión
 {% endblock %}
 
 {% block content %}
@@ -10,7 +10,7 @@ Login
     ← Volver al menú {{ source }}
 </a>
 <div class="card mx-auto shadow-sm p-4 mt-3" style="max-width: 400px;">
-  <h2 class="text-center mb-4">Login</h2>
+  <h2 class="text-center mb-4">Inicio de sesión</h2>
 
   {% if form.non_field_errors %}
     <div class="alert alert-danger">
@@ -59,11 +59,16 @@ Login
       {% endif %}
     </div>
 
-    <button type="submit" class="btn btn-primary w-100">Iniciar sesión</button>
+    <button type="submit" class="btn btn-primary w-100">
+      <i class="fas fa-sign-in-alt me-2"></i> Iniciar sesión
+    </button>
+    
     <p class="text-center mt-3">
       <small>
           ¿No tienes una cuenta?
-          <a href="{% url 'accounts:register' %}" class="text-primary">Regístrate</a>
+          <a href="{% url 'accounts:register' %}" class="text-decoration-none">
+            <i class="fas fa-user-plus ms-1 me-1"></i> Regístrate
+          </a>
       </small>
     </p>
   </form>
