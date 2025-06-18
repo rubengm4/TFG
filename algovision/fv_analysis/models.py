@@ -28,7 +28,6 @@ class UserProject(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     joined_at = models.DateField()
-    role = models.CharField(max_length=100)
 
     class Meta:
         unique_together = ('project', 'user')

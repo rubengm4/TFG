@@ -65,31 +65,33 @@ class FileManagerView(LoginRequiredMixin, View):
             messages.success(request, "Archivo eliminado correctamente.")
             return redirect('file_manager')
 
-        uploaded_file = request.FILES.get('file')
-        if uploaded_file is not None:
-            file_type = getattr(uploaded_file, 'content_type', None)
-            if file_type and (file_type.startswith('image/') or file_type.startswith('video/') or uploaded_file.name.endswith('.csv')):
-                # Obtener nombre base y extensión
+        uploaded_files = request.FILES.getlist('files')
+
+        if uploaded_files:
+            existing_names = File.objects.filter(
+                user=request.user).values_list('file', flat=True)
+            existing_file_names = [os.path.basename(n) for n in existing_names]
+
+            for uploaded_file in uploaded_files:
+                file_type = getattr(uploaded_file, 'content_type', None)
+                if not file_type or not (
+                    file_type.startswith('image/') or
+                    file_type.startswith('video/') or
+                    uploaded_file.name.endswith('.csv')
+                ):
+                    messages.error(
+                        request, f"Archivo '{uploaded_file.name}' no permitido.")
+                    continue
+
                 base_name, ext = os.path.splitext(uploaded_file.name)
-
-                # Revisar si ya existe un archivo con el mismo nombre para este usuario
-                existing_names = File.objects.filter(
-                    user=request.user).values_list('file', flat=True)
-                # Los nombres en existing_names pueden ser rutas, extraemos solo el nombre del archivo
-                existing_file_names = [
-                    os.path.basename(n) for n in existing_names]
-
                 final_name = uploaded_file.name
                 was_renamed = False
 
                 if final_name in existing_file_names:
-                    # Generar un nombre único con sufijo aleatorio
                     final_name = f"{base_name}_{uuid.uuid4().hex[:8]}{ext}"
                     was_renamed = True
 
-                # Modificar el archivo cargado para cambiarle el nombre en memoria antes de guardar
                 uploaded_file.name = final_name
-
                 type_code, _ = file_type.split("/")
                 type = FileType.objects.get(code=type_code)
 
@@ -102,13 +104,12 @@ class FileManagerView(LoginRequiredMixin, View):
 
                 if was_renamed:
                     messages.info(
-                        request, f"El archivo ya existía y fue renombrado a '{final_name}'.")
+                        request, f"Archivo '{uploaded_file.name}' renombrado por duplicado.")
                 else:
-                    messages.success(request, "Archivo subido exitosamente.")
-            else:
-                messages.error(request, "Tipo de archivo no permitido.")
+                    messages.success(
+                        request, f"Archivo '{uploaded_file.name}' subido correctamente.")
         else:
-            messages.error(request, "No se seleccionó ningún archivo.")
+            messages.error(request, "No se seleccionaron archivos.")
 
         return redirect('file_manager')
 

@@ -20,8 +20,8 @@ class UserAdmin(admin.ModelAdmin):
 
 
 class UserProjectAdmin(admin.ModelAdmin):
-    list_display = ('project', 'user', 'role', 'joined_at')
-    list_filter = ('role',)
+    list_display = ('project', 'user', 'joined_at')
+    list_filter = ('project', 'user')
 
 # ModelAdmin para personalizar la vista de administración de File
 
