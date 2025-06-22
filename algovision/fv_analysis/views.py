@@ -194,6 +194,8 @@ class AnalysisView(View):
                 status="IN PROCESS",
                 algorithm_id=algorithm_id,
                 file_id=file_id,
+                snapshot_file_name=file.filename(),
+                snapshot_alg_name=algorithm.name,
                 user=request.user
             )
 
@@ -313,8 +315,8 @@ class ResultsView(LoginRequiredMixin, View):
             output = Output.objects.filter(execution=execution).first()
             results.append({
                 'id': execution.pk,
-                'original_filename': execution.file.filename if execution.file else "(sin archivo)",
-                'algorithm_name': execution.algorithm.name if execution.algorithm else "(sin algoritmo)",
+                'original_filename': execution.snapshot_file_name if execution.snapshot_file_name else "(sin archivo)",
+                'algorithm_name': execution.snapshot_alg_name if execution.snapshot_alg_name else "(sin algoritmo)",
                 'execution_date': execution.execution_date,
                 'output_id': output.pk if output else None,
             })

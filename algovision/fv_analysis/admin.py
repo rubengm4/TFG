@@ -44,7 +44,8 @@ class AlgorithmAdmin(admin.ModelAdmin):
 
 
 class ExecutionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'algorithm', 'status', 'execution_date')
+    list_display = ('id', 'user', 'algorithm', 'status',
+                    'execution_date', 'snapshot_file_name')
     list_filter = ('status', 'execution_date')
     search_fields = ('user__username', 'algorithm__name', 'status')
 

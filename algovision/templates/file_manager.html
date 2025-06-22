@@ -80,7 +80,7 @@
                     >
                     <i class="fa fa-pencil-alt me-1"></i>Editar
                     </button>
-                    <form method="post" style="display:inline;">
+                    <form method="post" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este archivo? Puede tener ejecuciones asociadas');">
                         {% csrf_token %}
                         <input type="hidden" name="delete_file" value="{{ file.id }}">
                         <button type="submit" class="btn btn-danger btn-sm action-delete-btn">

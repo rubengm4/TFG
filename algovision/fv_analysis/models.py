@@ -82,6 +82,10 @@ class Execution(models.Model):
     file = models.ForeignKey(File, null=True, on_delete=models.SET_NULL)
     execution_date = models.DateTimeField()
     status = models.CharField(max_length=50, choices=EXECUTION_STATUS_CHOICES)
+    snapshot_file_name = models.CharField(
+        max_length=255, default="PLACEHOLDER")
+    snapshot_alg_name = models.CharField(
+        max_length=255, default="PLACEHOLDER")
 
     def __str__(self):
         return f"Execution {self.pk} - {self.status}"
