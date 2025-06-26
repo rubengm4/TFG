@@ -39,7 +39,8 @@
           <tr>
               <th onclick="sortTableByColumn(0)">Nombre archivo original <span class="sort-arrow" data-index="0"></span></th>
               <th onclick="sortTableByColumn(1)">Algoritmo <span class="sort-arrow" data-index="1"></span></th>
-              <th onclick="sortTableByColumn(2)">Fecha <span class="sort-arrow" data-index="2"></span></th>
+              <th onclick="sortTableByColumn(2)">Estado <span class="sort-arrow" data-index="2"></span></th>
+              <th onclick="sortTableByColumn(3)">Fecha <span class="sort-arrow" data-index="3"></span></th>
               <th>Acciones</th>
           </tr>
       </thead>
@@ -48,6 +49,7 @@
           <tr class="result-row">
               <td>{{ result.original_filename }}</td>
               <td>{{ result.algorithm_name }}</td>
+              <td>{{ result.status }}</td>
               <td>{{ result.execution_date|date:"d/m/Y H:i" }}</td>
               <td class="actions-cell">
                 {% if result.output_id %}
@@ -59,12 +61,12 @@
                 {% endif %}
 
                 <form method="post" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que quieres eliminar esta ejecución?');">
-                    {% csrf_token %}
-                    <input type="hidden" name="delete_execution" value="{{ result.id }}">
-                    <button type="submit" class="btn btn-danger btn-sm">
-                      <i class="fa fa-trash-alt me-1"></i>Borrar
-                    </button>
-                </form>
+                  {% csrf_token %}
+                  <input type="hidden" name="delete_execution" value="{{ result.id }}">
+                  <button type="submit" class="btn btn-danger btn-sm" {% if result.status == "IN PROCESS" %}disabled title="No se puede borrar una tarea en proceso"{% endif %}>
+                    <i class="fa fa-trash-alt me-1"></i>Borrar
+                  </button>
+                </form>                
             </td>            
           </tr>
           {% empty %}
@@ -88,11 +90,9 @@
 
 {% block extra_scripts %}
 <script>
-    // Copia la misma función sortTableByColumn que usas en la otra vista
-
     let currentSort = {
-        column: 0,
-        ascending: false
+        column: 3,
+        ascending: true
     };
 
     function sortTableByColumn(colIndex, forceAscending = null) {
@@ -109,7 +109,7 @@
             let aText = a.children[colIndex].textContent.trim().toLowerCase();
             let bText = b.children[colIndex].textContent.trim().toLowerCase();
     
-            if (colIndex === 2) {
+            if (colIndex === 3) {
                 const parseDate = str => {
                     const [date, time] = str.split(" ");
                     const [day, month, year] = date.split("/");
@@ -142,9 +142,26 @@
         });
     }
 
+    function checkIfPendingTasksExist() {
+      const rows = document.querySelectorAll("table tbody tr");
+      for (const row of rows) {
+          const status = row.children[2]?.textContent?.trim().toUpperCase();
+          if (status === "IN PROCESS" || status === "PENDIENTE") {
+              return true;
+          }
+      }
+      return false;
+    }
+
+    setInterval(() => {
+      if (checkIfPendingTasksExist()) {
+          location.reload();
+      }
+    }, 15000);
+
     document.addEventListener("DOMContentLoaded", () => {
-        currentSort = { column: 0, ascending: true };
-        sortTableByColumn(0);
+        currentSort = { column: 3, ascending: true };
+        sortTableByColumn(3);
     });
 </script>
 {% endblock %}

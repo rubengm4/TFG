@@ -28,6 +28,7 @@ from typing import Any, List, Dict
 
 from .models import File, Algorithm, Project, Execution, Output, FileType
 from .forms import AlgorithmForm
+from .tasks import ejecutar_algoritmo_task
 
 
 class HomepageView(TemplateView):
@@ -188,69 +189,28 @@ class AnalysisView(View):
             )
             return redirect('analysis')
 
-        try:
-            # Register execution
-            exec = Execution.objects.create(
-                execution_date=now,
-                status="IN PROCESS",
-                algorithm_id=algorithm_id,
-                file_id=file_id,
-                snapshot_file_name=file.filename(),
-                snapshot_alg_name=algorithm.name,
-                user=request.user
+        # Crear ejecución (pero no correrla aquí)
+        exec = Execution.objects.create(
+            execution_date=now,
+            status="IN PROCESS",
+            algorithm_id=algorithm_id,
+            file_id=file_id,
+            snapshot_file_name=file.filename(),
+            snapshot_alg_name=algorithm.name,
+            user=request.user
+        )
+
+        results_url: str = reverse('results')
+        ejecutar_algoritmo_task.delay(
+            file_id, algorithm_id, request.user.id, exec.id)
+
+        messages.success(
+            request,
+            mark_safe(
+                f"Se ha iniciado el análisis con <strong>{algorithm.name}</strong> sobre <strong>{file.filename()}</strong>. "
+                f"Puedes consultar su estado en la pestaña de <a href='{results_url}' class='fw-bold text-decoration-none custom-link'>Mis Resultados</a>"
             )
-
-            # Extract the algorithm ZIP into a dedicated directory
-            algorithm_zip = algorithm.archive.path
-            algorithm_stem = Path(algorithm_zip).stem  # e.g. 'my_algorithm'
-            extract_path = os.path.join(
-                settings.MEDIA_ROOT, 'algorithms', algorithm_stem)
-
-            if not os.path.exists(extract_path):
-                os.makedirs(extract_path, exist_ok=True)
-                with zipfile.ZipFile(algorithm_zip, 'r') as zip_ref:
-                    zip_ref.extractall(extract_path)
-
-            # Build full path to the entrypoint script
-            entrypoint = algorithm.entrypoint  # e.g. "main.py" or "subfolder/run.py"
-            script_path = os.path.join(extract_path, entrypoint)
-
-            # Build Python executable path from shared venv
-            shared_venv = Path(script_path).parents[2] / "envs" / ".algenv"
-            if platform.system() == "Windows":
-                python_exec = shared_venv / "Scripts" / "python.exe"
-            else:
-                python_exec = shared_venv / "bin" / "python"
-
-            # Execute the algorithm: python script input_file output_zip
-            subprocess.run(
-                [str(python_exec), str(script_path), input_file, output_zip],
-                check=True
-            )
-
-            exec.status = "COMPLETED"
-            exec.save(update_fields=['status'])
-
-            Output.objects.create(
-                execution=exec,
-                file=f"outputs/{user_id}/{output_filename}",
-                output_date=now
-            )
-
-            results_url: str = reverse('results')
-
-            messages.success(
-                request,
-                mark_safe(
-                    f"Análisis con <strong>{algorithm.name}</strong> ejecutado sobre <strong>{file.filename()}</strong>. "
-                    f"<a href='{results_url}' class='fw-bold text-decoration-none custom-link'>Ver resultados</a>"
-                )
-            )
-
-        except subprocess.CalledProcessError as e:
-            exec.status = "FAILED"
-            exec.save(update_fields=['status'])
-            messages.error(request, f"Error al ejecutar el algoritmo: {e}")
+        )
 
         return redirect('analysis')
 
@@ -318,6 +278,7 @@ class ResultsView(LoginRequiredMixin, View):
                 'id': execution.pk,
                 'original_filename': execution.snapshot_file_name if execution.snapshot_file_name else "(sin archivo)",
                 'algorithm_name': execution.snapshot_alg_name if execution.snapshot_alg_name else "(sin algoritmo)",
+                'status': execution.status,
                 'execution_date': execution.execution_date,
                 'output_id': output.pk if output else None,
             })
