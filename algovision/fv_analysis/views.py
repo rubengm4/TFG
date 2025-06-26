@@ -1,6 +1,7 @@
 import os
 import subprocess
 import json
+import shutil
 import uuid
 import platform
 import zipfile
@@ -383,6 +384,24 @@ class UpdateAlgorithmView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return self.request.user.is_superuser
 
     def form_valid(self, form):
+        obj = self.get_object()
+        new_archive = form.cleaned_data.get('archive')
+
+        # Verificamos si el archivo ha cambiado
+        if new_archive and new_archive != obj.archive:
+            # Ruta del archivo anterior
+            old_file_path = obj.archive.path
+            # Carpeta asociada (sin la extensión .zip)
+            old_folder_path = os.path.splitext(old_file_path)[0]
+
+            # Eliminar el archivo anterior si existe
+            if os.path.isfile(old_file_path):
+                os.remove(old_file_path)
+
+            # Eliminar la carpeta asociada si existe
+            if os.path.isdir(old_folder_path):
+                shutil.rmtree(old_folder_path)
+
         messages.success(self.request, "Algoritmo editado correctamente.")
         return super().form_valid(form)
 
@@ -403,6 +422,11 @@ class DeleteAlgorithmView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
             file_path = obj.archive.path
             if os.path.isfile(file_path):
                 os.remove(file_path)
+
+            # Ruta a la carpeta con el mismo nombre (sin extensión .zip)
+            folder_path = os.path.splitext(file_path)[0]
+            if os.path.isdir(folder_path):
+                shutil.rmtree(folder_path)
 
         # Proceed with the usual deletion (calls obj.delete())
         return super().form_valid(form)

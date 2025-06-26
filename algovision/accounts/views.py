@@ -120,8 +120,8 @@ class SetSourceAndRedirectToLogin(View):
         # Redirect to the appropriate homepage
         if source == 'fv-analysis':
             return redirect('fv_analysis_home')
-        elif source == 'example-project':
-            return redirect('example_project_home')
+        elif source == 'people-analysis':
+            return redirect('people_analysis_home')
         # Add more as needed
         return redirect('index')
 

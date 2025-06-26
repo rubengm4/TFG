@@ -76,7 +76,7 @@
             <a href="{% url 'edit_algorithm' algo.id %}" class="btn btn-secondary btn-sm">
               <i class="fa fa-pencil-alt me-1"></i>Editar
             </a>
-            <form method="post" action="{% url 'delete_algorithm' algo.id %}" style="display:inline;">
+            <form method="post" action="{% url 'delete_algorithm' algo.id %}" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este algoritmo?');">
               {% csrf_token %}
               <button type="submit" class="btn btn-danger btn-sm">
                 <i class="fa fa-trash-alt me-1"></i>Borrar
