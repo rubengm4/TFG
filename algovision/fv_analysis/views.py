@@ -69,12 +69,26 @@ class FileManagerView(LoginRequiredMixin, View):
 
         uploaded_files = request.FILES.getlist('files')
 
+        # Tamaño máximo de archivo admitido (en MB)
+        MAX_FILE_SIZE_MB = 10
+        MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+
         if uploaded_files:
             existing_names = File.objects.filter(
                 user=request.user).values_list('file', flat=True)
             existing_file_names = [os.path.basename(n) for n in existing_names]
 
             for uploaded_file in uploaded_files:
+                # Validar tamaño
+                if uploaded_file.size > MAX_FILE_SIZE_BYTES:
+                    print("HOLA")
+                    messages.error(
+                        request,
+                        f"El archivo '{uploaded_file.name}' supera el límite de {MAX_FILE_SIZE_MB} MB."
+                    )
+                    continue
+
+                # Validar tipo
                 file_type = getattr(uploaded_file, 'content_type', None)
                 if not file_type or not (
                     file_type.startswith('image/') or

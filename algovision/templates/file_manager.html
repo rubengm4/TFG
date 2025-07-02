@@ -39,7 +39,7 @@
     <form method="post" enctype="multipart/form-data" class="mb-4">
         {% csrf_token %}
         <div class="mb-3">
-            <label for="fileInput" class="form-label">Selecciona un archivo</label>
+            <label for="fileInput" class="form-label">Selecciona un archivo (Límite: 10 MB)</label>
             <input class="form-control" type="file" name="files" id="fileInput" accept=".csv,image/*,video/*" multiple required>
         </div>
         <button type="submit" class="btn btn-success">
