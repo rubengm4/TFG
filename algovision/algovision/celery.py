@@ -1,6 +1,7 @@
 # algovision/celery.py
 
 import os
+import ssl
 from celery import Celery
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'algovision.settings')

@@ -32,3 +32,17 @@ Trabajo de Fin de Grado
 El resto de la funcionalidad es común a cualquier proyecto, por lo que con estos simples pasos d
 
 ---
+
+## ¿Cómo hacer que funcione la aplicación?
+
+- Lanzar aplicación
+
+python manage.py runserver
+
+- Lanzar celery
+
+celery -A algovision worker --loglevel=info
+
+- Lanzar redis
+
+redis-server
