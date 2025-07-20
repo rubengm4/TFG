@@ -122,6 +122,8 @@ class SetSourceAndRedirectToLogin(View):
             return redirect('fv_analysis_home')
         elif source == 'people-analysis':
             return redirect('people_analysis_home')
+        elif source == 'stats-analysis':
+            return redirect('stats_analysis_home')
         # Add more as needed
         return redirect('index')
 

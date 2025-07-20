@@ -12,6 +12,8 @@ urlpatterns = [
     path('fv-analysis-home/', LoginHomeView.as_view(), name='fv_analysis_home'),
     path('people-analysis-home/', LoginHomeView.as_view(),
          name='people_analysis_home'),
+    path('stats-analysis-home/', LoginHomeView.as_view(),
+         name='stats_analysis_home'),
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
     path('files/', FileManagerView.as_view(), name='file_manager'),
     path('files/rename/<int:file_id>/',

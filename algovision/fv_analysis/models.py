@@ -61,6 +61,7 @@ class Algorithm(models.Model):
     entrypoint = models.CharField(
         max_length=255, help_text="Archivo principal a ejecutar, por ejemplo: main.py")
     supported_types = models.ManyToManyField(FileType, blank=True)
+    requires_two_files = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -80,6 +81,8 @@ class Execution(models.Model):
     algorithm = models.ForeignKey(
         Algorithm, null=True, on_delete=models.SET_NULL)
     file = models.ForeignKey(File, null=True, on_delete=models.SET_NULL)
+    secondary_file = models.ForeignKey(
+        File, on_delete=models.SET_NULL, null=True, blank=True, related_name='secondary_execs')
     execution_date = models.DateTimeField()
     status = models.CharField(max_length=50, choices=EXECUTION_STATUS_CHOICES)
     snapshot_file_name = models.CharField(

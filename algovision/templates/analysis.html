@@ -38,6 +38,18 @@
         {% csrf_token %}
 
         <div class="mb-3">
+          <label for="algorithm">Seleccionar algoritmo:</label>
+          <select name="algorithm" class="form-select" required id="algorithm-select">
+              <option value="">-- Selecciona un algoritmo --</option>
+              {% for algo in algorithms %}
+              <option value="{{ algo.id }}" data-requires-two="{{ algo.requires_two_files|yesno:"true,false" }}">
+                {{ algo.name }} - {{ algo.supported_types.all|join:", " }} - {{ algo.description }}
+              </option>
+              {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-3">
             <label for="file">Seleccionar archivo:</label>
             <select name="file_id" class="form-select" required>
                 <option value="">-- Selecciona un archivo --</option>
@@ -49,14 +61,15 @@
               </select>              
         </div>
 
-        <div class="mb-3">
-            <label for="algorithm">Seleccionar algoritmo:</label>
-            <select name="algorithm" class="form-select" required>
-                <option value="">-- Selecciona un algoritmo --</option>
-                {% for algo in algorithms %}
-                <option value="{{ algo.id }}">{{ algo.name }} - {{algo.supported_types.all|join:", "}} - {{ algo.description }}</option>
-                {% endfor %}
-            </select>
+        <!-- SECOND FILE SELECTOR (conditionally visible) -->
+        <div class="mb-3 d-none" id="second-file-block">
+          <label for="second_file_id">Seleccionar segundo archivo:</label>
+          <select name="second_file_id" class="form-select">
+            <option value="">-- Selecciona un segundo archivo --</option>
+            {% for file in files %}
+              <option value="{{ file.id }}">{{ file.filename|cut:"uploads/" }}</option>
+            {% endfor %}
+          </select>
         </div>
 
         <div class="mb-3">
@@ -78,6 +91,23 @@
             {% endif %}
         {% endfor %}
     {% endif %}
-
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const algoSelect = document.getElementById("algorithm-select");
+  const secondFileBlock = document.getElementById("second-file-block");
+
+  algoSelect.addEventListener("change", () => {
+    const selectedOption = algoSelect.options[algoSelect.selectedIndex];
+    const needsTwo = selectedOption.dataset.requiresTwo === "true";
+
+    if (needsTwo) {
+      secondFileBlock.classList.remove("d-none");
+    } else {
+      secondFileBlock.classList.add("d-none");
+    }
+  });
+</script>
 {% endblock %}

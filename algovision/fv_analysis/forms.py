@@ -12,7 +12,8 @@ class AlgorithmForm(forms.ModelForm):
             'description',
             'archive',
             'entrypoint',
-            'supported_types'
+            'supported_types',
+            'requires_two_files'
         ]
 
         widgets = {
@@ -22,6 +23,7 @@ class AlgorithmForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
             'entrypoint': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'main.py'}),
             'supported_types': forms.CheckboxSelectMultiple(),  # Este no usa form-control
+            'requires_two_files': forms.CheckboxInput(),
             'archive': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.zip'})
         }
 

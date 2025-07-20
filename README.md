@@ -19,6 +19,7 @@ Trabajo de Fin de Grado
    path('example-project-home/', LoginHomeView.as_view(), name='example_project_home'),
    ```
 4. En _fv_analysis/templates/index.html_, añadir un elemento similar al siguiente, para crear un botón con un enlace al nuevo proyecto, cambiando Example y _value="example-project"_ por el nombre del proyecto:
+
    ```html
    <div class="col-auto">
      <form method="post" action="{% url 'accounts:set_source' %}">
@@ -29,7 +30,9 @@ Trabajo de Fin de Grado
    </div>
    ```
 
-El resto de la funcionalidad es común a cualquier proyecto, por lo que con estos simples pasos d
+5. Es importante crear un usuario para este nuevo proyecto o dar permisos a un administrador. En caso negativo, no nos dejará entrar al proyecto.
+
+El resto de la funcionalidad es común a cualquier proyecto, por lo que con estos simples pasos debería ser suficiente para añadir un nuevo proyecto. Es muy importante ser lo más fiel posible a la nomenclatura reflejada en estos pasos.
 
 ---
 

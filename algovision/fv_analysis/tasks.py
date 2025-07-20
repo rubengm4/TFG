@@ -13,9 +13,13 @@ from .models import File, Algorithm, Execution, Output  # ajusta según tu estru
 
 
 @shared_task
-def ejecutar_algoritmo_task(file_id, algorithm_id, user_id, exec_id):
+def ejecutar_algoritmo_task(file_id, algorithm_id, user_id, exec_id, second_file_id=None):
     try:
         file = File.objects.get(id=file_id)
+        second_file = None
+        if second_file_id:
+            second_file = File.objects.get(id=second_file_id)
+            second_input_path = second_file.file.path
         algorithm = Algorithm.objects.get(id=algorithm_id)
         exec = Execution.objects.get(id=exec_id)
         input_file = file.file.path
@@ -50,8 +54,14 @@ def ejecutar_algoritmo_task(file_id, algorithm_id, user_id, exec_id):
             ("Scripts/python.exe" if platform.system()
              == "Windows" else "bin/python")
 
-        subprocess.run([str(python_exec), str(script_path),
-                       input_file, output_zip], check=True)
+        command = [str(python_exec), str(script_path), input_file]
+
+        if second_file:
+            command.append(second_input_path)
+
+        command.append(output_zip)
+
+        subprocess.run(command, check=True)
 
         exec.status = "COMPLETED"
         exec.save(update_fields=['status'])

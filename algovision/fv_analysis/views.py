@@ -155,6 +155,7 @@ class AnalysisView(View):
     def post(self, request: HttpRequest):
         file_id = request.POST.get('file_id')
         algorithm_id = request.POST.get('algorithm')
+        second_file_id = request.POST.get('second_file_id')
 
         if file_id and not algorithm_id:
             # Caso: vengo de /files solo con file_id para preselección
@@ -163,13 +164,15 @@ class AnalysisView(View):
 
         # Caso: vengo de formulario análisis para ejecutar (file y algo)
         if not file_id or not algorithm_id:
-            print(file_id)
-            print(algorithm_id)
             messages.error(request, "Debes seleccionar archivo y algoritmo.")
             return redirect('analysis')
 
-        file = File.objects.get(id=file_id)
-        algorithm = Algorithm.objects.get(id=algorithm_id)
+        try:
+            file = File.objects.get(id=file_id)
+            algorithm = Algorithm.objects.get(id=algorithm_id)
+        except (File.DoesNotExist, Algorithm.DoesNotExist):
+            messages.error(request, "Archivo o algoritmo no válido.")
+            return redirect('analysis')
 
         input_file = file.file.path
         media_root = settings.MEDIA_ROOT
@@ -203,20 +206,47 @@ class AnalysisView(View):
             )
             return redirect('analysis')
 
+        # Validación de segundo archivo si se requiere
+        second_file = None
+        if algorithm.requires_two_files:
+            if not second_file_id:
+                messages.error(
+                    request, "Este algoritmo requiere un segundo archivo.")
+                return redirect('analysis')
+            try:
+                second_file = File.objects.get(id=second_file_id)
+            except File.DoesNotExist:
+                messages.error(
+                    request, "El segundo archivo seleccionado no existe.")
+                return redirect('analysis')
+
+            if second_file.type not in supported_types:
+                messages.error(
+                    request,
+                    f"El segundo archivo no es compatible con el algoritmo '{algorithm.name}'. "
+                    f"Este algoritmo solo admite archivos de tipo: {supported_names}"
+                )
+                return redirect('analysis')
+
         # Crear ejecución (pero no correrla aquí)
         exec = Execution.objects.create(
             execution_date=now,
             status="IN PROCESS",
             algorithm_id=algorithm_id,
             file_id=file_id,
+            secondary_file=second_file if second_file else None,
             snapshot_file_name=file.filename(),
             snapshot_alg_name=algorithm.name,
             user=request.user
         )
 
         results_url: str = reverse('results')
-        ejecutar_algoritmo_task.delay(
-            file_id, algorithm_id, request.user.id, exec.id)
+        if algorithm.requires_two_files:
+            ejecutar_algoritmo_task.delay(
+                file_id, algorithm_id, request.user.id, exec.id, second_file.id)
+        else:
+            ejecutar_algoritmo_task.delay(
+                file_id, algorithm_id, request.user.id, exec.id)
 
         messages.success(
             request,
