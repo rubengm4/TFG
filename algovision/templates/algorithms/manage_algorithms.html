@@ -45,46 +45,52 @@
     <i class="fas fa-plus me-1"></i> Crear nuevo algoritmo
   </a>
 
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Nombre</th>
-        <th>Versión</th>
-        <th>Proyecto</th>
-        <th>Tipos de archivo admitidos</th>
-        <th>Archivo</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for algo in algorithms %}
+  {% if algorithms %}
+    <table class="table">
+      <thead>
         <tr>
-          <td>{{ algo.name }}</td>
-          <td>{{ algo.version }}</td>
-          <td>{{ algo.project }}</td>
-          <td>{{ algo.supported_types.all|join:", " }}</td>
-          <td>
-            {% if algo.archive %}
-              <a href="{{ algo.archive.url }}" class="btn btn-outline-primary btn-sm">
-                <i class="fa fa-download me-1"></i>Descargar
-              </a>
-            {% else %}
-              <span class="text-muted">No subido</span>
-            {% endif %}
-          </td>
-          <td>
-            <a href="{% url 'edit_algorithm' algo.id %}" class="btn btn-secondary btn-sm">
-              <i class="fa fa-pencil-alt me-1"></i>Editar
-            </a>
-            <form method="post" action="{% url 'delete_algorithm' algo.id %}" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este algoritmo?');">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-danger btn-sm">
-                <i class="fa fa-trash-alt me-1"></i>Borrar
-              </button>
-            </form>
-          </td>
+          <th>Nombre</th>
+          <th>Versión</th>
+          <th>Proyecto</th>
+          <th>Tipos de archivo admitidos</th>
+          <th>Archivo</th>
+          <th>Acciones</th>
         </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for algo in algorithms %}
+          <tr>
+            <td>{{ algo.name }}</td>
+            <td>{{ algo.version }}</td>
+            <td>{{ algo.project }}</td>
+            <td>{{ algo.supported_types.all|join:", " }}</td>
+            <td>
+              {% if algo.archive %}
+                <a href="{{ algo.archive.url }}" class="btn btn-outline-primary btn-sm">
+                  <i class="fa fa-download me-1"></i>Descargar
+                </a>
+              {% else %}
+                <span class="text-muted">No subido</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{% url 'edit_algorithm' algo.id %}" class="btn btn-secondary btn-sm">
+                <i class="fa fa-pencil-alt me-1"></i>Editar
+              </a>
+              <form method="post" action="{% url 'delete_algorithm' algo.id %}" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este algoritmo?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm">
+                  <i class="fa fa-trash-alt me-1"></i>Borrar
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+  <div>
+    No hay algoritmos creados en este proyecto.
+  </div>
+  {% endif %}
 {% endblock %}

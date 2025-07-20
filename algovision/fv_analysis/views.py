@@ -378,6 +378,31 @@ class ManageAlgorithmsView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     def test_func(self):
         return self.request.user.is_superuser
 
+    def get_queryset(self):
+        project_slug = self.request.session.get('login_source')
+
+        if not project_slug or project_slug == 'Sin proyecto':
+            return Algorithm.objects.none()
+
+        try:
+            project = Project.objects.get(title=project_slug)
+        except Project.DoesNotExist:
+            return Algorithm.objects.none()
+
+        return Algorithm.objects.filter(project=project)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        project_slug = self.request.session.get('login_source')
+
+        try:
+            context['current_project'] = Project.objects.get(
+                title=project_slug)
+        except Project.DoesNotExist:
+            context['current_project'] = None
+
+        return context
+
 
 class UpdateAlgorithmView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Algorithm
