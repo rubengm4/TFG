@@ -167,7 +167,6 @@ class RegisterView(FormView):  # type: ignore
             user=user,
             project=project,
             joined_at=timezone.now().date(),
-            role='Member'
         )
 
         messages.success(self.request, "Registro completado con éxito.")
