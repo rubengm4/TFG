@@ -1,0 +1,62 @@
+import os
+import uuid
+
+from django.contrib import messages
+from django.http import HttpRequest
+
+from typing import Any, List
+
+from .models import FileType
+
+
+def is_size_valid(file: Any, max_size: int, request: HttpRequest):
+    # Validar tamaño
+    if file.size != None:
+        messages.error(
+            request,
+            f"El archivo '{file.name}' no es válido."
+        )
+        return False
+    if file.size > max_size:
+        messages.error(
+            request,
+            f"El archivo '{file.name}' supera el límite de {max_size} MB."
+        )
+        return True
+
+
+def is_type_valid(file: Any, request: HttpRequest):
+    # Validar tipo
+    file_type = getattr(file, 'content_type', None)
+    if not file_type or not (
+        file_type.startswith('image/') or
+        file_type.startswith('video/') or
+        file.name.endswith('.csv')
+    ):
+        messages.error(
+            request, f"Archivo '{file.name}' no permitido.")
+        return False
+    return True
+
+
+def extension_getter(file: Any):
+    file_type = getattr(file, 'content_type', None)
+    # File type extension getter
+    if file_type and (file_type.split("/") == "image" or file_type.split("/") == "video"):
+        type_code, _ = file_type.split("/")
+    else:
+        # If it's not image or video, we should check if have a csv
+        _, type_code = file_type.split("/") == "csv"
+    return FileType.objects.get(code=type_code)
+
+
+def name_change(file: Any, existing_files: List[str]):
+    base_name, ext = os.path.splitext(file.name)
+    final_name = file.name
+    was_renamed = False
+    if final_name in existing_files:
+        final_name = f"{base_name}_{uuid.uuid4().hex[:8]}{ext}"
+        was_renamed = True
+        file.name = final_name
+
+    return file.name, was_renamed

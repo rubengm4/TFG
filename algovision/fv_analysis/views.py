@@ -2,9 +2,6 @@ import os
 import subprocess
 import json
 import shutil
-import uuid
-import platform
-import zipfile
 
 from datetime import datetime
 
@@ -26,7 +23,8 @@ from django.views.generic import TemplateView, CreateView, ListView, DeleteView,
 from pathlib import Path
 from typing import Any, List, Dict
 
-from .models import File, Algorithm, Project, Execution, Output, FileType
+from .aux_file_func import is_size_valid, is_type_valid, extension_getter, name_change
+from .models import File, Algorithm, Project, Execution, Output
 from .forms import AlgorithmForm
 from .tasks import ejecutar_algoritmo_task
 
@@ -79,38 +77,22 @@ class FileManagerView(LoginRequiredMixin, View):
             existing_file_names = [os.path.basename(n) for n in existing_names]
 
             for uploaded_file in uploaded_files:
-                # Validar tamaño
-                if uploaded_file.size > MAX_FILE_SIZE_BYTES:
-                    print("HOLA")
-                    messages.error(
-                        request,
-                        f"El archivo '{uploaded_file.name}' supera el límite de {MAX_FILE_SIZE_MB} MB."
-                    )
+                # Size validator
+                if is_size_valid(uploaded_file, MAX_FILE_SIZE_BYTES, request) == False:
                     continue
 
-                # Validar tipo
-                file_type = getattr(uploaded_file, 'content_type', None)
-                if not file_type or not (
-                    file_type.startswith('image/') or
-                    file_type.startswith('video/') or
-                    uploaded_file.name.endswith('.csv')
-                ):
-                    messages.error(
-                        request, f"Archivo '{uploaded_file.name}' no permitido.")
+                # Type validator
+                if is_type_valid(uploaded_file, request) == False:
                     continue
 
-                base_name, ext = os.path.splitext(uploaded_file.name)
-                final_name = uploaded_file.name
-                was_renamed = False
+                # Name setter
+                uploaded_file.name, was_renamed = name_change(
+                    uploaded_file, existing_file_names)
 
-                if final_name in existing_file_names:
-                    final_name = f"{base_name}_{uuid.uuid4().hex[:8]}{ext}"
-                    was_renamed = True
+                # Get extension
+                type = extension_getter(uploaded_file)
 
-                uploaded_file.name = final_name
-                type_code, _ = file_type.split("/")
-                type = FileType.objects.get(code=type_code)
-
+                # Create file
                 File.objects.create(
                     user=request.user,
                     file=uploaded_file,
