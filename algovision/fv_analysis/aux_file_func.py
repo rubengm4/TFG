@@ -11,7 +11,7 @@ from .models import FileType
 
 def is_size_valid(file: Any, max_size: int, request: HttpRequest):
     # Validar tamaño
-    if file.size != None:
+    if file.size == None:
         messages.error(
             request,
             f"El archivo '{file.name}' no es válido."
@@ -42,11 +42,13 @@ def is_type_valid(file: Any, request: HttpRequest):
 def extension_getter(file: Any):
     file_type = getattr(file, 'content_type', None)
     # File type extension getter
+    type_code = None
     if file_type and (file_type.split("/") == "image" or file_type.split("/") == "video"):
         type_code, _ = file_type.split("/")
     else:
         # If it's not image or video, we should check if have a csv
-        _, type_code = file_type.split("/") == "csv"
+        if file_type:
+            _, type_code = file_type.split("/")
     return FileType.objects.get(code=type_code)
 
 

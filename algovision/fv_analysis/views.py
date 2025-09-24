@@ -78,6 +78,7 @@ class FileManagerView(LoginRequiredMixin, View):
 
             for uploaded_file in uploaded_files:
                 # Size validator
+                print("HOla: ", uploaded_file)
                 if is_size_valid(uploaded_file, MAX_FILE_SIZE_BYTES, request) == False:
                     continue
 
