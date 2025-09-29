@@ -42,5 +42,6 @@ ehthumbs.db
 # VS Code
 .vscode/
 
+*.zip
 Algoritmos/
 
