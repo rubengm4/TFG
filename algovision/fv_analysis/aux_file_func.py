@@ -43,12 +43,14 @@ def extension_getter(file: Any):
     file_type = getattr(file, 'content_type', None)
     # File type extension getter
     type_code = None
-    if file_type and (file_type.split("/") == "image" or file_type.split("/") == "video"):
+    # Type: video/mp4 or image/jpeg
+    if file_type and (file_type.split("/")[0] == "image" or file_type.split("/")[0] == "video"):
         type_code, _ = file_type.split("/")
     else:
         # If it's not image or video, we should check if have a csv
         if file_type:
             _, type_code = file_type.split("/")
+    print("Type: ", type_code)
     return FileType.objects.get(code=type_code)
 
 
