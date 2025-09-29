@@ -1,6 +1,6 @@
 # analysis/tasks.py
 
-from celery import shared_task
+from celery import shared_task  # type: ignore
 import os
 import zipfile
 import platform
@@ -8,22 +8,24 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 from django.conf import settings
-from django.core.files.storage import default_storage
 from .models import File, Algorithm, Execution, Output  # ajusta según tu estructura
+from typing import Optional
 
 
 @shared_task
-def ejecutar_algoritmo_task(file_id, algorithm_id, user_id, exec_id, second_file_id=None):
+def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, second_file_id: Optional[int] = None) -> None:
+    exec: Optional[Execution] = None
     try:
         file = File.objects.get(id=file_id)
-        second_file = None
+        second_file: Optional[File] = None
+        second_input_path: Optional[str] = None
         if second_file_id:
             second_file = File.objects.get(id=second_file_id)
             second_input_path = second_file.file.path
         algorithm = Algorithm.objects.get(id=algorithm_id)
-        exec = Execution.objects.get(id=exec_id)
-        input_file = file.file.path
 
+        input_file = file.file.path
+        exec = Execution.objects.get(id=exec_id)
         rel_path = os.path.relpath(input_file, settings.MEDIA_ROOT)
         parts = rel_path.split(os.sep)
         user_id_folder = parts[1]
@@ -56,7 +58,7 @@ def ejecutar_algoritmo_task(file_id, algorithm_id, user_id, exec_id, second_file
 
         command = [str(python_exec), str(script_path), input_file]
 
-        if second_file:
+        if second_file and second_input_path is not None:
             command.append(second_input_path)
 
         command.append(output_zip)
@@ -73,6 +75,7 @@ def ejecutar_algoritmo_task(file_id, algorithm_id, user_id, exec_id, second_file
         )
 
     except Exception as e:
-        exec.status = "FAILED"
-        exec.save(update_fields=['status'])
-        raise e
+        if exec:
+            exec.status = "FAILED"
+            exec.save(update_fields=['status'])
+            raise e

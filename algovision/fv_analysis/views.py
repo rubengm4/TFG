@@ -1,5 +1,4 @@
 import os
-import subprocess
 import json
 import shutil
 
@@ -20,7 +19,6 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView, CreateView, ListView, DeleteView, UpdateView
 
-from pathlib import Path
 from typing import Any, List, Dict
 
 from .aux_file_func import is_size_valid, is_type_valid, extension_getter, name_change
@@ -160,7 +158,7 @@ class AnalysisView(View):
             messages.error(request, "Archivo o algoritmo no válido.")
             return redirect('analysis')
 
-        input_file = file.file.path
+        input_file: str = file.file.path
         media_root = settings.MEDIA_ROOT
 
         # Resolve user path
@@ -169,13 +167,8 @@ class AnalysisView(View):
         user_id = parts[1]
 
         # Prepare output directory and zip
-        filename, _ = os.path.splitext(parts[-1])
-        now = datetime.now()
-        timestamp = now.strftime("%Y%m%d_%H%M%S")
         output_dir = os.path.join(media_root, 'outputs', user_id)
         os.makedirs(output_dir, exist_ok=True)
-        output_filename = f"{filename}_{algorithm.name}_{timestamp}_out.zip"
-        output_zip = os.path.join(output_dir, output_filename)
 
         # Guardar selección para que persista si vuelves a analysis
         request.session['selected_file_id'] = file_id
@@ -215,6 +208,7 @@ class AnalysisView(View):
                 return redirect('analysis')
 
         # Crear ejecución (pero no correrla aquí)
+        now = datetime.now()
         exec = Execution.objects.create(
             execution_date=now,
             status="IN PROCESS",
@@ -229,10 +223,10 @@ class AnalysisView(View):
         results_url: str = reverse('results')
         if algorithm.requires_two_files:
             ejecutar_algoritmo_task.delay(
-                file_id, algorithm_id, request.user.id, exec.id, second_file.id)
+                file_id, algorithm_id, exec.id, second_file.id)
         else:
             ejecutar_algoritmo_task.delay(
-                file_id, algorithm_id, request.user.id, exec.id)
+                file_id, algorithm_id, exec.id)
 
         messages.success(
             request,
@@ -272,7 +266,7 @@ class RenameFileView(LoginRequiredMixin, View):
 
         user_folder = f"uploads/{request.user.pk}"
 
-        old_relative_path = file_obj.file.name
+        old_relative_path: str = file_obj.file.name
         old_path = os.path.join(settings.MEDIA_ROOT, old_relative_path)
 
         new_relative_path = f"{user_folder}/{new_filename}"
@@ -377,7 +371,7 @@ class ManageAlgorithmsView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 
         return Algorithm.objects.filter(project=project)
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any):
         context = super().get_context_data(**kwargs)
         project_slug = self.request.session.get('login_source')
 
@@ -399,8 +393,8 @@ class UpdateAlgorithmView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def test_func(self):
         return self.request.user.is_superuser
 
-    def form_valid(self, form):
-        obj = self.get_object()
+    def form_valid(self, form: Any):
+        obj: Any | None = self.get_object()
         new_archive = form.cleaned_data.get('archive')
 
         # Verificamos si el archivo ha cambiado
@@ -429,9 +423,9 @@ class DeleteAlgorithmView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def test_func(self):
         return self.request.user.is_superuser
 
-    def form_valid(self, form):
+    def form_valid(self, form: Any) -> Any:
         # Access the object to be deleted
-        obj = self.get_object()
+        obj: Any = self.get_object()
 
         # Delete the associated file if it exists
         if obj.archive:

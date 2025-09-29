@@ -50,7 +50,6 @@ def extension_getter(file: Any):
         # If it's not image or video, we should check if have a csv
         if file_type:
             _, type_code = file_type.split("/")
-    print("Type: ", type_code)
     return FileType.objects.get(code=type_code)
 
 
