@@ -71,14 +71,16 @@ class FileManagerView(LoginRequiredMixin, View):
         MAX_FILE_SIZE_MB = 10
         MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
+        # If there are uploaded files
         if uploaded_files:
+            # Get names of every existing user file in the database
             existing_names = File.objects.filter(
                 user=request.user).values_list('file', flat=True)
             existing_file_names = [os.path.basename(n) for n in existing_names]
 
+            # For every uploaded file
             for uploaded_file in uploaded_files:
                 # Size validator
-                print("HOla: ", uploaded_file)
                 if is_size_valid(uploaded_file, MAX_FILE_SIZE_BYTES, request) == False:
                     continue
 
@@ -93,7 +95,7 @@ class FileManagerView(LoginRequiredMixin, View):
                 # Get extension
                 type = extension_getter(uploaded_file)
 
-                # Create file
+                # Create file in database
                 File.objects.create(
                     user=request.user,
                     file=uploaded_file,
@@ -101,6 +103,7 @@ class FileManagerView(LoginRequiredMixin, View):
                     upload_date=timezone.now()
                 )
 
+                # If file was renamed
                 if was_renamed:
                     messages.info(
                         request, f"Archivo '{uploaded_file.name}' renombrado por duplicado.")

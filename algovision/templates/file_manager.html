@@ -215,7 +215,7 @@
         td.appendChild(span);
 
         // Restaurar botones eliminar y editar en TODAS las filas
-        document.querySelectorAll('.action-delete-btn, .action-edit-btn, action-analyze-btn').forEach(btn => {
+        document.querySelectorAll('.action-delete-btn, .action-edit-btn, .action-analyze-btn').forEach(btn => {
             btn.style.display = '';
         });
 
@@ -253,13 +253,13 @@
             td.innerHTML = '';
             const newSpan = document.createElement('span');
             newSpan.classList.add('file-name');
-            newSpan.textContent = data.new_name + extension; //IMPORTANT: IT HAS TO BE LIKE THIS TO SHOW CORRECTLY  IN FRONTEND
+            newSpan.textContent = data.new_name + extension; //IMPORTANT: IT HAS TO BE LIKE THIS TO SHOW CORRECTLY IN FRONTEND
             td.appendChild(newSpan);
 
             const tr = td.closest('tr');
 
             // Restaurar botones eliminar y editar en TODAS las filas
-            document.querySelectorAll('.action-delete-btn, .action-edit-btn').forEach(btn => {
+            document.querySelectorAll('.action-delete-btn, .action-edit-btn, .action-analyze-btn').forEach(btn => {
                 btn.style.display = '';
             });
 
