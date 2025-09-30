@@ -5,72 +5,100 @@ Algovision | Inicio de sesión
 {% endblock %}
 
 {% block content %}
-{% load dynamic_url %}
-<a href="{% dynamic_url source|add:'_home' %}" class="btn btn-outline-secondary ms-5">
-    ← Volver al menú {{ source }}
-</a>
-<div class="card mx-auto shadow-sm p-4 mt-3" style="max-width: 400px;">
-  <h2 class="text-center mb-4">Inicio de sesión</h2>
+<div class="flex flex-col items-center justify-center min-h-screen space-y-8 px-4">
 
-  {% if form.non_field_errors %}
-    <div class="alert alert-danger">
-      {% for error in form.non_field_errors %}
-        <p>{{ error }}</p>
-      {% endfor %}
-    </div>
-  {% endif %}
-
-  {% for field in form %}
-    {% for error in field.errors %}
-      <div class="alert alert-danger">
-        <strong>{{ field.label }}:</strong> {{ error }}
-      </div>
-    {% endfor %}
-  {% endfor %}
-
-
-  {% if messages %}
-    {% for message in messages %}
-      {% if "error" in message.tags %}
-        <div class="alert alert-danger">{{ message }}</div>
-      {% else %}
-        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-      {% endif %}
-    {% endfor %}
-  {% endif %}
-
-
-  <form method="post" novalidate>
-    {% csrf_token %}
-    
-    <div class="mb-3">
-      <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
-      {{ form.username }}
-      {% if form.username.errors %}
-        <div class="text-danger small">{{ form.username.errors }}</div>
-      {% endif %}
+    <!-- Hero Section -->
+    <div class="w-full max-w-md text-center mb-4">
+        {% load dynamic_url %}
+        <a href="{% dynamic_url source|add:'_home' %}" 
+           class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-all shadow group">
+            <i class="fas fa-arrow-left mr-2 transition-transform duration-300 ease-in-out group-hover:-translate-x-1"></i>
+            Volver al menú {{ source }}
+        </a>
     </div>
 
-    <div class="mb-3">
-      <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
-      {{ form.password }}
-      {% if form.password.errors %}
-        <div class="text-danger small">{{ form.password.errors }}</div>
-      {% endif %}
-    </div>
+    <!-- Login Form Card -->
+    <div class="bg-white rounded-lg shadow p-8 w-full max-w-md space-y-6 flex flex-col items-center
+                transition-transform transform hover:-translate-y-1 hover:shadow-xl">
+        
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Inicio de sesión</h2>
 
-    <button type="submit" class="btn btn-primary w-100">
-      <i class="fas fa-sign-in-alt me-2"></i> Iniciar sesión
-    </button>
-    
-    <p class="text-center mt-3">
-      <small>
-          ¿No tienes una cuenta?
-          <a href="{% url 'accounts:register' %}" class="text-decoration-none">
-            <i class="fas fa-user-plus ms-1 me-1"></i> Regístrate
-          </a>
-      </small>
-    </p>
-  </form>
+        <!-- Messages / Form errors -->
+        {% if form.non_field_errors %}
+          <div class="bg-red-100 text-red-700 p-2 rounded w-full text-center">
+            {% for error in form.non_field_errors %}
+              <p>{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% for field in form %}
+          {% for error in field.errors %}
+            <div class="bg-red-100 text-red-700 p-2 rounded w-full">
+              <strong>{{ field.label }}:</strong> {{ error }}
+            </div>
+          {% endfor %}
+        {% endfor %}
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="bg-{{ message.tags }}-100 text-{{ message.tags }}-700 p-2 rounded w-full text-center">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        <!-- Form -->
+        <form method="post" novalidate class="space-y-4 w-full">
+            {% csrf_token %}
+
+            <!-- Username -->
+            <div>
+                <label for="username" class="block text-gray-700 font-semibold mb-1">Username</label>
+                <input type="text" id="username" name="username" required
+                       class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- Password with Show/Hide -->
+            <div class="w-full">
+              <label for="password" class="block text-gray-700 font-semibold mb-1">Password</label>
+              <input type="password" id="password" name="password" required
+                     class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          
+
+            <!-- Submit -->
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-all flex items-center justify-center gap-2">
+                <i class="fas fa-sign-in-alt"></i>
+                Iniciar sesión
+            </button>
+
+            <!-- Register link -->
+            <p class="text-center text-gray-600 mt-3 text-sm">
+                ¿No tienes una cuenta?
+                <a href="{% url 'accounts:register' %}" class="text-blue-600 hover:text-blue-700 font-semibold inline-flex items-center gap-1">
+                    <i class="fas fa-user-plus"></i> Regístrate
+                </a>
+            </p>
+        </form>
+    </div>
 </div>
+
+<!-- Show/Hide Password Script -->
+<script>
+  const passwordInput = document.getElementById('password');
+  const togglePassword = document.getElementById('togglePassword');
+  const eyeIcon = document.getElementById('eyeIcon');
+
+  togglePassword.addEventListener('click', () => {
+      // Toggle input type
+      const isHidden = passwordInput.type === 'password';
+      passwordInput.type = isHidden ? 'text' : 'password';
+
+      // Replace the icon element completely
+      eyeIcon.outerHTML = isHidden
+          ? '<i id="eyeIcon" class="fas fa-eye"></i>'
+          : '<i id="eyeIcon" class="fas fa-eye-slash"></i>';
+  });
+</script>
 {% endblock %}

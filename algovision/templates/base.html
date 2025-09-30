@@ -5,154 +5,58 @@
     <title>{% block title %}Algovision{% endblock %}</title>
 
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        body, html {
-            height: 100%;
-            margin: 0;
+        body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8f9fa;
-            color: #212529;
         }
-
-        /* Sidebar */
-        .sidebar {
-            width: 200px;
-            height: 100vh;
-            background-color: #1f2937;
-            padding-top: 1rem;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 1000;
-            transition: transform 0.3s ease;
-        }
-
-        .sidebar.collapsed {
-            transform: translateX(-100%);
-        }
-
-        .sidebar .nav-link {
-            color: #cbd5e1;
-            padding-left: 1rem;
-            transition: background-color 0.2s ease, padding-left 0.2s ease;
-        }
-
-        .sidebar .nav-link:hover {
-            background-color: #374151;
-            padding-left: 1.5rem;
-        }
-
-        .sidebar .navbar-brand {
-            font-size: 1.5rem;
-        }
-
-        /* Main content */
-        .main-content {
-            margin-left: 200px;
-            padding: 2rem;
-            transition: margin-left 0.3s ease;
-        }
-
-        .main-content.expanded {
-            margin-left: 0;
-        }
-
-        /* Toggle Button */
-        #sidebarToggle {
-            position: fixed;
-            top: 1rem;
-            left: 210px;
-            z-index: 1100;
-            background-color: #1f2937;
-            color: white;
-            border: none;
-            font-size: 1.5rem;
-            padding: 0.5rem 0.75rem;
-            border-radius: 4px;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-            transition: left 0.3s ease;
-        }
-
-        .sidebar.collapsed + #sidebarToggle {
-            left: 1rem;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-
-            .sidebar:not(.collapsed) {
-                transform: translateX(0);
-            }
-
-            .main-content {
-                margin-left: 0 !important;
-            }
-
-            #sidebarToggle {
-                left: 1rem !important;
-            }
-        }
-
-        .d-flex.gap-1 input.form-control {
-            width: auto;
-            flex-grow: 1;
-        }
-
-        .custom-link {
-            color: inherit; /* Toma el color del texto circundante */
-            transition: color 0.2s ease, text-decoration 0.2s ease;
-        }
-          
-        .custom-link:hover {
-            color: #0d6efd; /* Color de Bootstrap primary */
-            text-decoration: underline;
-        } 
     </style>
 
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body class="flex h-screen bg-gray-100 overflow-hidden">
 
-<!-- Sidebar -->
-<nav class="sidebar" id="sidebar">
-    <a class="navbar-brand text-white px-3 mb-3" href="/">Algovision</a>
-    <hr class="text-secondary my-2 mx-3">
-    <ul class="nav flex-column px-2">
+<!-- Sidebar (Left) -->
+<nav id="sidebar" class="bg-gray-900 text-gray-100 w-64 flex-shrink-0 h-full fixed z-20 transform transition-transform duration-300">
+    <div class="px-6 py-4 flex items-center">
+        <a href="/" class="text-2xl font-bold text-white hover:text-blue-500 transition-colors">Algovision</a>
+    </div>
+    <hr class="border-gray-700 my-2">
+    <ul class="flex flex-col gap-1 px-4">
         {% block sidebar_links %}
-        <!--Default links, or empty-->
+        <!-- Default links -->
         {% endblock %}
     </ul>
 </nav>
 
-<!-- Toggle Button -->
-<button id="sidebarToggle">&#9776;</button>
+<!-- Sidebar Toggle Button (outside sidebar, always visible) -->
+<button id="sidebarToggle" class="fixed top-6 left-72 z-30 bg-blue-600 text-white p-2 rounded shadow-lg hover:bg-blue-700 transition-all">
+    <i class="fas fa-bars"></i>
+</button>
 
 <!-- Main Content -->
-<div class="main-content" id="mainContent">
+<div id="mainContent" class="flex-1 ml-64 transition-all p-6 overflow-auto">
 
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h4 fw-semibold">{% block page_title %}{% endblock %}</h1>
-        {% block page_actions %}{% endblock %}
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-semibold text-gray-800">{% block page_title %}{% endblock %}</h1>
+        <div>
+            {% block page_actions %}{% endblock %}
+        </div>
     </div>
 
-    {% block content %}{% endblock %}
+    <!-- Page Content -->
+    <div class="space-y-6">
+        {% block content %}{% endblock %}
+    </div>
 </div>
 
-<!-- Bootstrap JS Bundle -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Font Awesome -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js"></script>
 
 <script>
     const toggleBtn = document.getElementById('sidebarToggle');
@@ -161,17 +65,29 @@
 
     // Restore sidebar state
     if (localStorage.getItem('sidebarCollapsed') === 'true') {
-        sidebar.classList.add('collapsed');
-        mainContent.classList.add('expanded');
+        sidebar.classList.add('-translate-x-full');
+        mainContent.classList.remove('ml-64');
+        mainContent.classList.add('ml-0');
+        toggleBtn.classList.add('left-4'); // Move toggle button left when sidebar hidden
+        toggleBtn.classList.remove('left-72');
     }
 
     toggleBtn.addEventListener('click', () => {
-        sidebar.classList.toggle('collapsed');
-        mainContent.classList.toggle('expanded');
+        const collapsed = sidebar.classList.toggle('-translate-x-full');
 
-        // Save state
-        const isCollapsed = sidebar.classList.contains('collapsed');
-        localStorage.setItem('sidebarCollapsed', isCollapsed);
+        if (collapsed) {
+            mainContent.classList.remove('ml-64');
+            mainContent.classList.add('ml-0');
+            toggleBtn.classList.add('left-4');   // Move button to left when sidebar hidden
+            toggleBtn.classList.remove('left-72');
+        } else {
+            mainContent.classList.remove('ml-0');
+            mainContent.classList.add('ml-64');
+            toggleBtn.classList.remove('left-4'); // Move button back next to sidebar
+            toggleBtn.classList.add('left-72');
+        }
+
+        localStorage.setItem('sidebarCollapsed', collapsed);
     });
 </script>
 

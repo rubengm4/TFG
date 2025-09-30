@@ -4,32 +4,47 @@
 {% block title %}Algovision{% endblock %}
 
 {% block content %}
-<div class="container py-5 text-center">
-  <h1 class="mb-3">Bienvenido a Algovision</h1>
-  <p class="lead mb-5">Aplicación de gestión de algoritmos de IA</p>
+<div class="flex flex-col items-center justify-center py-12 space-y-8">
 
-  <div class="row justify-content-center g-3 mb-4">
-    <div class="col-auto">
-      <form method="post" action="{% url 'accounts:set_source' %}">
-        {% csrf_token %}
-        <input type="hidden" name="source" value="fv-analysis" />
-        <button type="submit" class="btn btn-primary px-4">FV Analysis</button>
-      </form>
+    <!-- Hero Section with Gradient -->
+    <div class="bg-gradient-to-r from-blue-100 to-indigo-100 rounded-lg shadow p-8 text-center max-w-3xl w-full">
+      <h1 class="text-4xl font-bold text-gray-800 mb-3">Bienvenido a Algovision</h1>
+      <p class="text-gray-600 text-lg">Aplicación de gestión de algoritmos de IA</p>
     </div>
-    <div class="col-auto">
-      <form method="post" action="{% url 'accounts:set_source' %}">
-        {% csrf_token %}
-        <input type="hidden" name="source" value="people-analysis" />
-        <button type="submit" class="btn btn-primary px-4">People Analysis</button>
-      </form>
+
+    <!-- Analysis Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-6xl px-4">
+
+        <!-- FV Analysis Card -->
+        <form method="post" action="{% url 'accounts:set_source' %}" class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-all transform hover:scale-105 flex flex-col items-center">
+            {% csrf_token %}
+            <input type="hidden" name="source" value="fv-analysis" />
+            <i class="fas fa-chart-line text-5xl text-blue-600 mb-4"></i>
+            <h2 class="text-xl font-semibold mb-2 text-gray-800">FV Analysis</h2>
+            <p class="text-gray-500 mb-4 text-center">Analiza y gestiona los algoritmos de placas fotovoltaicas</p>
+            <button type="submit" class="mt-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded transition-all w-full">Abrir</button>
+        </form>
+
+        <!-- People Analysis Card -->
+        <form method="post" action="{% url 'accounts:set_source' %}" class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-all transform hover:scale-105 flex flex-col items-center">
+            {% csrf_token %}
+            <input type="hidden" name="source" value="people-analysis" />
+            <i class="fas fa-users text-5xl text-green-600 mb-4"></i>
+            <h2 class="text-xl font-semibold mb-2 text-gray-800">People Analysis</h2>
+            <p class="text-gray-500 mb-4 text-center">Gestión de análisis de personas y algoritmos relacionados</p>
+            <button type="submit" class="mt-auto bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded transition-all w-full">Abrir</button>
+        </form>
+
+        <!-- Stats Analysis Card -->
+        <form method="post" action="{% url 'accounts:set_source' %}" class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-all transform hover:scale-105 flex flex-col items-center">
+            {% csrf_token %}
+            <input type="hidden" name="source" value="stats-analysis" />
+            <i class="fas fa-chart-pie text-5xl text-purple-600 mb-4"></i>
+            <h2 class="text-xl font-semibold mb-2 text-gray-800">Stats Analysis</h2>
+            <p class="text-gray-500 mb-4 text-center">Generación de estadísticas y tendencias a partir de archivos CSV</p>
+            <button type="submit" class="mt-auto bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-2 rounded transition-all w-full">Abrir</button>
+        </form>
+
     </div>
-    <div class="col-auto">
-      <form method="post" action="{% url 'accounts:set_source' %}">
-        {% csrf_token %}
-        <input type="hidden" name="source" value="stats-analysis" />
-        <button type="submit" class="btn btn-primary px-4">Stats</button>
-      </form>
-    </div>
-  </div>
 </div>
 {% endblock %}
