@@ -274,7 +274,7 @@ class DashboardView(LoginRequiredMixin, View):
         # Contar algoritmos totales
         algorithms_count = Algorithm.objects.filter(project=project).count()
 
-        context = {
+        context: dict[str, Any] = {
             'project_slug': project_slug,
             'user': request.user,
             'files_count': files_count,
