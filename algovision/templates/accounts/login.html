@@ -42,11 +42,22 @@ Algovision | Inicio de sesión
 
         {% if messages %}
           {% for message in messages %}
-            <div class="bg-{{ message.tags }}-100 text-{{ message.tags }}-700 p-2 rounded w-full text-center">
-              {{ message }}
-            </div>
+            {% if "error" in message.tags %}
+              <div class="bg-red-100 text-red-700 p-2 rounded w-full text-center mb-2">
+                {{ message }}
+              </div>
+            {% elif "success" in message.tags %}
+              <div class="bg-green-100 text-green-700 p-2 rounded w-full text-center mb-2">
+                {{ message }}
+              </div>
+            {% else %}
+              <div class="bg-gray-100 text-gray-700 p-2 rounded w-full text-center mb-2">
+                {{ message }}
+              </div>
+            {% endif %}
           {% endfor %}
-        {% endif %}
+      {% endif %}
+      
 
         <!-- Form -->
         <form method="post" novalidate class="space-y-4 w-full">
@@ -83,22 +94,4 @@ Algovision | Inicio de sesión
         </form>
     </div>
 </div>
-
-<!-- Show/Hide Password Script -->
-<script>
-  const passwordInput = document.getElementById('password');
-  const togglePassword = document.getElementById('togglePassword');
-  const eyeIcon = document.getElementById('eyeIcon');
-
-  togglePassword.addEventListener('click', () => {
-      // Toggle input type
-      const isHidden = passwordInput.type === 'password';
-      passwordInput.type = isHidden ? 'text' : 'password';
-
-      // Replace the icon element completely
-      eyeIcon.outerHTML = isHidden
-          ? '<i id="eyeIcon" class="fas fa-eye"></i>'
-          : '<i id="eyeIcon" class="fas fa-eye-slash"></i>';
-  });
-</script>
 {% endblock %}

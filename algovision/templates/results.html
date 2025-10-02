@@ -63,7 +63,7 @@
                 <form method="post" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que quieres eliminar esta ejecución?');">
                   {% csrf_token %}
                   <input type="hidden" name="delete_execution" value="{{ result.id }}">
-                  <button type="submit" class="btn btn-danger btn-sm" {% if result.status == "IN PROCESS" %}disabled title="No se puede borrar una tarea en proceso"{% endif %}>
+                  <button type="submit" class="btn btn-danger btn-sm" {% if result.status == "PENDING" %}disabled title="No se puede borrar una tarea en proceso"{% endif %}>
                     <i class="fa fa-trash-alt me-1"></i>Borrar
                   </button>
                 </form>                
@@ -146,7 +146,7 @@
       const rows = document.querySelectorAll("table tbody tr");
       for (const row of rows) {
           const status = row.children[2]?.textContent?.trim().toUpperCase();
-          if (status === "IN PROCESS" || status === "PENDIENTE") {
+          if (status === "PENDING") {
               return true;
           }
       }

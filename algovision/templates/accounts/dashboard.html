@@ -23,82 +23,108 @@
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-end">
-  <a href="{% url 'accounts:logout' %}" class="btn btn-danger">
-    <i class="fa fa-sign-out-alt me-1"></i> Cerrar sesión
-  </a>
-</div>
-<div class="container py-4 text-center">
-  <h2>Bienvenido, {{ user.username }}</h2>
-  <p>Estás en el proyecto: <strong>{{ project_slug }}</strong></p>
+<div class="flex flex-col items-center min-h-screen px-4 py-8 space-y-6">
 
-  <div class="row mt-4 g-4">
-    <!-- Archivos subidos -->
-    <div class="col-md-3">
-      <div class="card h-100 shadow-sm border-0 text-primary hover-shadow">
-        <div class="card-body d-flex flex-column align-items-center justify-content-center">
-          <i class="fas fa-file-upload fa-3x mb-3"></i>
-          <h5 class="card-title">Archivos subidos</h5>
-          <p class="display-4 mb-3">{{ files_count }}</p>
-          <a href="{% url 'file_manager' %}" class="btn btn-primary w-75">
-            <i class="fas fa-folder-open me-1"></i> Mis archivos
-          </a>
-        </div>
-      </div>
+  <!-- Logout button top right -->
+  <div class="w-full flex justify-end">
+    <a href="{% url 'accounts:logout' %}" 
+       class="inline-flex items-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow">
+       <i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión
+    </a>
+  </div>
+
+  <!-- Welcome Info -->
+  <div class="text-center">
+    <h2 class="text-3xl font-bold text-gray-800">Bienvenido, {{ user.username }}</h2>
+    <p class="text-gray-600 mt-2">Estás en el proyecto: <strong>{{ project_slug }}</strong></p>
+    {% if last_login %}
+      <p class="text-gray-500 text-sm mt-1">Último acceso: {{ last_login|date:"d M Y H:i" }}</p>
+    {% endif %}
+  </div>
+
+  <!-- First Row: 3 Main Cards with gradients -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-7xl mt-6">
+
+    <!-- Archivos subidos (red) -->
+    <div class="bg-gradient-to-br from-red-100 to-red-300 shadow rounded-lg p-6 flex flex-col items-center 
+                hover:shadow-red-400/60 hover:scale-105 transition-all">
+      <i class="fas fa-file-upload fa-3x text-red-600 mb-3"></i>
+      <h5 class="text-lg font-bold text-gray-800 mb-1">Archivos subidos</h5>
+      <p class="text-2xl font-bold text-gray-800 mb-3">{{ files_count }}</p>
+      <a href="{% url 'file_manager' %}" 
+         class="w-full bg-red-700 hover:bg-red-800 text-white py-2 rounded-lg font-semibold flex items-center justify-center gap-2 shadow-lg shadow-red-500/50 transition-all">
+         <i class="fas fa-folder-open"></i> Mis archivos
+      </a>
     </div>
 
-    <!-- Análisis realizados -->
-    <div class="col-md-3">
-      <div class="card h-100 shadow-sm border-0 text-success hover-shadow">
-        <div class="card-body d-flex flex-column align-items-center justify-content-center">
-          <i class="fas fa-chart-line fa-3x mb-3"></i>
-          <h5 class="card-title">Análisis realizados</h5>
-          <p class="display-4 mb-3">{{ analysis_count }}</p>
-          <a href="{% url 'analysis' %}" class="btn btn-success w-80">
-            <i class="fas fa-play me-1"></i> Realizar análisis
-          </a>
-        </div>
-      </div>
+    <!-- Análisis realizados (yellow) -->
+    <div class="bg-gradient-to-br from-yellow-200 to-yellow-400 shadow rounded-lg p-6 flex flex-col items-center 
+                hover:shadow-yellow-400/60 hover:scale-105 transition-all">
+      <i class="fas fa-chart-line fa-3x text-yellow-600 mb-3"></i>
+      <h5 class="text-lg font-bold text-gray-800 mb-1">Análisis realizados</h5>
+      <p class="text-2xl font-bold text-gray-800 mb-3">{{ analysis_count }}</p>
+      <a href="{% url 'analysis' %}" 
+         class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 rounded-lg font-semibold flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/50 transition-all">
+         <i class="fas fa-play"></i> Realizar análisis
+      </a>
     </div>
 
-    <!-- Resultados recientes -->
-    <div class="col-md-3">
-      <div class="card h-100 shadow-sm border-0 text-info hover-shadow">
-        <div class="card-body d-flex flex-column align-items-center justify-content-center">
-          <i class="fas fa-tasks fa-3x mb-3"></i>
-          <h5 class="card-title">Resultados recientes</h5>
-          {% if recent_results %}
-            <ul class="list-unstyled mb-3 small text-start" style="max-height: 140px; overflow-y: auto;">
-              {% for result in recent_results %}
-                <li><i class="fas fa-file-alt me-1"></i> {{ result.file.filename }} - {{ result.execution_date|date:"d M Y" }}</li>
-              {% endfor %}
-            </ul>
-            <a href="{% url 'results' %}" class="btn btn-info w-75">
-              <i class="fas fa-list me-1"></i> Ver todos
-            </a>
-          {% else %}
-            <p>No hay resultados recientes</p>
-          {% endif %}
-        </div>
-      </div>
+    <!-- Algoritmos del proyecto (green) -->
+    <div class="bg-gradient-to-br from-green-400 to-green-600 shadow rounded-lg p-6 flex flex-col items-center 
+                hover:shadow-green-400/60 hover:scale-105 transition-all">
+      <i class="fas fa-cogs fa-3x text-green-700 mb-3"></i>
+      <h5 class="text-lg font-bold text-gray-800 mb-1 text-center">Algoritmos del proyecto</h5>
+      <p class="text-2xl font-bold text-gray-800 mb-3">{{ algorithms_count }}</p>
+      {% if user.is_superuser %}
+        <a href="{% url 'manage_algorithms' %}" 
+           class="w-full bg-green-700 hover:bg-green-800 text-white py-2 rounded-lg font-semibold flex items-center justify-center gap-2 shadow-lg shadow-green-500/50 transition-all">
+           <i class="fas fa-tools"></i> Gestionar algoritmos
+        </a>
+      {% endif %}
     </div>
 
-    <!-- Algoritmos del proyecto -->
-    <div class="col-md-3">
-      <div class="card h-100 shadow-sm border-0 text-warning hover-shadow">
-        <div class="card-body d-flex flex-column align-items-center justify-content-center">
-          <i class="fas fa-cogs fa-3x mb-3"></i>
-          <h5 class="card-title">Algoritmos del proyecto</h5>
-          <p class="display-4 mb-3">{{ algorithms_count }}</p>
-          {% if user.is_superuser %}
-            <a href="{% url 'manage_algorithms' %}" class="btn btn-warning w-75">
-              <i class="fas fa-tools me-1"></i> Gestionar algoritmos
-            </a>
-          {% endif %}
+  </div>
+
+  <!-- Second Row: Resultados Recientes (blue) -->
+  <div class="w-full max-w-7xl mt-6">
+    <div class="bg-gradient-to-br from-blue-200 to-blue-400 shadow rounded-lg p-6 flex flex-col 
+                hover:shadow-blue-400/60 hover:scale-105 transition-all">
+      <i class="fas fa-tasks fa-3x text-blue-700 mb-3 self-center"></i>
+      <h5 class="text-lg font-bold text-gray-800 mb-3 text-center">Resultados recientes</h5>
+
+      {% if recent_results %}
+        <div class="flex flex-col space-y-2 max-h-64 overflow-y-auto mb-3">
+          {% for result in recent_results %}
+            <div class="flex items-center justify-between p-2 bg-gray-50 rounded hover:bg-gray-100 transition-all">
+              <div class="flex items-center gap-2">
+                <!-- Status indicator with stronger pulse/glow -->
+                {% if result.status == 'FINISHED' %}
+                  <span class="w-3 h-3 rounded-full bg-green-500 inline-block animate-pulse shadow-lg shadow-green-500/70"></span>
+                {% elif result.status == 'PENDING' %}
+                  <span class="w-3 h-3 rounded-full bg-yellow-500 inline-block animate-pulse shadow-lg shadow-yellow-500/70"></span>
+                {% elif result.status == 'FAILED' %}
+                  <span class="w-3 h-3 rounded-full bg-red-500 inline-block animate-pulse shadow-lg shadow-red-500/70"></span>
+                {% else %}
+                  <span class="w-3 h-3 rounded-full bg-gray-400 inline-block animate-pulse shadow-lg shadow-gray-400/70"></span>
+                {% endif %}
+                <i class="fas fa-file-alt text-gray-600"></i>
+                <span class="truncate">{{ result.file.filename }}</span>
+              </div>
+              <span class="text-xs text-gray-500">{{ result.execution_date|date:"d M Y" }}</span>
+            </div>
+          {% endfor %}
         </div>
-      </div>
+
+        <!-- "Ver todos" button (dark blue to match) -->
+        <a href="{% url 'results' %}" 
+           class="mt-3 w-full bg-blue-700 hover:bg-blue-800 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-500/50 transition-all transform hover:scale-105">
+           <i class="fas fa-list"></i> Ver todos
+        </a>
+      {% else %}
+        <p class="text-gray-500 text-center">No hay resultados recientes</p>
+      {% endif %}
     </div>
   </div>
+
 </div>
 {% endblock %}
-

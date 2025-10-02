@@ -5,13 +5,13 @@ from datetime import timedelta
 
 
 class Command(BaseCommand):
-    help = 'Marca como FAILED las ejecuciones que llevan demasiado tiempo IN PROCESS'
+    help = 'Marca como FAILED las ejecuciones que llevan demasiado tiempo PENDING'
 
     def handle(self, *args, **options):
         timeout = timedelta(minutes=30)
         now = timezone.now()
         stuck_executions = Execution.objects.filter(
-            status="IN PROCESS",
+            status="PENDING",
             execution_date__lt=now - timeout
         )
         count = stuck_executions.count()

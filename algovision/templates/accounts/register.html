@@ -1,62 +1,111 @@
-<!-- templates/accounts/register.html -->
 {% extends "base.html" %}
 
-{% block title %}
-Algovision | Registro
-{% endblock %}
+{% block title %}Algovision | Registro{% endblock %}
 
 {% block content %}
 {% load dynamic_url %}
-<a href="{% dynamic_url source|add:'_home' %}" class="btn btn-outline-secondary ms-5">
-    ← Volver al menú {{ source }}
-</a>
-<div class="card mx-auto shadow-sm p-4 mt-4" style="max-width: 500px;">
-  <h2 class="text-center mb-4">Registro</h2>
-  {% if messages %}
-    {% for message in messages %}
-      {% if "error" in message.tags %}
-        <div class="alert alert-danger">{{ message }}</div>
-      {% else %}
-        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-      {% endif %}
-    {% endfor %}
-  {% endif %}
+<div class="flex flex-col items-center justify-center min-h-screen px-4 space-y-6">
 
-  <form method="post" novalidate>
-    {% csrf_token %}
-    {% for field in form %}
-      <div class="mb-3">
-        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-        {{ field }}
-        {% if field.errors %}
-          <div class="text-danger small">{{ field.errors }}</div>
+  <!-- Back Button -->
+  <div class="w-full max-w-md text-left">
+    <a href="{% dynamic_url source|add:'_home' %}" 
+       class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-all shadow group">
+        <i class="fas fa-arrow-left mr-2 transition-transform duration-300 ease-in-out group-hover:-translate-x-1"></i>
+        Volver al menú {{ source }}
+    </a>
+  </div>
+
+  <!-- Register Card -->
+  <div class="bg-white rounded-lg shadow p-8 w-full max-w-md transition-transform transform hover:-translate-y-1 hover:shadow-xl">
+    
+    <h2 class="text-2xl font-bold text-gray-800 text-center mb-6">Registro</h2>
+
+    <!-- Messages -->
+    {% if messages %}
+      {% for message in messages %}
+        {% if "error" in message.tags %}
+          <div class="bg-red-100 text-red-700 p-2 rounded w-full text-center mb-2">
+            {{ message }}
+          </div>
+        {% elif "success" in message.tags %}
+          <div class="bg-green-100 text-green-700 p-2 rounded w-full text-center mb-2">
+            {{ message }}
+          </div>
+        {% else %}
+          <div class="bg-gray-100 text-gray-700 p-2 rounded w-full text-center mb-2">
+            {{ message }}
+          </div>
         {% endif %}
-      </div>
-    {% endfor %}
-  
+      {% endfor %}
+    {% endif %}
+
     {% if form.non_field_errors %}
-      <div class="alert alert-danger">
+      <div class="bg-red-100 text-red-700 p-2 rounded w-full text-center mb-3">
         {% for error in form.non_field_errors %}
           <div>{{ error }}</div>
         {% endfor %}
       </div>
     {% endif %}
-  
-    <button type="submit" class="btn btn-primary w-100">
-      <i class="fas fa-user-plus me-2"></i> Registrarse
-    </button>
-    
-    <p class="text-center mt-3">
-      <small>
-        ¿Ya tienes una cuenta? 
-        <a href="{% url 'accounts:login' %}" class="text-decoration-none">
-          <i class="fas fa-sign-in-alt ms-1 me-1"></i> Inicia sesión
+
+    <!-- Form -->
+    <form method="post" novalidate class="space-y-4">
+      {% csrf_token %}
+      {% for field in form %}
+        <div>
+          <label for="{{ field.id_for_label }}" class="block text-gray-700 font-semibold mb-1">
+            {{ field.label }}
+          </label>
+          {{ field }}
+          {% if field.errors %}
+            <div class="text-red-600 text-sm mt-1">{{ field.errors }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      <!-- Password Rules + Match Box -->
+      <div id="passwordBox" class="bg-gray-50 rounded p-3 text-sm mt-3 border border-gray-200">
+        <p class="font-semibold mb-2">Requisitos de la contraseña:</p>
+        <ul id="password-rules" class="space-y-1 mb-3">
+          <li id="rule-length" class="text-red-600">❌ Al menos 8 caracteres</li>
+          <li id="rule-numeric" class="text-red-600">❌ No ser solo números</li>
+          <li id="rule-match" class="text-red-600">❌ Las contraseñas coinciden</li>
+        </ul>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+          <div id="strength-bar" class="h-2 rounded-full bg-red-500 w-0 transition-all"></div>
+        </div>
+        <p id="strength-label" class="mt-1 text-xs text-gray-600">Fuerza: Muy débil</p>
+      </div>
+
+      <button type="submit" 
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-all flex items-center justify-center gap-2">
+          <i class="fas fa-user-plus"></i> Registrarse
+      </button>
+
+      <p class="text-center text-gray-600 mt-3 text-sm">
+        ¿Ya tienes una cuenta?
+        <a href="{% url 'accounts:login' %}" 
+           class="text-blue-600 hover:text-blue-700 font-semibold inline-flex items-center gap-1">
+          <i class="fas fa-sign-in-alt"></i> Inicia sesión
         </a>
-      </small>
-    </p>
-    
-  </form>
+      </p>
+    </form>
+  </div>
 </div>
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+  /* Campos con fondo gris cuando vacíos, blanco cuando tienen valor */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"] {
+    @apply w-full px-3 py-2 rounded border border-gray-300 bg-gray-100 text-gray-900
+           focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors;
+  }
+  input:valid {
+    @apply bg-white;
+  }
+</style>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -64,72 +113,67 @@ Algovision | Registro
 document.addEventListener('DOMContentLoaded', function () {
   const passwordField = document.getElementById('id_password1');
   const confirmField = document.getElementById('id_password2');
-  const emailField = document.getElementById('id_email');
 
-  if (!passwordField || !confirmField || !emailField) return;
+  if (!passwordField || !confirmField) return;
 
-  // Password rules box
-  const rulesBox = document.createElement('div');
-  rulesBox.className = 'mb-3 text-muted small';
-  rulesBox.innerHTML = `
-    <ul id="password-rules">
-      <li id="rule-length" class="text-danger">At least 8 characters</li>
-      <li id="rule-numeric" class="text-danger">Not entirely numeric</li>
-    </ul>
-  `;
+  const ruleLength = document.getElementById('rule-length');
+  const ruleNumeric = document.getElementById('rule-numeric');
+  const ruleMatch = document.getElementById('rule-match');
+  const strengthBar = document.getElementById('strength-bar');
+  const strengthLabel = document.getElementById('strength-label');
 
-  const passwordDiv = passwordField.parentNode;
-  const confirmDiv = confirmField.parentNode;
-  passwordDiv.parentNode.insertBefore(rulesBox, confirmDiv);
+  function updateStrength(pwd) {
+    let strength = 0;
+    if (pwd.length >= 8) strength++;
+    if (/[A-Z]/.test(pwd)) strength++;
+    if (/[0-9]/.test(pwd)) strength++;
+    if (/[^A-Za-z0-9]/.test(pwd)) strength++;
+    if (pwd.length >= 16) strength++;
 
-  passwordField.addEventListener('input', function () {
-    const pwd = passwordField.value;
+    const widths = ["w-1/5", "w-2/5", "w-3/5", "w-4/5", "w-full"];
+    const colors = ["bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-blue-500", "bg-green-500"];
+    const labels = ["Muy débil", "Débil", "Aceptable", "Fuerte", "Muy fuerte"];
 
-    // Length check
-    document.getElementById('rule-length').className =
-      pwd.length >= 8 ? 'text-success' : 'text-danger';
-
-    // Numeric check
-    document.getElementById('rule-numeric').className =
-      /^\d+$/.test(pwd) ? 'text-danger' : 'text-success';
-
-    // Also check if passwords match on password change
-    checkPasswordMatch();
-  });
-
-  // Email validation message
-  const emailDiv = emailField.parentNode;
-  const emailMsg = document.createElement('div');
-  emailMsg.className = 'text-danger small mt-1';
-  emailDiv.appendChild(emailMsg);
-
-  emailField.addEventListener('input', function () {
-    const email = emailField.value;
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (email === '' || re.test(email)) {
-      emailMsg.textContent = '';
-    } else {
-      emailMsg.textContent = 'Please enter a valid email address.';
-    }
-  });
-
-  // Password confirmation match check message
-  const matchMsg = document.createElement('div');
-  matchMsg.className = 'text-danger small mt-1';
-  confirmDiv.appendChild(matchMsg);
-
-  function checkPasswordMatch() {
-    if (confirmField.value === '') {
-      matchMsg.textContent = '';
-      return;
-    }
-    matchMsg.textContent = passwordField.value === confirmField.value ? '' : 'Passwords do not match.';
+    strengthBar.className = `h-2 rounded-full transition-all ${widths[strength-1] || "w-1/5"} ${colors[strength-1] || "bg-red-500"}`;
+    strengthLabel.textContent = `Fuerza: ${labels[strength-1] || "Muy débil"}`;
   }
 
-  confirmField.addEventListener('input', checkPasswordMatch);
+  function checkRules() {
+    const pwd = passwordField.value;
+    // Length
+    if (pwd.length >= 8) {
+      ruleLength.className = "text-green-600";
+      ruleLength.textContent = "✅ Al menos 8 caracteres";
+    } else {
+      ruleLength.className = "text-red-600";
+      ruleLength.textContent = "❌ Al menos 8 caracteres";
+    }
+    // Numeric
+    if (/^\d+$/.test(pwd) || pwd.length === 0) {
+      ruleNumeric.className = "text-red-600";
+      ruleNumeric.textContent = "❌ No ser solo números";
+    } else {
+      ruleNumeric.className = "text-green-600";
+      ruleNumeric.textContent = "✅ No ser solo números";
+    }
+    // Match
+    if (confirmField.value === "") {
+      ruleMatch.className = "text-red-600";
+      ruleMatch.textContent = "❌ Las contraseñas coinciden";
+    } else if (pwd === confirmField.value) {
+      ruleMatch.className = "text-green-600";
+      ruleMatch.textContent = "✅ Las contraseñas coinciden";
+    } else {
+      ruleMatch.className = "text-red-600";
+      ruleMatch.textContent = "❌ Las contraseñas coinciden";
+    }
+  }
+
+  passwordField.addEventListener('input', function() {
+    updateStrength(passwordField.value);
+    checkRules();
+  });
+  confirmField.addEventListener('input', checkRules);
 });
 </script>
 {% endblock %}
-
-
-

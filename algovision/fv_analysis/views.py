@@ -211,7 +211,7 @@ class AnalysisView(View):
         now = datetime.now()
         exec = Execution.objects.create(
             execution_date=now,
-            status="IN PROCESS",
+            status="PENDING",
             algorithm_id=algorithm_id,
             file_id=file_id,
             secondary_file=second_file if second_file else None,

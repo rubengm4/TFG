@@ -65,7 +65,7 @@ def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, secon
 
         subprocess.run(command, check=True)
 
-        exec.status = "COMPLETED"
+        exec.status = "FINISHED"
         exec.save(update_fields=['status'])
 
         Output.objects.create(
