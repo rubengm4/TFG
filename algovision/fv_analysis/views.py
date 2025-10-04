@@ -2,8 +2,6 @@ import os
 import json
 import shutil
 
-from datetime import datetime
-
 from django import forms
 from django.conf import settings
 from django.contrib import messages
@@ -54,13 +52,15 @@ class FileManagerView(LoginRequiredMixin, View):
         if 'delete_file' in request.POST:
             file_id = request.POST.get('delete_file')
             file_obj = get_object_or_404(File, id=file_id)
+            file_name = os.path.basename(file_obj.file.name)
 
             file_path = file_obj.file.path
             if os.path.exists(file_path):
                 os.remove(file_path)
 
             file_obj.delete()
-            messages.success(request, "Archivo eliminado correctamente.")
+            messages.success(
+                request, f"Archivo {file_name} eliminado correctamente.")
             return redirect('file_manager')
 
         uploaded_files = request.FILES.getlist('files')
@@ -104,10 +104,10 @@ class FileManagerView(LoginRequiredMixin, View):
                 # If file was renamed
                 if was_renamed:
                     messages.info(
-                        request, f"Archivo '{uploaded_file.name}' renombrado por duplicado.")
+                        request, f"Archivo {uploaded_file.name} renombrado por duplicado.")
                 else:
                     messages.success(
-                        request, f"Archivo '{uploaded_file.name}' subido correctamente.")
+                        request, f"Archivo {uploaded_file.name} subido correctamente.")
         else:
             messages.error(request, "No se seleccionaron archivos.")
 
@@ -208,7 +208,8 @@ class AnalysisView(View):
                 return redirect('analysis')
 
         # Crear ejecución (pero no correrla aquí)
-        now = datetime.now()
+        now = timezone.now()
+        print(now)
         exec = Execution.objects.create(
             execution_date=now,
             status="PENDING",

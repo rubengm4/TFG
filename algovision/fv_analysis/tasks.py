@@ -5,10 +5,12 @@ import os
 import zipfile
 import platform
 import subprocess
-from datetime import datetime
-from pathlib import Path
-from django.conf import settings
+
 from .models import File, Algorithm, Execution, Output  # ajusta según tu estructura
+
+from django.conf import settings
+from django.utils import timezone
+from pathlib import Path
 from typing import Optional
 
 
@@ -31,7 +33,7 @@ def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, secon
         user_id_folder = parts[1]
 
         filename, _ = os.path.splitext(parts[-1])
-        now = datetime.now()
+        now = timezone.now()
         timestamp = now.strftime("%Y%m%d_%H%M%S")
         output_dir = os.path.join(
             settings.MEDIA_ROOT, 'outputs', user_id_folder)
