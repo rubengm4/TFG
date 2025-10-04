@@ -101,7 +101,7 @@
       <!-- Buttons -->
       <div class="flex items-center gap-4 pt-2">
         <button type="submit"
-                class="flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white py-2.5 px-6 rounded-lg font-bold shadow-lg shadow-yellow-400/50 transition-all hover:shadow-yellow-500/70 hover:scale-[1.03] animate-pulse-slow">
+                class="flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white py-2.5 px-6 rounded-lg font-bold shadow-lg shadow-yellow-400/50 transition-all hover:shadow-yellow-500/70 hover:scale-[1.03] animate-pulse-slow-but">
           <i class="fas fa-play animate-pulse-slow"></i> Ejecutar Algoritmo
         </button>
         <a href="{% url 'analysis' %}"
@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.85; transform: scale(1.05); }
 }
-.animate-pulse-slow {
+.animate-pulse-slow-but {
   animation: pulse-slow 2.5s ease-in-out infinite;
 }
 </style>

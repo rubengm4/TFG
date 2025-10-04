@@ -2,107 +2,136 @@
 
 {% block title %}Algovision | Mis resultados{% endblock %}
 
+{% block sidebar_links %}
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'file_manager' %}">Mis archivos</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'analysis' %}">Realizar análisis</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link active" href="{% url 'results' %}">Mis resultados</a>
+  </li>
+  {% if user.is_superuser %}
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'manage_algorithms' %}">Gestionar algoritmos</a>
+    </li>
+  {% endif %}
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:logout' %}">Cerrar sesión</a>
+  </li>
+{% endblock %}
+
 {% block content %}
-<div class="min-h-screen bg-gray-50 text-gray-900 px-6 py-10">
+<div class="flex flex-col items-center min-h-screen px-4 py-8 space-y-6">
+
   <!-- Header -->
-  <div class="flex justify-between items-center mb-8">
+  <div class="w-full flex justify-between max-w-6xl">
     <a href="{% url 'dashboard' %}" 
-       class="flex items-center text-sm text-gray-600 hover:text-blue-600 transition">
-      ← Volver al dashboard
+       class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-all shadow">
+       ← Volver al dashboard
     </a>
     <a href="{% url 'accounts:logout' %}" 
-       class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-md transition">
-      <i class="fa fa-sign-out-alt"></i> Cerrar sesión
+       class="inline-flex items-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow">
+       <i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión
     </a>
   </div>
 
   <!-- Title -->
-  <h2 class="text-3xl font-bold mb-6 text-blue-700 flex items-center gap-2">
-    <i class="fa fa-chart-bar"></i> Mis Resultados
-  </h2>
-
-  <!-- Table -->
-  <div class="overflow-x-auto rounded-2xl shadow-md border border-gray-200 bg-white">
-    <table class="min-w-full text-sm text-left">
-      <thead class="bg-blue-600 text-white">
-        <tr>
-          <th class="px-6 py-3 cursor-pointer" onclick="sortTableByColumn(0)">
-            Nombre archivo original <span class="sort-arrow" data-index="0"></span>
-          </th>
-          <th class="px-6 py-3 cursor-pointer" onclick="sortTableByColumn(1)">
-            Algoritmo <span class="sort-arrow" data-index="1"></span>
-          </th>
-          <th class="px-6 py-3 cursor-pointer" onclick="sortTableByColumn(2)">
-            Estado <span class="sort-arrow" data-index="2"></span>
-          </th>
-          <th class="px-6 py-3 cursor-pointer" onclick="sortTableByColumn(3)">
-            Fecha <span class="sort-arrow" data-index="3"></span>
-          </th>
-          <th class="px-6 py-3">Acciones</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-100">
-        {% for result in results %}
-        <tr class="hover:bg-blue-50 transition">
-          <td class="px-6 py-4 font-medium">{{ result.original_filename }}</td>
-          <td class="px-6 py-4">{{ result.algorithm_name }}</td>
-          <td class="px-6 py-4">
-            {% if result.status == "FINISHED" %}
-              <span class="inline-flex items-center gap-1 text-green-600 font-semibold">
-                <i class="fa fa-check-circle"></i> Finalizado
-              </span>
-            {% elif result.status == "PENDING" %}
-              <span class="inline-flex items-center gap-1 text-yellow-600 font-semibold animate-pulse">
-                <i class="fa fa-hourglass-half"></i> Pendiente
-              </span>
-            {% else %}
-              <span class="inline-flex items-center gap-1 text-red-600 font-semibold">
-                <i class="fa fa-times-circle"></i> Fallido
-              </span>
-            {% endif %}
-          </td>
-          <td class="px-6 py-4">{{ result.execution_date|date:"d/m/Y H:i" }}</td>
-          <td class="px-6 py-4 flex items-center gap-3">
-            {% if result.status == "FAILED" %} <!-- Task failed -->
-              <span class="text-gray-400 text-sm italic">No output</span>
-            {% elif result.output_id %}
-              <a href="{% url 'results_download' result.output_id %}" 
-                 class="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-semibold transition">
-                <i class="fa fa-download"></i> Descargar
-              </a>
-            {% else %}
-              <span class="text-gray-400 text-sm italic">Pendiente</span>
-            {% endif %}
-
-            <form method="post" class="inline delete-form">
-              {% csrf_token %}
-              <input type="hidden" name="delete_execution" value="{{ result.id }}">
-              <button type="submit" 
-                      class="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 transition"
-                      {% if result.status == "PENDING" %}
-                        disabled title="No se puede borrar una tarea en proceso"
-                        class="opacity-50 cursor-not-allowed"
-                      {% endif %}>
-                <i class="fa fa-trash"></i> Borrar
-              </button>
-            </form>
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="5" class="text-center py-6 text-gray-500 italic">
-            No hay resultados disponibles.
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <div class="text-center">
+    <h2 class="text-3xl font-bold text-gray-800 flex items-center justify-center gap-3">
+      <i class="fas fa-chart-bar text-blue-500 drop-shadow-[0_0_8px_rgba(21,101,192,0.7)] animate-pulse-slow"></i>
+      Mis Resultados
+    </h2>
   </div>
 
-  <!-- Alert container -->
+  <!-- Results Table Container -->
+  <div class="bg-gradient-to-br from-blue-100 to-blue-300 shadow-lg rounded-xl p-6 w-full max-w-6xl hover:shadow-blue-400/50 hover:scale-[1.01] transition-all">
+    <div class="overflow-x-auto rounded-xl bg-white border border-blue-200 shadow-inner">
+      <table class="min-w-full text-sm text-left">
+        <thead class="bg-blue-600 text-white">
+          <tr>
+            <th class="px-6 py-3 cursor-pointer" onclick="sortTableByColumn(0)">
+              Nombre archivo original <span class="sort-arrow" data-index="0"></span>
+            </th>
+            <th class="px-6 py-3 cursor-pointer" onclick="sortTableByColumn(1)">
+              Algoritmo <span class="sort-arrow" data-index="1"></span>
+            </th>
+            <th class="px-6 py-3 cursor-pointer" onclick="sortTableByColumn(2)">
+              Estado <span class="sort-arrow" data-index="2"></span>
+            </th>
+            <th class="px-6 py-3 cursor-pointer" onclick="sortTableByColumn(3)">
+              Fecha <span class="sort-arrow" data-index="3"></span>
+            </th>
+            <th class="px-6 py-3">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for result in results %}
+          <tr class="hover:bg-blue-50 transition">
+            <td class="px-6 py-4 font-medium">{{ result.original_filename }}</td>
+            <td class="px-6 py-4">{{ result.algorithm_name }}</td>
+            <td class="px-6 py-4">
+              {% if result.status == "FINISHED" %}
+                <span class="inline-flex items-center gap-1 text-green-600 font-semibold">
+                  <i class="fa fa-check-circle"></i> Finalizado
+                </span>
+              {% elif result.status == "PENDING" %}
+                <span class="inline-flex items-center gap-1 text-yellow-600 font-semibold animate-pulse">
+                  <i class="fa fa-hourglass-half"></i> Pendiente
+                </span>
+              {% else %}
+                <span class="inline-flex items-center gap-1 text-red-600 font-semibold">
+                  <i class="fa fa-times-circle"></i> Fallido
+                </span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4">{{ result.execution_date|date:"d/m/Y H:i" }}</td>
+            <td class="px-6 py-4 flex items-center gap-3">
+              {% if result.status == "FAILED" %}
+                <span class="text-gray-400 text-sm italic">No output</span>
+              {% elif result.output_id %}
+                <a href="{% url 'results_download' result.output_id %}" 
+                   class="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-semibold transition">
+                  <i class="fa fa-download"></i> Descargar
+                </a>
+              {% else %}
+                <span class="text-gray-400 text-sm italic">Pendiente</span>
+              {% endif %}
+
+              <form method="post" class="inline delete-form">
+                {% csrf_token %}
+                <input type="hidden" name="delete_execution" value="{{ result.id }}">
+                <button type="submit" 
+                class="text-sm text-red-600 hover:text-red-700 flex items-center gap-1 font-semibold transition"
+                  {% if result.status == "PENDING" %}
+                    disabled title="No se puede borrar una tarea en proceso"
+                    class="opacity-50 cursor-not-allowed"
+                  {% endif %}>
+                  <i class="fa fa-trash"></i> Borrar
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center py-6 text-gray-500 italic">
+              No hay resultados disponibles.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Alerts -->
   <div id="alerts-container" class="fixed top-4 left-1/2 -translate-x-1/2 w-80 z-50"></div>
 </div>
 
+{% endblock %}
+
+{% block extra_scripts %}
 <script>
   let currentSort = { column: 3, ascending: true };
 
@@ -162,15 +191,25 @@
   document.addEventListener("DOMContentLoaded", () => {
       currentSort = { column: 3, ascending: true };
       sortTableByColumn(3);
-  });
 
-  // Modern confirmation before deleting
-  document.querySelectorAll(".delete-form").forEach(form => {
-    form.addEventListener("submit", e => {
-      e.preventDefault();
-      if (!confirm("¿Estás seguro de que quieres eliminar esta ejecución?")) return;
-      form.submit();
-    });
+      // Delete confirmation
+      document.querySelectorAll(".delete-form").forEach(form => {
+        form.addEventListener("submit", e => {
+          e.preventDefault();
+          if (!confirm("¿Estás seguro de que quieres eliminar esta ejecución?")) return;
+          form.submit();
+        });
+      });
   });
 </script>
+
+<style>
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.05); }
+}
+.animate-pulse-slow {
+  animation: pulse-slow 2.5s ease-in-out infinite;
+}
+</style>
 {% endblock %}

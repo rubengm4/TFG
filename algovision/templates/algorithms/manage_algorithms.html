@@ -12,7 +12,7 @@
   </li>
   {% if user.is_superuser %}
     <li class="nav-item">
-      <a class="nav-link" href="{% url 'manage_algorithms' %}">Gestionar algoritmos</a>
+      <a class="nav-link active" href="{% url 'manage_algorithms' %}">Gestionar algoritmos</a>
     </li>
   {% endif %}
   <li class="nav-item">
@@ -21,76 +21,135 @@
 {% endblock %}
 
 {% block content %}
-  <div class="d-flex justify-content-between align-items-center mt-5">
-    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
-      ← Volver al dashboard
+<div class="flex flex-col items-center min-h-screen px-4 py-8 space-y-6">
+
+  <!-- Header -->
+  <div class="w-full flex justify-between max-w-6xl">
+    <a href="{% url 'dashboard' %}" 
+       class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-all shadow">
+       ← Volver al dashboard
     </a>
-    <a href="{% url 'accounts:logout' %}" class="btn btn-danger">
-      <i class="fa fa-sign-out-alt me-1"></i> Cerrar sesión
+    <a href="{% url 'accounts:logout' %}" 
+       class="inline-flex items-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow">
+       <i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión
     </a>
   </div>
+
+  <!-- Title -->
+  <div class="text-center">
+    <h2 class="text-3xl font-bold text-gray-800 flex items-center justify-center gap-3">
+      <i class="fas fa-cogs text-green-500 drop-shadow-[0_0_8px_rgba(34,197,94,0.7)] animate-pulse-slow"></i>
+      Gestionar Algoritmos
+    </h2>
+  </div>
+
+  <!-- Messages -->
   {% if messages %}
-  <div class="container mt-3">
-    {% for message in messages %}
-      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-      </div>
-    {% endfor %}
-  </div>
+    <div class="w-full max-w-6xl">
+      {% for message in messages %}
+        <div class="px-4 py-3 rounded-lg mb-4 shadow-md
+                    {% if message.tags == 'success' %}
+                      bg-green-100 text-green-800 border border-green-400
+                    {% elif message.tags == 'error' %}
+                      bg-red-100 text-red-800 border border-red-400
+                    {% else %}
+                      bg-yellow-100 text-yellow-800 border border-yellow-400
+                    {% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
   {% endif %}
-  <h2 class="mt-5">Gestionar Algoritmos</h2>
 
-  <a href="{% url 'create_algorithm' %}" class="btn btn-primary mb-3">
-    <i class="fas fa-plus me-1"></i> Crear nuevo algoritmo
-  </a>
-
-  {% if algorithms %}
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Versión</th>
-          <th>Proyecto</th>
-          <th>Tipos de archivo admitidos</th>
-          <th>Archivo</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for algo in algorithms %}
+  <!-- Algorithms Table -->
+  <div class="bg-gradient-to-br from-green-100 to-green-300 shadow-lg rounded-xl p-6 w-full max-w-6xl hover:shadow-green-400/50 hover:scale-[1.01] transition-all">
+    {% if algorithms %}
+    <div class="overflow-x-auto rounded-xl border border-green-200 shadow-inner">
+      <table class="min-w-full text-sm text-left">
+        <thead class="bg-green-600 text-white">
           <tr>
-            <td>{{ algo.name }}</td>
-            <td>{{ algo.version }}</td>
-            <td>{{ algo.project }}</td>
-            <td>{{ algo.supported_types.all|join:", " }}</td>
-            <td>
+            <th class="px-6 py-3">Nombre</th>
+            <th class="px-6 py-3">Versión</th>
+            <th class="px-6 py-3">Proyecto</th>
+            <th class="px-6 py-3">Tipos de archivo admitidos</th>
+            <th class="px-6 py-3">Archivo</th>
+            <th class="px-6 py-3">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for algo in algorithms %}
+          <tr class="bg-white hover:bg-green-50 transition">
+            <td class="px-6 py-4 font-medium">{{ algo.name }}</td>
+            <td class="px-6 py-4">{{ algo.version }}</td>
+            <td class="px-6 py-4">{{ algo.project }}</td>
+            <td class="px-6 py-4">{{ algo.supported_types.all|join:", " }}</td>
+            <td class="px-6 py-4">
               {% if algo.archive %}
-                <a href="{{ algo.archive.url }}" class="btn btn-outline-primary btn-sm">
-                  <i class="fa fa-download me-1"></i>Descargar
-                </a>
+              <a href="{{ algo.archive.url }}"
+                class="flex items-center gap-1 text-sm text-green-600 hover:text-green-700 font-semibold transition">
+                <i class="fa fa-download"></i> Descargar
+              </a>
               {% else %}
-                <span class="text-muted">No subido</span>
+                <span class="text-gray-400 italic">No subido</span>
               {% endif %}
             </td>
-            <td>
-              <a href="{% url 'edit_algorithm' algo.id %}" class="btn btn-secondary btn-sm">
-                <i class="fa fa-pencil-alt me-1"></i>Editar
+            <td class="px-6 py-4 flex items-center gap-2">
+              <a href="{% url 'edit_algorithm' algo.id %}"
+                class="flex items-center gap-1 text-sm text-green-600 hover:text-green-700 font-semibold transition">
+                <i class="fa fa-pencil-alt"></i> Editar
               </a>
-              <form method="post" action="{% url 'delete_algorithm' algo.id %}" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este algoritmo?');">
+              <form method="post" action="{% url 'delete_algorithm' algo.id %}" class="inline delete-form">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-danger btn-sm">
-                  <i class="fa fa-trash-alt me-1"></i>Borrar
+                <button type="submit"
+                        class="flex items-center gap-1 text-sm text-red-600 hover:text-red-700 font-semibold transition">
+                  <i class="fa fa-trash"></i> Borrar
                 </button>
               </form>
             </td>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-  <div>
-    No hay algoritmos creados en este proyecto.
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-6 text-gray-500 italic">
+      No hay algoritmos creados en este proyecto.
+    </div>
+    {% endif %}
   </div>
-  {% endif %}
+
+
+
+  <!-- Create Algorithm Button (left) -->
+  <div class="w-full max-w-6xl flex justify-start mt-4">
+    <a href="{% url 'create_algorithm' %}"
+       class="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white py-2.5 px-6 rounded-lg font-bold shadow-lg shadow-green-400/50 transition-all hover:shadow-green-500/70 hover:scale-[1.02]">
+      <i class="fas fa-plus"></i> Crear nuevo algoritmo
+    </a>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Modern confirmation before deleting
+  document.querySelectorAll(".delete-form").forEach(form => {
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      if (!confirm("¿Estás seguro de que quieres eliminar este algoritmo?")) return;
+      form.submit();
+    });
+  });
+</script>
+
+<style>
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.05); }
+}
+.animate-pulse-slow {
+  animation: pulse-slow 2.5s ease-in-out infinite;
+}
+</style>
 {% endblock %}
