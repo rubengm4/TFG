@@ -202,7 +202,7 @@ class AnalysisView(View):
             if second_file.type not in supported_types:
                 messages.error(
                     request,
-                    f"El segundo archivo no es compatible con el algoritmo '{algorithm.name}'. "
+                    f"El segundo archivo seleccionado no es compatible con el algoritmo '{algorithm.name}'. "
                     f"Este algoritmo solo admite archivos de tipo: {supported_names}"
                 )
                 return redirect('analysis')
@@ -228,13 +228,14 @@ class AnalysisView(View):
             ejecutar_algoritmo_task.delay(
                 file_id, algorithm_id, exec.id)
 
-        messages.success(
-            request,
-            mark_safe(
-                f"Se ha iniciado el análisis con <strong>{algorithm.name}</strong> sobre <strong>{file.filename()}</strong>. "
-                f"Puedes consultar su estado en la pestaña de <a href='{results_url}' class='fw-bold text-decoration-none custom-link'>Mis Resultados</a>"
+            messages.success(
+                request,
+                mark_safe(
+                    f"Se ha iniciado el análisis con <strong>{algorithm.name}</strong> sobre <strong>{file.filename()}</strong>. "
+                    f"Puedes consultar su estado en la pestaña de "
+                    f"<a href='{results_url}' style='font-weight:700; text-decoration:none; color:inherit;'>Mis Resultados</a>"
+                )
             )
-        )
 
         return redirect('analysis')
 

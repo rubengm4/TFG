@@ -165,3 +165,7 @@ celery -A algovision worker --loglevel=info
 - Lanzar redis
 
 redis-server
+
+- Lanzar monitoreo web Celery
+
+celery -A algovision flower --port=5555

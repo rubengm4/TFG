@@ -25,7 +25,7 @@
 {% block content %}
 <div class="flex flex-col items-center min-h-screen px-4 py-8 space-y-6">
 
-  <!-- Header: back + logout -->
+  <!-- Header -->
   <div class="w-full flex justify-between max-w-6xl">
     <a href="{% url 'dashboard' %}" 
        class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-all shadow">
@@ -39,66 +39,92 @@
 
   <!-- Title -->
   <div class="text-center">
-    <h2 class="text-3xl font-bold text-gray-800">Gestor de Archivos</h2>
+    <h2 class="text-3xl font-bold text-gray-800">
+      <i class="fas fa-file-upload text-red-600 drop-shadow-[0_0_8px_rgba(250,204,21,0.7)] animate-pulse-slow"></i></i> Gestor de Archivos
+    </h2>
   </div>
 
-  <!-- Upload form card -->
-  <div class="bg-gradient-to-br from-red-100 to-red-300 shadow-lg rounded-xl p-6 w-full max-w-6xl 
-              hover:shadow-red-400/50 hover:scale-[1.01] transition-all">
+  <!-- Upload form -->
+  <div class="bg-gradient-to-br from-red-100 to-red-300 shadow-lg rounded-xl p-6 w-full max-w-6xl hover:shadow-red-400/50 hover:scale-[1.01] transition-all">
     <form method="post" enctype="multipart/form-data" class="space-y-4">
         {% csrf_token %}
         <div>
             <label for="fileInput" class="block font-semibold text-gray-700 mb-2">
               Selecciona un archivo (Límite: 10 MB)
             </label>
-            <input class="form-control w-full border rounded-lg p-2" 
+            <input class="form-control w-full border border-red-400 rounded-lg p-2 bg-white/90 focus:ring-2 focus:ring-red-500 focus:outline-none" 
                    type="file" name="files" id="fileInput" 
                    accept=".csv,image/*,video/*" multiple required>
         </div>
         <button type="submit" 
-                class="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 shadow-lg shadow-red-400/50 transition-all">
-            <i class="fas fa-cloud-upload-alt"></i> Subir Archivo
+                class="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 shadow-lg shadow-red-400/50 transition-all hover:shadow-red-500/70 hover:scale-[1.02]">
+            <i class="fas fa-cloud-upload-alt animate-pulse-slow"></i> Subir Archivo
         </button>
     </form>    
   </div>
 
-  <!-- File list card (red themed) -->
-  <div class="bg-gradient-to-br from-red-100 to-red-300 shadow-lg rounded-xl p-6 w-full max-w-6xl 
-              hover:shadow-red-400/50 hover:scale-[1.01] transition-all">
+  {% if messages %}
+    <div class="w-full max-w-6xl">
+      {% for message in messages %}
+        <div class="px-4 py-3 rounded-lg mb-4 shadow-md 
+                    {% if message.tags == 'success' %}
+                      bg-green-100 text-green-800 border border-green-400
+                    {% elif message.tags == 'error' %}
+                      bg-red-100 text-red-800 border border-red-400
+                    {% else %}
+                      bg-gray-100 text-gray-800 border border-gray-300
+                    {% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- File list -->
+  <div class="bg-gradient-to-br from-red-100 to-red-300 shadow-lg rounded-xl p-6 w-full max-w-6xl hover:shadow-red-400/50 hover:scale-[1.01] transition-all">
     <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
       <i class="fas fa-folder-open text-red-600"></i> Tus archivos
     </h3>
     <table class="w-full bg-white rounded-lg overflow-hidden shadow-md">
         <thead class="bg-gray-100 text-gray-700">
             <tr>
-                <th onclick="sortTableByColumn(0)" class="cursor-pointer px-4 py-2 text-left">Nombre <span class="sort-arrow" data-index="0"></span></th>
-                <th onclick="sortTableByColumn(1)" class="cursor-pointer px-4 py-2 text-left">Tipo <span class="sort-arrow" data-index="1"></span></th>
-                <th onclick="sortTableByColumn(2)" class="cursor-pointer px-4 py-2 text-left">Fecha de subida <span class="sort-arrow" data-index="2"></span></th>                
+                <th class="px-4 py-2 text-left">Nombre</th>
+                <th class="px-4 py-2 text-left">Tipo</th>
+                <th class="px-4 py-2 text-left">Fecha de subida</th>                
                 <th class="px-4 py-2 text-left">Acciones</th>
             </tr>
         </thead>
         <tbody>
             {% for file in files %}
-            <tr class="file-row hover:bg-gray-50 transition">
+            <tr class="file-row hover:bg-red-50 transition">
                 <td class="px-4 py-2">
-                    <span class="file-name flex items-center gap-2">
-                      <i class="fas fa-file-alt text-red-500"></i> {{ file.filename|cut:"media" }}
+                    <span class="file-name flex items-center gap-2 text-gray-800 font-semibold group">
+                        {% if "image" in file.type|lower %}
+                          <i class="fas fa-file-image text-red-500 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110 group-hover:drop-shadow-[0_0_6px_rgba(239,68,68,0.7)]"></i>
+                        {% elif "video" in file.type|lower %}
+                          <i class="fas fa-file-video text-red-500 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110 group-hover:drop-shadow-[0_0_6px_rgba(239,68,68,0.7)]"></i>
+                        {% elif "csv" in file.type|lower %}
+                          <i class="fas fa-file-csv text-red-500 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110 group-hover:drop-shadow-[0_0_6px_rgba(239,68,68,0.7)]"></i>
+                        {% else %}
+                          <i class="fas fa-file-alt text-red-500 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110 group-hover:drop-shadow-[0_0_6px_rgba(239,68,68,0.7)]"></i>
+                        {% endif %}
+                        {{ file.filename|cut:"media" }}
                     </span>
                 </td>
                 <td class="px-4 py-2">{{ file.type }}</td>
                 <td class="px-4 py-2">{{ file.upload_date|date:"d/m/Y H:i" }}</td>
-                <td class="px-4 py-2 space-x-2">
+                <td class="px-4 py-2 flex gap-2">
                     <form method="post" action="{% url 'analysis' %}" class="inline">
                         {% csrf_token %}
                         <input type="hidden" name="file_id" value="{{ file.id }}">
                         <button type="submit" 
-                                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg text-sm shadow">
+                                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg text-sm shadow transition hover:shadow-red-500/70 hover:scale-[1.05]">
                             <i class="fas fa-chart-line"></i> Analizar
                         </button>
                     </form>
                     <button 
                       type="button" 
-                      class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-lg text-sm shadow"
+                      class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm shadow transition hover:shadow-red-500/70 hover:scale-[1.05]"
                       onclick="makeEditable(this.closest('tr').querySelector('td:first-child'), {{ file.id }})">
                       <i class="fas fa-pencil-alt"></i> Editar
                     </button>
@@ -107,7 +133,7 @@
                         {% csrf_token %}
                         <input type="hidden" name="delete_file" value="{{ file.id }}">
                         <button type="submit" 
-                                class="bg-red-800 hover:bg-red-900 text-white px-3 py-1 rounded-lg text-sm shadow">
+                                class="bg-red-800 hover:bg-red-900 text-white px-3 py-1 rounded-lg text-sm shadow transition hover:shadow-red-500/70 hover:scale-[1.05]">
                             <i class="fas fa-trash-alt"></i> Borrar
                         </button>
                     </form>
@@ -122,51 +148,105 @@
     </table>
   </div>
 
-  <!-- Django messages -->
-  {% if messages %}
-    <div class="w-full max-w-6xl">
-      {% for message in messages %}
-          {% if "error" in message.tags %}
-              <div class="alert alert-danger">{{ message }}</div>
-          {% else %}
-              <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-          {% endif %}
-      {% endfor %}
-    </div>
-  {% endif %}
-
   <!-- Floating alerts -->
   <div id="alerts-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 w-80 z-50"></div>
 
 </div>
 {% endblock %}
 
+
 {% block extra_scripts %}
 <script>
-function showErrorAlert(message) {
+document.addEventListener('DOMContentLoaded', () => {
+  // -------------------------
+  // Helpers (alerts + cookie)
+  // -------------------------
+  function showAlert(text, type = 'error') {
     const container = document.getElementById('alerts-container');
     if (!container) return;
+    const id = `alert-${Date.now()}`;
+    const alert = document.createElement('div');
+    alert.id = id;
+    alert.className = (type === 'success')
+      ? 'bg-green-600 text-white px-4 py-2 rounded shadow-lg mb-2'
+      : 'bg-red-600 text-white px-4 py-2 rounded shadow-lg mb-2';
+    alert.textContent = text;
+    container.appendChild(alert);
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    }, 5000);
+  }
 
-    const alertDiv = document.createElement('div');
-    alertDiv.className = 'bg-red-600 text-white px-4 py-2 rounded shadow-lg mb-2 animate-slide-down';
-    alertDiv.textContent = message;
+  // Necesario para obtener el token CSRF que Django requiere
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (const cookie of cookies) {
+        const c = cookie.trim();
+        if (c.startsWith(name + '=')) {
+          cookieValue = decodeURIComponent(c.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
 
-    container.appendChild(alertDiv);
-    setTimeout(() => { alertDiv.remove(); }, 5000);
-}
+  // -------------------------
+  // Utilities to disable/restore action buttons
+  // -------------------------
+  function getAllActionButtons() {
+    const rows = Array.from(document.querySelectorAll('table tbody tr'));
+    const buttons = [];
+    rows.forEach(row => {
+      const lastTd = row.querySelectorAll('td')[row.querySelectorAll('td').length - 1];
+      if (!lastTd) return;
+      lastTd.querySelectorAll('button, input[type="submit"], input[type="button"]').forEach(btn => {
+        buttons.push(btn);
+      });
+    });
+    return buttons;
+  }
 
-function makeEditable(container, fileId) {
-    const span = container.querySelector('.file-name');
-    const originalName = span.textContent.trim();
+  function hideAllActionButtons() {
+    getAllActionButtons().forEach(btn => {
+      if (btn.dataset._origDisplay === undefined) btn.dataset._origDisplay = btn.style.display || '';
+      btn.style.display = 'none';
+    });
+  }
 
-    const lastDotIndex = originalName.lastIndexOf('.');
-    const baseName = originalName.substring(0, lastDotIndex);
-    const extension = originalName.substring(lastDotIndex);
+  function restoreAllActionButtons() {
+    getAllActionButtons().forEach(btn => {
+      if (btn.dataset._origDisplay !== undefined) {
+        btn.style.display = btn.dataset._origDisplay;
+        delete btn.dataset._origDisplay;
+      } else {
+        btn.style.display = '';
+      }
+    });
+  }
+
+  // -------------------------
+  // makeEditable / cancelEdit / saveNewName
+  // -------------------------
+  function makeEditable(td, fileId) {
+    if (!td) return;
+    const span = td.querySelector('.file-name');
+    if (!span) return;
+
+    td.dataset._origHtml = td.innerHTML;
+
+    const originalText = span.textContent.trim();
+    const lastDotIndex = originalText.lastIndexOf('.');
+    const baseName = lastDotIndex > 0 ? originalText.substring(0, lastDotIndex) : originalText;
+    const extension = lastDotIndex > 0 ? originalText.substring(lastDotIndex) : '';
 
     const input = document.createElement('input');
     input.type = 'text';
     input.value = baseName;
-    input.className = 'border rounded px-2 py-1 text-sm w-full';
+    input.className = 'border rounded px-2 py-1 text-sm w-full focus:ring-2 focus:ring-red-500 outline-none';
 
     const extSpan = document.createElement('span');
     extSpan.textContent = extension;
@@ -177,56 +257,141 @@ function makeEditable(container, fileId) {
     wrapper.appendChild(input);
     wrapper.appendChild(extSpan);
 
-    container.innerHTML = '';
-    container.appendChild(wrapper);
+    td.innerHTML = '';
+    td.appendChild(wrapper);
+    input.focus();
+    input.select();
 
-    // Hide buttons
-    document.querySelectorAll('.action-delete-btn, .action-edit-btn, .action-analyze-btn').forEach(btn => btn.style.display='none');
+    hideAllActionButtons();
 
-    const item = container.closest('.file-item');
+    const row = td.closest('tr');
+    const cells = row.querySelectorAll('td');
+    const actionsCell = cells[cells.length - 1];
+
+    // Confirmar (rojo, tick) y Cancelar (gris, X)
     const confirmBtn = document.createElement('button');
     confirmBtn.type = 'button';
-    confirmBtn.className = 'bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-sm ml-2 shadow';
-    confirmBtn.textContent = 'Confirmar';
-    confirmBtn.onclick = () => { saveNewName(fileId, input.value.trim(), extension, container, span); };
+    confirmBtn.className = 'confirm-edit-btn bg-red-600 hover:bg-red-700 text-white hover:shadow-red-500/70 animate-pulse-slow px-2 py-1 rounded text-sm ml-2 shadow flex items-center gap-1 transition hover:scale-[1.05]';
+    confirmBtn.innerHTML = '<i class="fas fa-check"></i> Confirmar';
 
-    item.querySelector('.actions-cell').appendChild(confirmBtn);
-    input.focus();
-}
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'cancel-edit-btn bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-sm ml-2 shadow flex items-center gap-1 transition hover:scale-[1.05]';
+    cancelBtn.innerHTML = '<i class="fas fa-times"></i> Cancelar';
 
-function saveNewName(fileId, baseName, extension, container, span) {
-    if (!baseName) { showErrorAlert('El nombre no puede estar vacío.'); return; }
-    const newName = baseName + extension;
+    actionsCell.appendChild(confirmBtn);
+    actionsCell.appendChild(cancelBtn);
 
-    fetch(`/files/rename/${fileId}/`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ new_name: newName })
-    })
-    .then(res => res.json())
-    .then(data => {
-        container.innerHTML = '';
-        const newSpan = document.createElement('span');
-        newSpan.className = 'file-name font-semibold text-gray-800 truncate';
-        newSpan.textContent = data.new_name + extension;
-        container.appendChild(newSpan);
-        document.querySelectorAll('.action-delete-btn, .action-edit-btn, .action-analyze-btn').forEach(btn => btn.style.display='flex');
-        const confirmBtn = container.closest('.file-item').querySelector('.confirm-edit-btn');
-        if (confirmBtn) confirmBtn.remove();
-    })
-    .catch(err => { showErrorAlert(err.message); });
-}
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); confirmBtn.click(); }
+      if (e.key === 'Escape') { e.preventDefault(); cancelEdit(td); }
+    });
 
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (const cookie of cookies) {
-            const c = cookie.trim();
-            if (c.startsWith(name + '=')) { cookieValue = decodeURIComponent(c.substring(name.length+1)); break; }
-        }
+    confirmBtn.addEventListener('click', () => {
+      const newBase = input.value.trim();
+      saveNewName(fileId, newBase, extension, td);
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      cancelEdit(td);
+    });
+  }
+
+  function cancelEdit(td) {
+    if (!td) return;
+    if (td.dataset._origHtml !== undefined) {
+      td.innerHTML = td.dataset._origHtml;
+      delete td.dataset._origHtml;
     }
-    return cookieValue;
-}
+    const row = td.closest('tr');
+    if (row) {
+      const actionsCell = row.querySelectorAll('td')[row.querySelectorAll('td').length - 1];
+      if (actionsCell) {
+        const confirm = actionsCell.querySelector('.confirm-edit-btn');
+        const cancel = actionsCell.querySelector('.cancel-edit-btn');
+        if (confirm) confirm.remove();
+        if (cancel) cancel.remove();
+      }
+    }
+    restoreAllActionButtons();
+  }
+
+  async function saveNewName(fileId, baseName, extension, td) {
+    if (!td) return;
+    if (!baseName) {
+      showAlert('El nombre no puede estar vacío.');
+      return;
+    }
+
+    const newName = baseName + extension;
+    const row = td.closest('tr');
+    const actionsCell = row ? row.querySelectorAll('td')[row.querySelectorAll('td').length - 1] : null;
+
+    try {
+      const res = await fetch(`/files/rename/${fileId}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ new_name: newName })
+      });
+
+      if (!res.ok) {
+        let msg = 'Error al renombrar el archivo.';
+        try {
+          const data = await res.json();
+          msg = data.error || msg;
+        } catch (err) {}
+        throw new Error(msg);
+      }
+
+      const data = await res.json();
+
+      let iconHtml = '<i class="fas fa-file-alt text-red-500"></i>';
+      if (row) {
+        const typeText = (row.querySelectorAll('td')[1] || {}).textContent || '';
+        const t = typeText.toLowerCase();
+        if (t.includes('image')) iconHtml = '<i class="fas fa-file-image text-red-500"></i>';
+        else if (t.includes('video')) iconHtml = '<i class="fas fa-file-video text-red-500"></i>';
+        else if (t.includes('csv')) iconHtml = '<i class="fas fa-file-csv text-red-500"></i>';
+      }
+
+      const displayName = (data.new_name || baseName) + extension;
+      td.innerHTML = `<span class="file-name flex items-center gap-2 text-gray-800 font-semibold">${iconHtml} ${escapeHtml(displayName)}</span>`;
+
+      if (actionsCell) {
+        const confirm = actionsCell.querySelector('.confirm-edit-btn');
+        const cancel = actionsCell.querySelector('.cancel-edit-btn');
+        if (confirm) confirm.remove();
+        if (cancel) cancel.remove();
+      }
+
+      restoreAllActionButtons();
+      showAlert('Nombre actualizado correctamente.', 'success');
+    } catch (err) {
+      showAlert(err.message || 'Error desconocido.');
+      cancelEdit(td);
+    }
+  }
+
+  function escapeHtml(unsafe) {
+    return unsafe
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  // Exponer globalmente para los onclick
+  window.makeEditable = function(tdSelectorOrElement, fileId) {
+    let td = tdSelectorOrElement;
+    if (typeof tdSelectorOrElement === 'string') td = document.querySelector(tdSelectorOrElement);
+    makeEditable(td, fileId);
+  };
+});
 </script>
 {% endblock %}
+
+
