@@ -3,23 +3,46 @@
 {% block title %}Algovision | Editar algoritmo{% endblock %}
 
 {% block sidebar_links %}
-  <li class="nav-item">
-    <a class="nav-link" href="{% url 'file_manager' %}">Mis archivos</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link" href="{% url 'analysis' %}">Realizar análisis</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link" href="{% url 'results' %}">Mis resultados</a>
-  </li>
-  {% if user.is_superuser %}
-    <li class="nav-item">
-      <a class="nav-link active" href="{% url 'manage_algorithms' %}">Gestionar algoritmos</a>
+  <ul class="flex flex-col gap-1 text-gray-300 font-medium">
+
+    <li>
+      <a href="{% url 'file_manager' %}"
+         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white">
+        📁 Mis archivos
+      </a>
     </li>
-  {% endif %}
-  <li class="nav-item">
-    <a class="nav-link" href="{% url 'accounts:logout' %}">Cerrar sesión</a>
-  </li>
+
+    <li>
+      <a href="{% url 'analysis' %}"
+         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white">
+        🔍 Realizar análisis
+      </a>
+    </li>
+
+    <li>
+      <a href="{% url 'results' %}"
+         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white">
+        📊 Mis resultados
+      </a>
+    </li>
+
+    {% if user.is_superuser %}
+    <li>
+      <a href="{% url 'manage_algorithms' %}"
+         class="block py-2.5 px-4 rounded-lg transition-all text-indigo-300 hover:bg-gray-800 hover:text-indigo-400 font-semibold">
+        ⚙️ Gestionar algoritmos
+      </a>
+    </li>
+    {% endif %}
+
+    <li class="pt-3 border-t border-gray-700 mt-2">
+      <a href="{% url 'accounts:logout' %}"
+         class="block py-2.5 px-4 rounded-lg text-red-400 hover:bg-gray-800 hover:text-red-300 transition-all font-semibold">
+        🚪 Cerrar sesión
+      </a>
+    </li>
+
+  </ul>
 {% endblock %}
 
 {% block content %}

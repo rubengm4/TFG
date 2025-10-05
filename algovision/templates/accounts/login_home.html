@@ -4,13 +4,25 @@
 {% block title %}Algovision | {{ source|title }}{% endblock %}
 
 {% block sidebar_links %}
-<li class="nav-item">
-    <a class="nav-link text-gray-200 hover:text-white" href="{% url 'accounts:login' %}">Iniciar sesión</a>
-</li>
-<li class="nav-item">
-    <a class="nav-link text-gray-200 hover:text-white" href="{% url 'accounts:register' %}">Registrarse</a>
-</li>
+  <ul class="flex flex-col gap-1 text-gray-300 font-medium">
+
+    <li>
+      <a href="{% url 'accounts:login' %}"
+         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white">
+        🔑 Iniciar sesión
+      </a>
+    </li>
+
+    <li>
+      <a href="{% url 'accounts:register' %}"
+         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white">
+        📝 Registrarse
+      </a>
+    </li>
+
+  </ul>
 {% endblock %}
+
 
 {% block content %}
 <div class="flex flex-col items-center min-h-screen px-4 py-8 space-y-6">

@@ -3,29 +3,6 @@
 
 {% block title %}Algovision{% endblock %}
 
-{% block sidebar_links %}
-  <li class="nav-item">
-    <a class="nav-link active" href="{% url 'dashboard' %}">Algovision</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link" href="{% url 'file_manager' %}">Mis archivos</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link" href="{% url 'analysis' %}">Realizar análisis</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link" href="{% url 'results' %}">Mis resultados</a>
-  </li>
-  {% if user.is_superuser %}
-    <li class="nav-item">
-      <a class="nav-link" href="{% url 'manage_algorithms' %}">Gestionar algoritmos</a>
-    </li>
-  {% endif %}
-  <li class="nav-item">
-    <a class="nav-link" href="{% url 'accounts:logout' %}">Cerrar sesión</a>
-  </li>
-{% endblock %}
-
 {% block content %}
 <div class="flex flex-col items-center min-h-screen px-4 py-8 space-y-6">
 
