@@ -1,40 +1,35 @@
 {% extends "base.html" %}
+{% load static %}
+{% load dynamic_url %}
 
 {% block title %}Algovision | Registro{% endblock %}
 
 {% block content %}
-{% load dynamic_url %}
-<div class="flex flex-col items-center justify-center min-h-screen px-4 space-y-6">
+<div class="flex flex-col items-center justify-center min-h-screen px-4 py-8 space-y-6">
 
-  <!-- Back Button -->
-  <div class="w-full max-w-md text-left">
+  <!-- Back Button Centered -->
+  <div class="w-full flex justify-center">
     <a href="{% dynamic_url source|add:'_home' %}" 
-       class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-all shadow group">
-        <i class="fas fa-arrow-left mr-2 transition-transform duration-300 ease-in-out group-hover:-translate-x-1"></i>
-        Volver al menú {{ source }}
+       class="inline-flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg shadow transition-all hover:scale-[1.02]">
+      <i class="fas fa-arrow-left transition-transform duration-300 ease-in-out group-hover:-translate-x-1"></i>
+      Volver al menú {{ source }}
     </a>
   </div>
 
   <!-- Register Card -->
-  <div class="bg-white rounded-lg shadow p-8 w-full max-w-md transition-transform transform hover:-translate-y-1 hover:shadow-xl">
-    
-    <h2 class="text-2xl font-bold text-gray-800 text-center mb-6">Registro</h2>
+  <div class="bg-gradient-to-br from-indigo-100 to-purple-200 rounded-xl shadow-lg p-8 w-full max-w-md transition-all hover:shadow-purple-300/50 hover:scale-[1.01]">
+
+    <h2 class="text-3xl font-bold text-gray-800 text-center mb-6">Registro</h2>
 
     <!-- Messages -->
     {% if messages %}
       {% for message in messages %}
         {% if "error" in message.tags %}
-          <div class="bg-red-100 text-red-700 p-2 rounded w-full text-center mb-2">
-            {{ message }}
-          </div>
+          <div class="bg-red-100 text-red-700 p-2 rounded w-full text-center mb-2">{{ message }}</div>
         {% elif "success" in message.tags %}
-          <div class="bg-green-100 text-green-700 p-2 rounded w-full text-center mb-2">
-            {{ message }}
-          </div>
+          <div class="bg-green-100 text-green-700 p-2 rounded w-full text-center mb-2">{{ message }}</div>
         {% else %}
-          <div class="bg-gray-100 text-gray-700 p-2 rounded w-full text-center mb-2">
-            {{ message }}
-          </div>
+          <div class="bg-gray-100 text-gray-700 p-2 rounded w-full text-center mb-2">{{ message }}</div>
         {% endif %}
       {% endfor %}
     {% endif %}
@@ -48,7 +43,7 @@
     {% endif %}
 
     <!-- Form -->
-    <form method="post" novalidate class="space-y-4">
+    <form method="post" novalidate class="space-y-4 text-left">
       {% csrf_token %}
       {% for field in form %}
         <div>
@@ -62,8 +57,8 @@
         </div>
       {% endfor %}
 
-      <!-- Password Rules + Match Box -->
-      <div id="passwordBox" class="bg-gray-50 rounded p-3 text-sm mt-3 border border-gray-200">
+      <!-- Password Rules -->
+      <div id="passwordBox" class="bg-gray-50 rounded-lg p-3 text-sm mt-3 border border-gray-200 shadow-inner">
         <p class="font-semibold mb-2">Requisitos de la contraseña:</p>
         <ul id="password-rules" class="space-y-1 mb-3">
           <li id="rule-length" class="text-red-600">❌ Al menos 8 caracteres</li>
@@ -76,15 +71,17 @@
         <p id="strength-label" class="mt-1 text-xs text-gray-600">Fuerza: Muy débil</p>
       </div>
 
+      <!-- Submit -->
       <button type="submit" 
-              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-all flex items-center justify-center gap-2">
-          <i class="fas fa-user-plus"></i> Registrarse
+              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg shadow-md flex items-center justify-center gap-2 transition-all hover:scale-[1.02] hover:shadow-indigo-400/60">
+        <i class="fas fa-user-plus"></i> Registrarse
       </button>
 
-      <p class="text-center text-gray-600 mt-3 text-sm">
+      <!-- Login link -->
+      <p class="text-center text-gray-700 mt-3 text-sm">
         ¿Ya tienes una cuenta?
         <a href="{% url 'accounts:login' %}" 
-           class="text-blue-600 hover:text-blue-700 font-semibold inline-flex items-center gap-1">
+           class="text-indigo-600 hover:text-indigo-700 font-semibold inline-flex items-center gap-1 transition-colors">
           <i class="fas fa-sign-in-alt"></i> Inicia sesión
         </a>
       </p>
@@ -95,12 +92,11 @@
 
 {% block extra_styles %}
 <style>
-  /* Campos con fondo gris cuando vacíos, blanco cuando tienen valor */
   input[type="text"],
   input[type="email"],
   input[type="password"] {
-    @apply w-full px-3 py-2 rounded border border-gray-300 bg-gray-100 text-gray-900
-           focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors;
+    @apply w-full px-3 py-2 rounded-lg border border-gray-300 bg-gray-100 text-gray-900
+           focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors;
   }
   input:valid {
     @apply bg-white;
@@ -113,7 +109,6 @@
 document.addEventListener('DOMContentLoaded', function () {
   const passwordField = document.getElementById('id_password1');
   const confirmField = document.getElementById('id_password2');
-
   if (!passwordField || !confirmField) return;
 
   const ruleLength = document.getElementById('rule-length');
@@ -130,17 +125,21 @@ document.addEventListener('DOMContentLoaded', function () {
     if (/[^A-Za-z0-9]/.test(pwd)) strength++;
     if (pwd.length >= 16) strength++;
 
+    // Fallback to 1 if no strength detected
+    if (strength === 0) strength = 1;
+
     const widths = ["w-1/5", "w-2/5", "w-3/5", "w-4/5", "w-full"];
     const colors = ["bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-blue-500", "bg-green-500"];
     const labels = ["Muy débil", "Débil", "Aceptable", "Fuerte", "Muy fuerte"];
 
-    strengthBar.className = `h-2 rounded-full transition-all ${widths[strength-1] || "w-1/5"} ${colors[strength-1] || "bg-red-500"}`;
-    strengthLabel.textContent = `Fuerza: ${labels[strength-1] || "Muy débil"}`;
+    strengthBar.className = `h-2 rounded-full transition-all ${widths[strength-1]} ${colors[strength-1]}`;
+    strengthLabel.textContent = `Fuerza: ${labels[strength-1]}`;
   }
 
   function checkRules() {
     const pwd = passwordField.value;
-    // Length
+
+    // Length rule
     if (pwd.length >= 8) {
       ruleLength.className = "text-green-600";
       ruleLength.textContent = "✅ Al menos 8 caracteres";
@@ -148,7 +147,8 @@ document.addEventListener('DOMContentLoaded', function () {
       ruleLength.className = "text-red-600";
       ruleLength.textContent = "❌ Al menos 8 caracteres";
     }
-    // Numeric
+
+    // Numeric rule
     if (/^\d+$/.test(pwd) || pwd.length === 0) {
       ruleNumeric.className = "text-red-600";
       ruleNumeric.textContent = "❌ No ser solo números";
@@ -156,7 +156,8 @@ document.addEventListener('DOMContentLoaded', function () {
       ruleNumeric.className = "text-green-600";
       ruleNumeric.textContent = "✅ No ser solo números";
     }
-    // Match
+
+    // Match rule
     if (confirmField.value === "") {
       ruleMatch.className = "text-red-600";
       ruleMatch.textContent = "❌ Las contraseñas coinciden";
@@ -169,11 +170,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  // Live updates
   passwordField.addEventListener('input', function() {
     updateStrength(passwordField.value);
     checkRules();
   });
   confirmField.addEventListener('input', checkRules);
+
+  // Initialize on load
+  updateStrength(passwordField.value);
+  checkRules();
 });
 </script>
 {% endblock %}
+

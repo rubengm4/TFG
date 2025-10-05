@@ -4,40 +4,58 @@
 {% block title %}Algovision | {{ source|title }}{% endblock %}
 
 {% block sidebar_links %}
-    <li class="nav-item">
-        <a class="nav-link text-gray-200 hover:text-white" href="{% url 'accounts:login' %}">Iniciar sesión</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-gray-200 hover:text-white" href="{% url 'accounts:register' %}">Registrarse</a>
-    </li>
+<li class="nav-item">
+    <a class="nav-link text-gray-200 hover:text-white" href="{% url 'accounts:login' %}">Iniciar sesión</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link text-gray-200 hover:text-white" href="{% url 'accounts:register' %}">Registrarse</a>
+</li>
 {% endblock %}
 
 {% block content %}
-<div class="flex flex-col items-center justify-center py-12 space-y-8">
+<div class="flex flex-col items-center min-h-screen px-4 py-8 space-y-6">
 
-    <!-- Hero Section with Gradient -->
-    <div class="bg-gradient-to-r from-blue-100 to-indigo-100 rounded-lg shadow p-8 text-center max-w-3xl w-full space-y-4">
-        <h1 class="text-4xl font-bold text-gray-800">Estás en {{ source|title }}</h1>
-        <p class="text-gray-600 text-lg">Aquí puedes iniciar sesión y gestionar tus algoritmos en el entorno de {{ source }}.</p>
-        
-        <!-- Volver Button with Animated Arrow -->
-        <a href="{% url 'index' %}" class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-all shadow group">
-            <i class="fas fa-arrow-left mr-2 transition-transform duration-300 ease-in-out group-hover:-translate-x-1"></i>
-            Volver al menú principal
-        </a>
-    </div>
+  <!-- Back Button Centered -->
+  <div class="w-full flex justify-center">
+    <a href="{% url 'index' %}" 
+       class="inline-flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg shadow transition-all hover:scale-[1.02]">
+      <i class="fas fa-arrow-left transition-transform duration-300 ease-in-out group-hover:-translate-x-1"></i>
+      Volver al menú principal
+    </a>
+  </div>
 
+  <!-- Hero Section with Buttons -->
+  <div class="bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl shadow-lg p-8 max-w-3xl w-full text-center space-y-6 hover:shadow-indigo-300/50 transition-all">
+
+    <h1 class="text-4xl font-bold text-gray-800">Estás en {{ source|title }}</h1>
+    <p class="text-gray-600 text-lg">Aquí puedes iniciar sesión y gestionar tus algoritmos en el entorno de <span class="font-semibold text-gray-800">{{ source }}</span>.</p>
+    
     <!-- Action Buttons -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-md px-4">
-        <a href="{% url 'accounts:login' %}" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg shadow flex items-center justify-center gap-2 transition-all transform hover:scale-105">
-            <i class="fas fa-sign-in-alt text-lg"></i>
-            Iniciar sesión
-        </a>
+    <div class="flex flex-col sm:flex-row justify-center gap-6 mt-4">
+      <a href="{% url 'accounts:login' %}" 
+         class="flex-1 bg-gradient-to-br from-teal-100 to-teal-300 shadow-lg rounded-xl p-6 flex flex-col items-center hover:shadow-teal-400/50 hover:scale-[1.01] transition-all">
+        <i class="fas fa-sign-in-alt text-4xl text-teal-600 mb-2"></i>
+        <span class="font-bold text-gray-800">Iniciar sesión</span>
+      </a>
 
-        <a href="{% url 'accounts:register' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow flex items-center justify-center gap-2 transition-all transform hover:scale-105">
-            <i class="fas fa-user-plus text-lg"></i>
-            Registrarse
-        </a>
+      <a href="{% url 'accounts:register' %}" 
+         class="flex-1 bg-gradient-to-br from-orange-100 to-orange-300 shadow-lg rounded-xl p-6 flex flex-col items-center hover:shadow-orange-400/50 hover:scale-[1.01] transition-all">
+        <i class="fas fa-user-plus text-4xl text-orange-600 mb-2"></i>
+        <span class="font-bold text-gray-800">Registrarse</span>
+      </a>
     </div>
+
+  </div>
+
 </div>
+
+<style>
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.05); }
+}
+.animate-pulse-slow {
+  animation: pulse-slow 2.5s ease-in-out infinite;
+}
+</style>
 {% endblock %}

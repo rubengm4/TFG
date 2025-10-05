@@ -3,48 +3,85 @@
 
 {% block title %}Algovision{% endblock %}
 
+{% block sidebar_links %}
+  <li class="nav-item">
+    <a class="nav-link active" href="{% url 'dashboard' %}">Algovision</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'file_manager' %}">Mis archivos</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'analysis' %}">Realizar análisis</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'results' %}">Mis resultados</a>
+  </li>
+  {% if user.is_superuser %}
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'manage_algorithms' %}">Gestionar algoritmos</a>
+    </li>
+  {% endif %}
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:logout' %}">Cerrar sesión</a>
+  </li>
+{% endblock %}
+
 {% block content %}
-<div class="flex flex-col items-center justify-center py-12 space-y-8">
+<div class="flex flex-col items-center min-h-screen px-4 py-8 space-y-6">
 
-    <!-- Hero Section with Gradient -->
-    <div class="bg-gradient-to-r from-blue-100 to-indigo-100 rounded-lg shadow p-8 text-center max-w-3xl w-full">
-      <h1 class="text-4xl font-bold text-gray-800 mb-3">Bienvenido a Algovision</h1>
-      <p class="text-gray-600 text-lg">Aplicación de gestión de algoritmos de IA</p>
-    </div>
+  <!-- Title -->
+  <div class="text-center">
+    <h2 class="text-3xl font-bold text-gray-800 flex items-center justify-center gap-3">
+      <i class="fas fa-brain text-blue-500 drop-shadow-[0_0_8px_rgba(21,101,192,0.7)] animate-pulse-slow"></i>
+      Algovision
+    </h2>
+    <p class="text-gray-600 mt-2">Aplicación de gestión de algoritmos de IA</p>
+  </div>
 
-    <!-- Analysis Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-6xl px-4">
+  <!-- Cards Container -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-6xl px-4">
 
-        <!-- FV Analysis Card -->
-        <form method="post" action="{% url 'accounts:set_source' %}" class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-all transform hover:scale-105 flex flex-col items-center">
-            {% csrf_token %}
-            <input type="hidden" name="source" value="fv-analysis" />
-            <i class="fas fa-chart-line text-5xl text-blue-600 mb-4"></i>
-            <h2 class="text-xl font-semibold mb-2 text-gray-800">FV Analysis</h2>
-            <p class="text-gray-500 mb-4 text-center">Analiza y gestiona los algoritmos de placas fotovoltaicas</p>
-            <button type="submit" class="mt-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded transition-all w-full">Abrir</button>
-        </form>
+    <!-- FV Analysis Card -->
+    <form method="post" action="{% url 'accounts:set_source' %}" class="bg-gradient-to-br from-teal-100 to-teal-300 shadow-lg rounded-xl p-6 flex flex-col items-center hover:shadow-teal-400/50 hover:scale-[1.01] transition-all">
+      {% csrf_token %}
+      <input type="hidden" name="source" value="fv-analysis" />
+      <i class="fas fa-solar-panel text-5xl text-teal-600 mb-4"></i>
+      <h3 class="text-xl font-bold text-gray-800 mb-2">FV Analysis</h3>
+      <p class="text-gray-600 text-center mb-4">Analiza y gestiona los algoritmos de placas fotovoltaicas</p>
+      <button type="submit" class="mt-auto bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-6 rounded-lg transition-all w-full">Abrir</button>
+    </form>
 
-        <!-- People Analysis Card -->
-        <form method="post" action="{% url 'accounts:set_source' %}" class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-all transform hover:scale-105 flex flex-col items-center">
-            {% csrf_token %}
-            <input type="hidden" name="source" value="people-analysis" />
-            <i class="fas fa-users text-5xl text-green-600 mb-4"></i>
-            <h2 class="text-xl font-semibold mb-2 text-gray-800">People Analysis</h2>
-            <p class="text-gray-500 mb-4 text-center">Gestión de análisis de personas y algoritmos relacionados</p>
-            <button type="submit" class="mt-auto bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded transition-all w-full">Abrir</button>
-        </form>
+    <!-- People Analysis Card -->
+    <form method="post" action="{% url 'accounts:set_source' %}" class="bg-gradient-to-br from-orange-100 to-orange-300 shadow-lg rounded-xl p-6 flex flex-col items-center hover:shadow-orange-400/50 hover:scale-[1.01] transition-all">
+      {% csrf_token %}
+      <input type="hidden" name="source" value="people-analysis" />
+      <i class="fas fa-users text-5xl text-orange-600 mb-4"></i>
+      <h3 class="text-xl font-bold text-gray-800 mb-2">People Analysis</h3>
+      <p class="text-gray-600 text-center mb-4">Gestión de análisis de personas y algoritmos relacionados</p>
+      <button type="submit" class="mt-auto bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-6 rounded-lg transition-all w-full">Abrir</button>
+    </form>
 
-        <!-- Stats Analysis Card -->
-        <form method="post" action="{% url 'accounts:set_source' %}" class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-all transform hover:scale-105 flex flex-col items-center">
-            {% csrf_token %}
-            <input type="hidden" name="source" value="stats-analysis" />
-            <i class="fas fa-chart-pie text-5xl text-purple-600 mb-4"></i>
-            <h2 class="text-xl font-semibold mb-2 text-gray-800">Stats Analysis</h2>
-            <p class="text-gray-500 mb-4 text-center">Generación de estadísticas y tendencias a partir de archivos CSV</p>
-            <button type="submit" class="mt-auto bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-2 rounded transition-all w-full">Abrir</button>
-        </form>
+    <!-- Stats Analysis Card -->
+    <form method="post" action="{% url 'accounts:set_source' %}" class="bg-gradient-to-br from-purple-100 to-purple-300 shadow-lg rounded-xl p-6 flex flex-col items-center hover:shadow-purple-400/50 hover:scale-[1.01] transition-all">
+      {% csrf_token %}
+      <input type="hidden" name="source" value="stats-analysis" />
+      <i class="fas fa-chart-pie text-5xl text-purple-600 mb-4"></i>
+      <h3 class="text-xl font-bold text-gray-800 mb-2">Stats Analysis</h3>
+      <p class="text-gray-600 text-center mb-4">Generación de estadísticas y tendencias a partir de archivos CSV</p>
+      <button type="submit" class="mt-auto bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-all w-full">Abrir</button>
+    </form>
 
-    </div>
+  </div>
+
 </div>
+
+<style>
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.05); }
+}
+.animate-pulse-slow {
+  animation: pulse-slow 2.5s ease-in-out infinite;
+}
+</style>
 {% endblock %}
