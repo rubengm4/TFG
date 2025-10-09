@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block title %}Algovision | Gestionar algoritmos{% endblock %}
 
@@ -86,21 +86,40 @@
     </div>
   {% endif %}
 
-  <!-- Algorithms Table -->
+  <!-- Algorithms Table (gradient container) -->
   <div class="bg-gradient-to-br from-green-100 to-green-300 shadow-lg rounded-xl p-6 w-full max-w-6xl hover:shadow-green-400/50 hover:scale-[1.01] transition-all">
     {% if algorithms %}
     <div class="overflow-x-auto rounded-xl border border-green-200 shadow-inner">
       <table class="min-w-full text-sm text-left">
         <thead class="bg-green-600 text-white">
           <tr>
-            <th class="px-6 py-3">Nombre</th>
-            <th class="px-6 py-3">Versión</th>
-            <th class="px-6 py-3">Proyecto</th>
-            <th class="px-6 py-3">Tipos de archivo admitidos</th>
-            <th class="px-6 py-3">Archivo</th>
+            <th class="px-6 py-3 cursor-pointer" onclick="sortTableByColumn(0)">
+                <span class="inline-flex items-center gap-1">
+                    Nombre <span class="sort-arrow" data-index="0"></span>
+                </span>
+            </th>
+            <th class="px-6 py-3 cursor-pointer" onclick="sortTableByColumn(1)">
+                <span class="inline-flex items-center gap-1">
+                    Versión <span class="sort-arrow" data-index="1"></span>
+                </span>
+            </th>
+            <th class="px-6 py-3 cursor-pointer" onclick="sortTableByColumn(2)">
+                <span class="inline-flex items-center gap-1">
+                    Proyecto <span class="sort-arrow" data-index="2"></span>
+                </span>
+            </th>
+            <th class="px-6 py-3 cursor-pointer" onclick="sortTableByColumn(3)">
+                <span class="inline-flex items-center gap-1">
+                    Tipos de archivo admitidos <span class="sort-arrow" data-index="3"></span>
+                </span>
+            </th>
+            <th class="px-6 py-3">
+              Archivo
+            </th>
             <th class="px-6 py-3">Acciones</th>
           </tr>
         </thead>
+
         <tbody class="divide-y divide-gray-100">
           {% for algo in algorithms %}
           <tr class="bg-white hover:bg-green-50 transition">
@@ -143,8 +162,6 @@
     {% endif %}
   </div>
 
-
-
   <!-- Create Algorithm Button (left) -->
   <div class="w-full max-w-6xl flex justify-start mt-4">
     <a href="{% url 'create_algorithm' %}"
@@ -158,7 +175,57 @@
 
 {% block extra_scripts %}
 <script>
-  // Modern confirmation before deleting
+/* Ordenado cliente - columna por defecto: 0 (Nombre) ascendente.
+   - Excluye filas vacías (td[colspan]) al ordenar
+   - Actualiza pequeñas flechas en los th (sort-arrow) */
+let currentSort = { column: 0, ascending: true };
+
+function sortTableByColumn(colIndex, forceAscending = null) {
+  const tbody = document.querySelector("table tbody");
+  if (!tbody) return;
+
+  // todas las filas reutilizables (descartar fila placeholder con colspan)
+  const allRows = Array.from(tbody.querySelectorAll("tr"));
+  const rows = allRows.filter(r => !r.querySelector("td[colspan]"));
+
+  const isSameColumn = currentSort.column === colIndex;
+  const ascending = forceAscending !== null ? forceAscending : (isSameColumn ? !currentSort.ascending : true);
+
+  rows.sort((a, b) => {
+    const aCell = a.children[colIndex];
+    const bCell = b.children[colIndex];
+
+    const aText = (aCell && aCell.textContent) ? aCell.textContent.trim().toLowerCase() : "";
+    const bText = (bCell && bCell.textContent) ? bCell.textContent.trim().toLowerCase() : "";
+
+    // uso localeCompare para orden natural (números incluidos)
+    const cmp = aText.localeCompare(bText, undefined, { numeric: true, sensitivity: 'base' });
+    return ascending ? cmp : -cmp;
+  });
+
+  rows.forEach(row => tbody.appendChild(row));
+
+  // append any placeholder rows (with colspan) after sorted rows
+  allRows.filter(r => r.querySelector("td[colspan]")).forEach(r => tbody.appendChild(r));
+
+  currentSort = { column: colIndex, ascending };
+  updateSortArrows();
+}
+
+function updateSortArrows() {
+  const arrows = document.querySelectorAll(".sort-arrow");
+  arrows.forEach(arrow => {
+    const index = parseInt(arrow.dataset.index);
+    arrow.textContent = (index === currentSort.column) ? (currentSort.ascending ? "↑" : "↓") : "";
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  // orden inicial por nombre ascendente
+  currentSort = { column: 0, ascending: true };
+  sortTableByColumn(0, true);
+
+  // confirmación moderna para borrar
   document.querySelectorAll(".delete-form").forEach(form => {
     form.addEventListener("submit", e => {
       e.preventDefault();
@@ -166,9 +233,17 @@
       form.submit();
     });
   });
+});
 </script>
 
 <style>
+.sort-arrow {
+  display: inline-block;
+  margin-left: 2px;
+  color: rgba(255,255,255,0.9);
+  font-weight: 900;
+}
+
 @keyframes pulse-slow {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.85; transform: scale(1.05); }
