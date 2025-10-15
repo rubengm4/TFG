@@ -22,7 +22,7 @@ from typing import Any, List, Dict
 from .aux_file_func import is_size_valid, is_type_valid, extension_getter, name_change
 from .models import File, Algorithm, Project, Execution, Output
 from .forms import AlgorithmForm
-from .tasks import ejecutar_algoritmo_task
+from .tasks import ejecutar_algoritmo_task, install_requirements_task, REQUIREMENTS_PATH
 
 
 class HomepageView(TemplateView):
@@ -339,6 +339,106 @@ class DownloadOutputView(LoginRequiredMixin, View):
             return FileResponse(output.file.open('rb'), as_attachment=True, filename=output.file.name)
         except Output.DoesNotExist:
             raise Http404("Output no encontrado.")
+
+
+LOG_PATH = os.path.join(settings.MEDIA_ROOT, 'envs', 'debug_install.log')
+
+
+class ManageRequirementsView(LoginRequiredMixin, UserPassesTestMixin, View):
+    template_name = "manage_requirements.html"
+
+    def get(self, request):
+        packages = []
+        if os.path.exists(REQUIREMENTS_PATH):
+            with open(REQUIREMENTS_PATH, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    if '==' in line:
+                        name, version = line.split('==', 1)
+                    else:
+                        name, version = line, ''
+                    packages.append({'name': name, 'version': version})
+
+        logs = ""
+        if os.path.exists(LOG_PATH):
+            with open(LOG_PATH, 'r') as f:
+                logs = f.read()
+
+        # Soporta solo logs si se llama con ?logs_only=1
+        if request.GET.get('logs_only') == '1':
+            from django.http import HttpResponse
+            return HttpResponse(logs)
+
+        return render(request, self.template_name, {
+            'packages': packages,
+            'logs': logs
+        })
+
+    def post(self, request):
+        # Recolectar filas enviadas
+        package_names = request.POST.getlist('package_name')
+        package_versions = request.POST.getlist('package_version')
+
+        lines = []
+        for name, version in zip(package_names, package_versions):
+            name = name.strip()
+            version = version.strip() or ''  # si no hay version, se instala latest
+            if name:
+                if version:
+                    lines.append(f"{name}=={version}")
+                else:
+                    lines.append(name)
+
+        # Guardar en requirements_global.txt
+        os.makedirs(os.path.dirname(REQUIREMENTS_PATH), exist_ok=True)
+        with open(REQUIREMENTS_PATH, 'w') as f:
+            f.write("\n".join(lines) + "\n")
+
+        # Lanzar instalación via Celery
+        install_requirements_task.delay()
+
+        messages.success(
+            request, "Requirements guardados y la instalación se ha iniciado en segundo plano.")
+        return redirect('manage_requirements')
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+
+# Guardamos un timestamp global en memoria para simplicidad
+# Cada vez que se actualiza requirements_global.txt se cambia
+REQUIREMENTS_LAST_MOD = 0
+
+
+class RequirementsJSONView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def get(self, request):
+        global REQUIREMENTS_LAST_MOD
+        packages = []
+
+        if REQUIREMENTS_PATH.exists():
+            # timestamp de modificación del archivo
+            ts = int(REQUIREMENTS_PATH.stat().st_mtime)
+
+            # solo actualizamos el hash si cambió
+            if ts != REQUIREMENTS_LAST_MOD:
+                REQUIREMENTS_LAST_MOD = ts
+
+            for line in REQUIREMENTS_PATH.read_text().splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                if '==' in line:
+                    name, version = line.split('==', 1)
+                else:
+                    name, version = line, ''
+                packages.append({'name': name, 'version': version})
+
+        return JsonResponse({'packages': packages, 'timestamp': REQUIREMENTS_LAST_MOD})
+
+    def test_func(self):
+        return self.request.user.is_superuser
 
 
 class CreateAlgorithmView(LoginRequiredMixin, UserPassesTestMixin, CreateView):

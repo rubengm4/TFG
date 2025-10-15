@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Algovision | Gestionar Requerimientos{% endblock %}
+
+{% block extra_head %}
+<!-- Font Awesome para iconos -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col items-center w-full max-w-4xl mx-auto space-y-4">
+
+  <h2 class="text-3xl font-bold text-gray-800 mb-4">Editar Requerimientos Globales</h2>
+
+      {% if messages %}
+      {% for message in messages %}
+        {% if "error" in message.tags %}
+          <div class="bg-red-100 text-red-700 p-2 rounded w-full text-center mb-2">
+            {{ message }}
+          </div>
+        {% elif "success" in message.tags %}
+          <div class="bg-green-100 text-green-700 p-2 rounded w-full text-center mb-2">
+            {{ message }}
+          </div>
+        {% else %}
+          <div class="bg-gray-100 text-gray-700 p-2 rounded w-full text-center mb-2">
+            {{ message }}
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+  <form method="POST" id="requirements-form">
+    {% csrf_token %}
+    <table class="w-full border border-gray-300 rounded-lg overflow-hidden">
+      <thead class="bg-green-600 text-white">
+        <tr>
+          <th class="px-4 py-2 text-left">Paquete</th>
+          <th class="px-4 py-2 text-left">Versión</th>
+          <th class="px-4 py-2 text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="requirements-body">
+        {% for pkg in packages %}
+        <tr class="bg-white border-b hover:bg-green-50 transition">
+          <td class="px-2 py-1">
+            <input type="text" name="package_name" value="{{ pkg.name }}" class="w-full border rounded px-2 py-1">
+          </td>
+          <td class="px-2 py-1">
+            <input type="text" name="package_version" value="{{ pkg.version }}" placeholder="latest" class="w-full border rounded px-2 py-1">
+          </td>
+          <td class="px-2 py-1 text-center">
+            <button type="button" class="remove-row bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="flex justify-start mt-3 gap-2">
+      <button type="button" id="add-row" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-semibold shadow transition-all flex items-center gap-2">
+        <i class="fas fa-plus"></i> Añadir paquete
+      </button>
+      <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded font-bold shadow transition-all flex items-center gap-2">
+        <i class="fas fa-play"></i> Guardar e instalar
+      </button>
+    </div>
+  </form>
+
+  <div class="w-full">
+    <label class="block font-semibold mb-1 mt-6">Logs de instalación</label>
+    <textarea id="install-logs" readonly rows="15" class="w-full border border-gray-300 rounded-lg p-2 font-mono text-sm bg-gray-100">{{ logs }}</textarea>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const tbody = document.getElementById("requirements-body");
+
+  // Añadir fila
+  document.getElementById("add-row").addEventListener("click", function() {
+    const row = document.createElement("tr");
+    row.className = "bg-white border-b hover:bg-green-50 transition";
+    row.innerHTML = `
+      <td class="px-2 py-1"><input type="text" name="package_name" value="" class="w-full border rounded px-2 py-1"></td>
+      <td class="px-2 py-1"><input type="text" name="package_version" value="" placeholder="latest" class="w-full border rounded px-2 py-1"></td>
+      <td class="px-2 py-1 text-center"><button type="button" class="remove-row bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"><i class="fas fa-trash"></i></button></td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  // Eliminar fila
+  tbody.addEventListener("click", function(e) {
+    if(e.target && (e.target.matches("button.remove-row") || e.target.closest("button.remove-row"))){
+      e.target.closest("tr").remove();
+    }
+  });
+
+  // Refrescar logs cada 5 segundos
+  async function refreshLogs() {
+    try {
+      const response = await fetch("{% url 'manage_requirements' %}?logs_only=1");
+      if(response.ok){
+        const text = await response.text();
+        document.getElementById("install-logs").value = text;
+      }
+    } catch(e) {
+      console.error("Error al actualizar logs:", e);
+    }
+  }
+  setInterval(refreshLogs, 5000);
+});
+
+let lastReqTimestamp = 0;
+
+async function refreshRequirementsTable() {
+    try {
+        const response = await fetch("{% url 'requirements_json' %}");
+        if (!response.ok) return;
+        const data = await response.json();
+
+        // Solo actualizar si hay cambios
+        if (data.timestamp === lastReqTimestamp) return;
+        lastReqTimestamp = data.timestamp;
+
+        const tbody = document.getElementById("requirements-body");
+        tbody.innerHTML = "";
+        data.packages.forEach(pkg => {
+            const row = document.createElement("tr");
+            row.className = "bg-white border-b hover:bg-green-50 transition";
+            row.innerHTML = `
+                <td class="px-2 py-1"><input type="text" name="package_name" value="${pkg.name}" class="w-full border rounded px-2 py-1"></td>
+                <td class="px-2 py-1"><input type="text" name="package_version" value="${pkg.version}" placeholder="latest" class="w-full border rounded px-2 py-1"></td>
+                <td class="px-2 py-1 text-center"><button type="button" class="remove-row bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"><i class="fas fa-trash"></i></button></td>
+            `;
+            tbody.appendChild(row);
+        });
+    } catch(e) {
+        console.error("Error al actualizar tabla de paquetes:", e);
+    }
+}
+
+// Fetch cada 5 segundos pero solo se renderiza si cambia el timestamp
+setInterval(refreshRequirementsTable, 5000);
+</script>
+{% endblock %}
