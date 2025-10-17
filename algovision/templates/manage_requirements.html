@@ -3,32 +3,24 @@
 {% block title %}Algovision | Gestionar Requerimientos{% endblock %}
 
 {% block extra_head %}
-<!-- Font Awesome para iconos -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 {% endblock %}
 
 {% block content %}
 <div class="flex flex-col items-center w-full max-w-4xl mx-auto space-y-4">
-
   <h2 class="text-3xl font-bold text-gray-800 mb-4">Editar Requerimientos Globales</h2>
 
-      {% if messages %}
-      {% for message in messages %}
-        {% if "error" in message.tags %}
-          <div class="bg-red-100 text-red-700 p-2 rounded w-full text-center mb-2">
-            {{ message }}
-          </div>
-        {% elif "success" in message.tags %}
-          <div class="bg-green-100 text-green-700 p-2 rounded w-full text-center mb-2">
-            {{ message }}
-          </div>
-        {% else %}
-          <div class="bg-gray-100 text-gray-700 p-2 rounded w-full text-center mb-2">
-            {{ message }}
-          </div>
-        {% endif %}
-      {% endfor %}
-    {% endif %}
+  {% if messages %}
+    {% for message in messages %}
+      {% if "error" in message.tags %}
+        <div class="bg-red-100 text-red-700 p-2 rounded w-full text-center mb-2">{{ message }}</div>
+      {% elif "success" in message.tags %}
+        <div class="bg-green-100 text-green-700 p-2 rounded w-full text-center mb-2">{{ message }}</div>
+      {% else %}
+        <div class="bg-gray-100 text-gray-700 p-2 rounded w-full text-center mb-2">{{ message }}</div>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
 
   <form method="POST" id="requirements-form">
     {% csrf_token %}
@@ -44,13 +36,13 @@
         {% for pkg in packages %}
         <tr class="bg-white border-b hover:bg-green-50 transition">
           <td class="px-2 py-1">
-            <input type="text" name="package_name" value="{{ pkg.name }}" class="w-full border rounded px-2 py-1">
+            <input type="text" name="package_name" value="{{ pkg.name }}" class="package-input w-full border rounded px-2 py-1 bg-gray-100" readonly>
           </td>
           <td class="px-2 py-1">
-            <input type="text" name="package_version" value="{{ pkg.version }}" placeholder="latest" class="w-full border rounded px-2 py-1">
+            <input type="text" name="package_version" value="{{ pkg.version }}" placeholder="latest" class="package-input w-full border rounded px-2 py-1 bg-gray-100" readonly>
           </td>
           <td class="px-2 py-1 text-center">
-            <button type="button" class="remove-row bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded">
+            <button type="button" class="remove-row bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded hidden">
               <i class="fas fa-trash"></i>
             </button>
           </td>
@@ -60,11 +52,20 @@
     </table>
 
     <div class="flex justify-start mt-3 gap-2">
-      <button type="button" id="add-row" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-semibold shadow transition-all flex items-center gap-2">
+      <button type="button" id="edit-toggle" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded font-semibold shadow transition-all flex items-center gap-2">
+        <i class="fas fa-edit"></i> Editar requerimientos
+      </button>
+
+      <button type="button" id="add-row" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-semibold shadow transition-all flex items-center gap-2 hidden">
         <i class="fas fa-plus"></i> Añadir paquete
       </button>
-      <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded font-bold shadow transition-all flex items-center gap-2">
+
+      <button type="submit" id="save-btn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded font-bold shadow transition-all flex items-center gap-2 hidden">
         <i class="fas fa-play"></i> Guardar e instalar
+      </button>
+
+      <button type="button" id="cancel-btn" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded font-semibold shadow transition-all hidden">
+        Cancelar
       </button>
     </div>
   </form>
@@ -78,71 +79,138 @@
 <script>
 document.addEventListener("DOMContentLoaded", function() {
   const tbody = document.getElementById("requirements-body");
+  const editToggle = document.getElementById("edit-toggle");
+  const addRowBtn = document.getElementById("add-row");
+  const saveBtn = document.getElementById("save-btn");
+  const cancelBtn = document.getElementById("cancel-btn");
+  const logTextarea = document.getElementById("install-logs");
 
-  // Añadir fila
-  document.getElementById("add-row").addEventListener("click", function() {
+  const REQUIREMENTS_URL = "{% url 'manage_requirements' %}";
+  const CHECK_INTERVAL_MS = 2000;
+  const FINISH_PHRASE = "Instalación completada correctamente.";
+
+  let isEditing = false;
+  let installationInProgress = false;
+  let refreshInterval = null;
+
+  // === Función para activar/desactivar modo edición ===
+  function setEditingMode(val) {
+    isEditing = !!val;
+
+    document.querySelectorAll(".package-input").forEach(inp => {
+      inp.readOnly = !isEditing;
+      inp.classList.toggle("bg-gray-100", !isEditing);
+    });
+
+    addRowBtn.classList.toggle("hidden", !isEditing);
+    saveBtn.classList.toggle("hidden", !isEditing);
+    cancelBtn.classList.toggle("hidden", !isEditing);
+
+    // Ocultamos el botón de editar mientras estamos en modo edición
+    editToggle.classList.toggle("hidden", isEditing);
+
+    document.querySelectorAll("button.remove-row").forEach(btn => {
+      btn.classList.toggle("hidden", !isEditing);
+    });
+  }
+
+  // Inicialmente desactivado
+  setEditingMode(false);
+
+  // === Botón Editar ===
+  editToggle.addEventListener("click", function() {
+    setEditingMode(true);
+    const first = document.querySelector(".package-input");
+    if (first) first.focus();
+  });
+
+  // === Botón Cancelar ===
+  cancelBtn.addEventListener("click", function() {
+    location.reload();
+  });
+
+  // === Añadir fila ===
+  addRowBtn.addEventListener("click", function() {
+    if (!isEditing) return;
+
     const row = document.createElement("tr");
     row.className = "bg-white border-b hover:bg-green-50 transition";
     row.innerHTML = `
-      <td class="px-2 py-1"><input type="text" name="package_name" value="" class="w-full border rounded px-2 py-1"></td>
-      <td class="px-2 py-1"><input type="text" name="package_version" value="" placeholder="latest" class="w-full border rounded px-2 py-1"></td>
-      <td class="px-2 py-1 text-center"><button type="button" class="remove-row bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"><i class="fas fa-trash"></i></button></td>
+      <td class="px-2 py-1">
+        <input type="text" name="package_name" value="" class="package-input w-full border rounded px-2 py-1">
+      </td>
+      <td class="px-2 py-1">
+        <input type="text" name="package_version" value="" placeholder="latest" class="package-input w-full border rounded px-2 py-1">
+      </td>
+      <td class="px-2 py-1 text-center">
+        <button type="button" class="remove-row bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded">
+          <i class="fas fa-trash"></i>
+        </button>
+      </td>
     `;
     tbody.appendChild(row);
+    document.querySelectorAll("button.remove-row").forEach(btn => btn.classList.toggle("hidden", !isEditing));
   });
 
-  // Eliminar fila
+  // === Eliminar fila ===
   tbody.addEventListener("click", function(e) {
-    if(e.target && (e.target.matches("button.remove-row") || e.target.closest("button.remove-row"))){
-      e.target.closest("tr").remove();
-    }
+    const btn = e.target.closest("button.remove-row");
+    if (!btn || !isEditing) return;
+    btn.closest("tr").remove();
   });
 
-  // Refrescar logs cada 5 segundos
+  // === Función para refrescar logs ===
   async function refreshLogs() {
     try {
-      const response = await fetch("{% url 'manage_requirements' %}?logs_only=1");
-      if(response.ok){
-        const text = await response.text();
-        document.getElementById("install-logs").value = text;
+      const res = await fetch(REQUIREMENTS_URL + "?logs_only=1", { cache: "no-store" });
+      if (!res.ok) return;
+      const text = await res.text();
+      logTextarea.value = text;
+      logTextarea.scrollTop = logTextarea.scrollHeight;
+
+      // Detecta finalización de instalación
+      if (installationInProgress && text.includes(FINISH_PHRASE)) {
+        installationInProgress = false;
+        clearInterval(refreshInterval);
+
+        // Esperamos un pequeño delay para que el requirements_global.txt se actualice
+        setTimeout(() => location.reload(), 500);
       }
-    } catch(e) {
-      console.error("Error al actualizar logs:", e);
+    } catch (err) {
+      console.error("Error refrescando logs:", err);
     }
   }
-  setInterval(refreshLogs, 5000);
-});
 
-let lastReqTimestamp = 0;
+  // === Submit AJAX ===
+  document.getElementById("requirements-form").addEventListener("submit", async function(e) {
+    e.preventDefault(); // evitamos recarga de página
 
-async function refreshRequirementsTable() {
+    if (installationInProgress) return;
+
+    // Recolectamos datos del form
+    const formData = new FormData(this);
+    installationInProgress = true;
+
+    // Deshabilitamos edición mientras instalamos
+    setEditingMode(false);
+
     try {
-        const response = await fetch("{% url 'requirements_json' %}");
-        if (!response.ok) return;
-        const data = await response.json();
+      const res = await fetch(REQUIREMENTS_URL, {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) throw new Error("Error en instalación");
 
-        // Solo actualizar si hay cambios
-        if (data.timestamp === lastReqTimestamp) return;
-        lastReqTimestamp = data.timestamp;
+      // Empezamos a refrescar logs periódicamente
+      await refreshLogs(); // refresco inmediato
+      refreshInterval = setInterval(refreshLogs, CHECK_INTERVAL_MS);
 
-        const tbody = document.getElementById("requirements-body");
-        tbody.innerHTML = "";
-        data.packages.forEach(pkg => {
-            const row = document.createElement("tr");
-            row.className = "bg-white border-b hover:bg-green-50 transition";
-            row.innerHTML = `
-                <td class="px-2 py-1"><input type="text" name="package_name" value="${pkg.name}" class="w-full border rounded px-2 py-1"></td>
-                <td class="px-2 py-1"><input type="text" name="package_version" value="${pkg.version}" placeholder="latest" class="w-full border rounded px-2 py-1"></td>
-                <td class="px-2 py-1 text-center"><button type="button" class="remove-row bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"><i class="fas fa-trash"></i></button></td>
-            `;
-            tbody.appendChild(row);
-        });
-    } catch(e) {
-        console.error("Error al actualizar tabla de paquetes:", e);
+    } catch (err) {
+      console.error("Error en submit AJAX:", err);
+      alert("Error al instalar paquetes. Mira la consola.");
+      installationInProgress = false;
     }
-}
-
-// Fetch cada 5 segundos pero solo se renderiza si cambia el timestamp
-setInterval(refreshRequirementsTable, 5000);
+  });
+});
 </script>
 {% endblock %}
