@@ -323,7 +323,6 @@ class ResultsView(LoginRequiredMixin, View):
                     os.remove(output.file.path)
                     output.delete()
                 execution.delete()
-                # TODO: DECIDIR SI QUEREMOS ELIMINAR EJECUCIONES O MARCAR COMO DELETED
             except Execution.DoesNotExist:
                 pass  # Silenciar si no se encuentra
         return redirect("results")

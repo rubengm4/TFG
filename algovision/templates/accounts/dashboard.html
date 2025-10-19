@@ -133,7 +133,9 @@
                   <span class="w-3 h-3 rounded-full bg-gray-400 inline-block animate-pulse shadow-lg shadow-gray-400/70"></span>
                 {% endif %}
                 <i class="fas fa-file-alt text-gray-600"></i>
-                <span class="truncate">{{ result.file.filename }}</span>
+              <span class="truncate">
+                {{result.snapshot_file_name}}
+              </span>
               </div>
               <span class="text-xs text-gray-500">{{ result.execution_date|date:"d M Y" }}</span>
             </div>
