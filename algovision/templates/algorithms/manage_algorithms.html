@@ -162,14 +162,19 @@
     {% endif %}
   </div>
 
-  <!-- Create Algorithm Button (left) -->
-  <div class="w-full max-w-6xl flex justify-start mt-4">
+  <div class="w-full max-w-6xl flex justify-start mt-4 space-x-4">
+    <!-- Create Algorithm Button (left) -->
     <a href="{% url 'create_algorithm' %}"
-       class="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white py-2.5 px-6 rounded-lg font-bold shadow-lg shadow-green-400/50 transition-all hover:shadow-green-500/70 hover:scale-[1.02]">
+      class="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white py-2.5 px-6 rounded-lg font-bold shadow-lg shadow-green-400/50 transition-all hover:shadow-green-500/70 hover:scale-[1.02]">
       <i class="fas fa-plus"></i> Crear nuevo algoritmo
     </a>
+    
+    <!-- Manage Requirements Button -->
+    <a href="{% url 'manage_requirements' %}"
+      class="inline-flex items-center gap-2 bg-green-700 hover:bg-green-800 text-white py-2.5 px-6 rounded-lg font-bold shadow-lg shadow-green-600/50 transition-all hover:shadow-green-700/70 hover:scale-[1.02]">
+      <i class="fas fa-cogs"></i> Editar Requirimientos Globales
+    </a>
   </div>
-
 </div>
 {% endblock %}
 
