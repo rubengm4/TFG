@@ -4,28 +4,24 @@
 
 {% block sidebar_links %}
   <ul class="flex flex-col gap-1 text-gray-300 font-medium">
-
     <li>
       <a href="{% url 'file_manager' %}"
          class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white">
         📁 Mis archivos
       </a>
     </li>
-
     <li>
       <a href="{% url 'analysis' %}"
          class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white">
         🔍 Realizar análisis
       </a>
     </li>
-
     <li>
       <a href="{% url 'results' %}"
          class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white">
         📊 Mis resultados
       </a>
     </li>
-
     {% if user.is_superuser %}
     <li>
       <a href="{% url 'manage_algorithms' %}"
@@ -34,20 +30,17 @@
       </a>
     </li>
     {% endif %}
-
     <li>
       <a href="{% url 'accounts:logout' %}"
          class="block py-2.5 px-4 rounded-lg text-red-400 hover:bg-gray-800 hover:text-red-300 transition-all font-semibold">
         🚪 Cerrar sesión
       </a>
     </li>
-
   </ul>
 {% endblock %}
 
 {% block content %}
 <div class="flex flex-col items-center min-h-screen px-4 py-8 space-y-6">
-
   <!-- Header -->
   <div class="w-full flex justify-between max-w-6xl">
     <a href="{% url 'dashboard' %}" 
@@ -76,7 +69,6 @@
           <input type="file" name="files" id="fileInput" multiple
                  accept=".csv,image/*,video/*"
                  class="peer absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-      
           <div id="fileInputLabel" 
                class="w-full border border-red-400 rounded-lg p-2 bg-white/90 flex items-center justify-between gap-2 focus-within:ring-2 focus-within:ring-red-500 transition-all">
             <span class="text-gray-700">Selecciona un archivo (Límite: 10MB por archivo)</span>
@@ -91,7 +83,6 @@
       </div>
     </form>
   </div>
-
 
   {% if messages %}
   <div class="w-full max-w-6xl">
@@ -112,7 +103,6 @@
 
   <!-- File list -->
   <div class="bg-gradient-to-br from-red-100 to-red-300 shadow-lg rounded-xl p-6 w-full max-w-6xl hover:shadow-red-400/50 hover:scale-[1.01] transition-all">
-
     {% if files %}
     <div class="overflow-x-auto rounded-xl border border-red-200 shadow-inner">
       <table class="min-w-full text-sm text-left">
@@ -133,7 +123,7 @@
         <tbody class="divide-y divide-gray-100">
           {% for file in files %}
           <tr class="bg-white hover:bg-red-50 transition">
-            <td class="px-6 py-4 font-semibold text-gray-800 flex items-center gap-2">
+            <td class="px-6 py-4 font-semibold text-gray-800 flex items-center gap-2 file-name" data-extension=".{{ file.type|slice:'1:' }}">
               {% if "image" in file.type|lower %}
                 <i class="fas fa-file-image text-red-500"></i>
               {% elif "video" in file.type|lower %}
@@ -149,11 +139,14 @@
             <td class="px-6 py-4">{{ file.upload_date|date:"d/m/Y H:i" }}</td>
             <td class="px-6 py-4 flex items-center gap-3">
               <!-- Analyze -->
-              <a href="javascript:void(0);" 
-                onclick="this.closest('form')?.submit()"
-                class="text-red-600 hover:text-red-800 font-semibold transition flex items-center gap-1">
-                <i class="fas fa-chart-line"></i> Analizar
-              </a>
+              <form method="post" action="{% url 'analysis' %}" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="file_id" value="{{ file.id }}">
+                <button type="submit" 
+                        class="text-red-600 hover:text-red-800 font-semibold transition flex items-center gap-1">
+                  <i class="fas fa-chart-line"></i> Analizar
+                </button>
+              </form>
               <!-- Edit -->
               <a href="javascript:void(0);" 
                 onclick="makeEditable(this.closest('tr').querySelector('td:first-child'), {{ file.id }})"
@@ -185,7 +178,6 @@
 
   <!-- Floating alerts -->
   <div id="alerts-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 w-80 z-50"></div>
-
 </div>
 {% endblock %}
 
@@ -199,8 +191,8 @@
 }
 </style>
 <script>
+  // ---------- Table Sorting ----------
   let currentSort = { column: 2, ascending: true };
-
   function sortTableByColumn(colIndex, forceAscending = null) {
       const tbody = document.querySelector("table tbody");
       const rows = Array.from(tbody.querySelectorAll("tr")).filter(r => !r.querySelector("td[colspan]"));
@@ -211,8 +203,7 @@
           let aText = a.children[colIndex]?.textContent.trim().toLowerCase() || "";
           let bText = b.children[colIndex]?.textContent.trim().toLowerCase() || "";
 
-          // Ordenar por fecha si es la tercera columna (colIndex = 2)
-          if (colIndex === 2) {
+          if (colIndex === 2) { // fecha
               const parseDate = str => {
                   const [date, time] = str.split(" ");
                   if (!date || !time) return new Date(0);
@@ -245,23 +236,182 @@
 
   document.addEventListener("DOMContentLoaded", () => {
       currentSort = { column: 2, ascending: false };
-      sortTableByColumn(2, false); // Orden inicial: fecha descendente
+      sortTableByColumn(2, false);
   });
 
-  document.addEventListener('DOMContentLoaded', () => {
-    window.makeEditable = function(tdSelectorOrElement, fileId) {
-      let td = tdSelectorOrElement;
-      if (typeof tdSelectorOrElement === 'string') td = document.querySelector(tdSelectorOrElement);
-      makeEditable(td, fileId);
-    };
-  });
+  // ---------- Helpers ----------
+  function showAlert(text, type='error') {
+    const container = document.getElementById('alerts-container');
+    if (!container) return;
+    const id = `alert-${Date.now()}`;
+    const alert = document.createElement('div');
+    alert.id = id;
+    alert.className = type==='success'
+      ? 'bg-green-600 text-white px-4 py-2 rounded shadow-lg mb-2'
+      : 'bg-red-600 text-white px-4 py-2 rounded shadow-lg mb-2';
+    alert.textContent = text;
+    container.appendChild(alert);
+    setTimeout(()=>{document.getElementById(id)?.remove();},5000);
+  }
 
+  function getCookie(name){
+    let cookieValue = null;
+    if(document.cookie && document.cookie!==''){
+      document.cookie.split(';').forEach(c=>{
+        c=c.trim();
+        if(c.startsWith(name+'=')) cookieValue=decodeURIComponent(c.substring(name.length+1));
+      });
+    }
+    return cookieValue;
+  }
+
+  function escapeHtml(unsafe){
+    return unsafe.replaceAll('&','&amp;')
+                 .replaceAll('<','&lt;')
+                 .replaceAll('>','&gt;')
+                 .replaceAll('"','&quot;')
+                 .replaceAll("'","&#039;");
+  }
+
+  function getAllActionButtons(){
+    const rows = Array.from(document.querySelectorAll('table tbody tr'));
+    const buttons = [];
+    rows.forEach(row=>{
+      const lastTd = row.querySelectorAll('td')[row.querySelectorAll('td').length-1];
+      if(!lastTd) return;
+      lastTd.querySelectorAll('button, input[type="submit"], input[type="button"], a').forEach(btn=>buttons.push(btn));
+    });
+    return buttons;
+  }
+  function hideAllActionButtons(){ 
+    getAllActionButtons().forEach(btn=>{
+      if(btn.dataset._origDisplay===undefined) btn.dataset._origDisplay=btn.style.display||''; 
+      btn.style.display='none';
+    }); 
+  }
+  function restoreAllActionButtons(){ 
+    getAllActionButtons().forEach(btn=>{
+      btn.style.display=btn.dataset._origDisplay||''; 
+      delete btn.dataset._origDisplay; 
+    }); 
+  }
+
+  // ---------- makeEditable ----------
+  function makeEditable(td, fileId){
+    if(!td) return;
+
+    // Restaurar otras filas
+    document.querySelectorAll('table tbody tr').forEach(row=>{
+      if(row!==td.closest('tr')){
+        const actionsCell = row.querySelectorAll('td')[row.querySelectorAll('td').length-1];
+        if(actionsCell){
+          actionsCell.querySelectorAll('.confirm-edit-btn, .cancel-edit-btn').forEach(btn=>btn.remove());
+          actionsCell.querySelectorAll('button, a').forEach(btn=>btn.style.display='');
+        }
+      }
+    });
+
+    const span = td.querySelector('.file-name')||td;
+    td.dataset._origHtml = td.innerHTML;
+
+    const fullName = span.textContent.trim();
+    const lastDotIndex = fullName.lastIndexOf('.');
+    const baseName = lastDotIndex > 0 ? fullName.substring(0, lastDotIndex) : fullName;
+    const extension = lastDotIndex > 0 ? fullName.substring(lastDotIndex) : '';
+
+    // Input editable solo para el nombre
+    const input = document.createElement('input');
+    input.type='text'; input.value=baseName;
+    input.className='border rounded px-2 py-1 text-sm w-full focus:ring-2 focus:ring-red-500 outline-none';
+
+    // Span para extensión (no editable)
+    const extSpan = document.createElement('span');
+    extSpan.textContent = extension;
+    extSpan.className='ml-2 text-gray-700 font-semibold select-none';
+
+    const wrapper = document.createElement('div');
+    wrapper.className='flex items-center gap-1';
+    wrapper.appendChild(input);
+    wrapper.appendChild(extSpan);
+
+    td.innerHTML='';
+    td.appendChild(wrapper);
+    input.focus();
+    input.select();
+
+    hideAllActionButtons();
+    const row = td.closest('tr');
+    const actionsCell = row.querySelectorAll('td')[row.querySelectorAll('td').length-1];
+
+    // Confirmar
+    const confirmBtn = document.createElement('button');
+    confirmBtn.type='button';
+    confirmBtn.className='confirm-edit-btn text-red-600 hover:text-red-800 font-semibold px-2 py-1 rounded text-sm flex items-center gap-1 transition';
+    confirmBtn.innerHTML = '<i class="fas fa-check"></i> Confirmar';
+
+    // Cancelar
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type='button';
+    cancelBtn.className='cancel-edit-btn text-red-600 hover:text-red-800 font-semibold px-2 py-1 rounded text-sm flex items-center gap-1 transition';
+    cancelBtn.innerHTML = '<i class="fas fa-times"></i> Cancelar';
+
+    actionsCell.appendChild(confirmBtn);
+    actionsCell.appendChild(cancelBtn);
+
+    input.addEventListener('keydown', e=>{
+      if(e.key==='Enter'){ e.preventDefault(); confirmBtn.click(); }
+      if(e.key==='Escape'){ e.preventDefault(); cancelEdit(td); }
+    });
+
+    confirmBtn.addEventListener('click', ()=>saveNewName(fileId, input.value.trim(), extension, td));
+    cancelBtn.addEventListener('click', ()=>cancelEdit(td));
+  }
+
+  function cancelEdit(td){
+    if(!td) return;
+    if(td.dataset._origHtml!==undefined){ td.innerHTML=td.dataset._origHtml; delete td.dataset._origHtml; }
+    const row = td.closest('tr');
+    if(row){
+      const actionsCell = row.querySelectorAll('td')[row.querySelectorAll('td').length-1];
+      if(actionsCell) actionsCell.querySelectorAll('.confirm-edit-btn, .cancel-edit-btn').forEach(btn=>btn.remove());
+    }
+    restoreAllActionButtons();
+  }
+
+  async function saveNewName(fileId, baseName, extension, td){
+    if(!td||!baseName){ showAlert('El nombre no puede estar vacío.'); return; }
+    const newName = baseName + extension;
+
+    try{
+      const res = await fetch(`/files/rename/${fileId}/`, {
+        method:'POST',
+        headers:{ 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type':'application/json' },
+        body: JSON.stringify({ new_name:newName })
+      });
+      if(!res.ok){ 
+        let msg='Error al renombrar el archivo.'; 
+        try{ const data=await res.json(); msg=data.error||msg; }catch(e){} 
+        throw new Error(msg); 
+      }
+      showAlert('Nombre actualizado correctamente.','success');
+      window.location.reload(); // recarga completa de /files para reflejar cambios
+    }catch(err){ 
+      showAlert(err.message||'Error desconocido.'); 
+      cancelEdit(td); 
+    }
+  }
+
+  window.makeEditable = makeEditable;
+
+  // ---------- File Input ----------
   const fileInput = document.getElementById('fileInput');
-  const fileInputLabel = document.getElementById('fileInputLabel').querySelector('span');
-
-  fileInput.addEventListener('change', () => {
-    const files = Array.from(fileInput.files).map(f => f.name).join(', ');
-    fileInputLabel.textContent = files || 'Selecciona archivo/s (Límite: 10 MB por archivo)';
-  });
+  const fileInputLabel = document.getElementById('fileInputLabel')?.querySelector('span');
+  if(fileInput){
+    fileInput.addEventListener('change',()=>{
+      const files = Array.from(fileInput.files).map(f=>f.name).join(', ');
+      if(fileInputLabel) fileInputLabel.textContent = files || 'Selecciona archivo/s (Límite: 10 MB por archivo)';
+    });
+  }
 </script>
 {% endblock %}
+
