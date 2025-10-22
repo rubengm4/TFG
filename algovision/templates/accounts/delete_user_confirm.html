@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Confirmar eliminación{% endblock %}
+{% block content %}
+<div class="flex flex-col items-center justify-center min-h-screen px-4 py-8">
+
+  <div class="bg-red-100 p-8 rounded-xl shadow-md w-full max-w-md transition-all hover:shadow-red-300/50">
+    <h2 class="text-2xl font-bold text-red-700 mb-4">Confirmar eliminación de usuario</h2>
+    <p class="mb-4 text-gray-700">Escribe <strong>DELETE</strong> para habilitar el botón de eliminar.</p>
+
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      {{ form.confirm_text }}
+      {% if form.confirm_text.errors %}
+        <div class="text-red-600 text-sm">{{ form.confirm_text.errors }}</div>
+      {% endif %}
+
+      <div class="flex flex-col md:flex-row gap-2 mt-2">
+        <a href="{% url 'accounts:manage_user' %}" 
+           class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 rounded-lg text-center shadow transition-all">
+          <i class="fas fa-arrow-left mr-1"></i> Volver
+        </a>
+
+        <button type="submit" id="confirmBtn" disabled
+                class="flex-1 bg-red-400 cursor-not-allowed text-white py-2 rounded-lg shadow transition-all opacity-50">
+          Continuar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const input = document.getElementById("id_confirm_text");
+  const btn = document.getElementById("confirmBtn");
+
+  input.addEventListener("input", function() {
+    if (input.value === "DELETE") {
+      btn.disabled = false;
+      btn.classList.remove("bg-red-400", "cursor-not-allowed", "opacity-50");
+      btn.classList.add("bg-red-600", "hover:bg-red-700", "cursor-pointer");
+    } else {
+      btn.disabled = true;
+      btn.classList.add("bg-red-400", "cursor-not-allowed", "opacity-50");
+      btn.classList.remove("bg-red-600", "hover:bg-red-700", "cursor-pointer");
+    }
+  });
+</script>
+{% endblock %}

@@ -5,7 +5,9 @@ from .views import (
     SetSourceAndRedirectToLogin,
     CustomLogoutView,
     UserUpdateView,
-    CustomPasswordChangeView
+    CustomPasswordChangeView,
+    DeleteUserConfirmView,
+    DeleteUserView
 )
 
 
@@ -19,5 +21,8 @@ urlpatterns = [
          name='set_source'),
     path("manage/", UserUpdateView.as_view(), name="manage_user"),
     path('password/change/', CustomPasswordChangeView.as_view(),
-         name="password_change")
+         name="password_change"),
+    path('delete/', DeleteUserConfirmView.as_view(),
+         name='delete_user_confirm'),
+    path('delete/final/', DeleteUserView.as_view(), name='delete_user_final'),
 ]

@@ -104,6 +104,12 @@
       </p>
     </form>
   </div>
+  
+  <!-- Delete User -->
+  <a href="{% url 'accounts:delete_user_confirm' %}" 
+    class="w-full max-w-md inline-flex bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg shadow-md items-center justify-center gap-2 transition-all hover:scale-[1.02] hover:shadow-red-400/60 mt-4">
+    <i class="fas fa-trash-alt"></i> Eliminar usuario
+  </a>
 </div>
 {% endblock %}
 

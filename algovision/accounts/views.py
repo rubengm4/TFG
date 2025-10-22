@@ -345,3 +345,45 @@ class CustomPasswordChangeView(auth_views.PasswordChangeView):
         messages.success(
             self.request, "✅ Tu contraseña se ha cambiado correctamente.")
         return super().form_valid(form)
+
+# Formulario para escribir "DELETE"
+
+
+class DeleteUserForm(forms.Form):
+    confirm_text = forms.CharField(
+        max_length=6,
+        label='Escribe DELETE para continuar',
+        widget=forms.TextInput(attrs={
+            'class': 'w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900',
+            'placeholder': 'DELETE'
+        })
+    )
+
+# Step 2: Confirmación de escritura
+
+
+class DeleteUserConfirmView(LoginRequiredMixin, FormView):
+    template_name = 'accounts/delete_user_confirm.html'
+    form_class = DeleteUserForm
+
+    def form_valid(self, form):
+        confirm_text = form.cleaned_data['confirm_text']
+        if confirm_text == "DELETE":
+            return redirect('accounts:delete_user_final')
+        form.add_error('confirm_text', 'Debes escribir DELETE exactamente.')
+        return self.form_invalid(form)
+
+# Step 3: Confirmación final y borrado
+
+
+class DeleteUserView(LoginRequiredMixin, View):
+    def get(self, request):
+        # Mostrar confirmación final
+        return render(request, 'accounts/delete_user_final.html')
+
+    def post(self, request):
+        user = request.user
+        # Aquí podrías eliminar archivos y ejecuciones asociados
+        user.delete()
+        messages.success(request, "Usuario eliminado correctamente.")
+        return redirect('accounts:login')
