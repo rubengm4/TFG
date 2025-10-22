@@ -3,7 +3,7 @@ from typing import Any
 
 # Django contrib imports
 from django.contrib import messages
-from django.contrib.auth import logout
+from django.contrib.auth import logout, views as auth_views
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -18,7 +18,7 @@ from django.utils import timezone
 
 # Django views imports
 from django.views import View
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, UpdateView
 from django.views.generic.edit import FormView
 
 # Local app imports
@@ -296,3 +296,52 @@ class CustomLogoutView(LogoutView):
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any):
         request.session.pop('login_source', None)
         return super().dispatch(request, *args, **kwargs)
+
+
+class CustomUserChangeForm(forms.ModelForm):
+    email = forms.EmailField(required=True)
+    first_name = forms.CharField(max_length=30, required=False)
+    last_name = forms.CharField(max_length=30, required=False)
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'first_name', 'last_name')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        tailwind_class = (
+            'w-full px-3 py-2 rounded border border-gray-300 bg-white text-gray-900 '
+            'focus:outline-none focus:ring-2 focus:ring-blue-500'
+        )
+        for field in self.fields.values():
+            field.widget.attrs['class'] = tailwind_class
+            if field.label and field.label.lower() == 'username':
+                field.widget.attrs['readonly'] = True
+                field.help_text = "El nombre de usuario no se puede modificar."
+
+
+class UserUpdateView(LoginRequiredMixin, UpdateView):
+    model = User
+    form_class = CustomUserChangeForm
+    template_name = "accounts/manage_user.html"
+    success_url = reverse_lazy("dashboard")  # o donde quieras redirigir
+
+    def get_object(self):
+        # Solo permite editar su propio usuario
+        return self.request.user
+
+
+class CustomPasswordChangeView(auth_views.PasswordChangeView):
+    template_name = "accounts/password_change.html"
+    success_url = reverse_lazy("dashboard")
+
+    def form_valid(self, form):
+        # Comprobar que la nueva contraseña no sea igual a la actual
+        if form.cleaned_data['new_password1'] == form.cleaned_data['old_password']:
+            form.add_error(
+                'new_password1', "La nueva contraseña no puede ser igual a la actual.")
+            return self.form_invalid(form)
+
+        messages.success(
+            self.request, "✅ Tu contraseña se ha cambiado correctamente.")
+        return super().form_valid(form)
