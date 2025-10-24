@@ -3,10 +3,10 @@ from typing import Any
 
 # Django contrib imports
 from django.contrib import messages
-from django.contrib.auth import logout, views as auth_views
+from django.contrib.auth import views as auth_views
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import AccessMixin
 from django.contrib.auth.views import LoginView, LogoutView
 
 # Django core imports
@@ -117,19 +117,35 @@ class CustomAuthenticationForm(AuthenticationForm):
 
 # Project source selector (from homepage)
 class SetSourceAndRedirectToLogin(View):
+    """
+    Recibe el menú o proyecto seleccionado desde el home
+    y guarda el contexto en la sesión para futuras redirecciones.
+    """
+
     def post(self, request: HttpRequest):
-        source = request.POST.get('source', 'default')
+        source = request.POST.get('source', '').strip()
+        if not source:
+            return redirect('index')
+
+        # Guardar en sesión el login_source y project_id si existe
         request.session['login_source'] = source
         request.session['source'] = source
 
-        # Redirect to the appropriate homepage
+        try:
+            project = Project.objects.get(title__iexact=source)
+            request.session['project_id'] = project.id
+        except Project.DoesNotExist:
+            request.session['project_id'] = None
+
+        # Redirigir a la pantalla de login del proyecto seleccionado
         if source == 'fv-analysis':
             return redirect('fv_analysis_home')
         elif source == 'people-analysis':
             return redirect('people_analysis_home')
         elif source == 'stats-analysis':
             return redirect('stats_analysis_home')
-        # Add more as needed
+
+        # Si no se reconoce, volver al inicio
         return redirect('index')
 
 
@@ -193,49 +209,29 @@ class CustomLoginView(LoginView):
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any):
         source = request.session.get('login_source')
+        project_id = request.session.get('project_id')
 
+        # Si el usuario ya está autenticado, ir al dashboard
         if request.user.is_authenticated:
             return redirect('dashboard')
 
-        if not source or source == 'default':
+        # Si no hay contexto válido, volver al index
+        if not source and not project_id:
             return redirect('index')
 
+        # Si el proyecto no existe, volver al index
         try:
-            project = Project.objects.get(title=source)
+            if project_id:
+                Project.objects.get(id=project_id)
+            elif source:
+                Project.objects.get(title__iexact=source)
         except Project.DoesNotExist:
             return redirect('index')
 
-        if request.user.is_authenticated:
-            if not UserProject.objects.filter(user=request.user, project=project).exists():
-                logout(request)
-                return redirect('index')
-
         return super().dispatch(request, *args, **kwargs)
 
-    def get_form(self, form_class=None):
-        if form_class is None:
-            form_class = self.get_form_class()
-        form = form_class(**self.get_form_kwargs())
-        return form
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['request'] = self.request
-        return kwargs
-
-    def get_context_data(self, **kwargs: Any):
-        context = super().get_context_data(**kwargs)
-        context['source'] = self.request.session.get('login_source', 'default')
-        return context
-
     def get_success_url(self):
-        source = self.request.session.get('login_source', 'default')
-        if source:
-            return reverse('dashboard')
-        return reverse('index')
-
-    def form_invalid(self, form):
-        return super().form_invalid(form)
+        return reverse('dashboard')
 
 
 class LoginHomeView(TemplateView):
@@ -247,7 +243,31 @@ class LoginHomeView(TemplateView):
         return context
 
 
-class DashboardView(LoginRequiredMixin, View):
+class CustomLoginRedirectMixin(AccessMixin):
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            _ = resolve(request.path)
+        except Exception as e:
+            print(f"resolve error: {e}")
+
+        login_source = request.session.get('login_source')
+
+        if not request.user.is_authenticated:
+            if not login_source or login_source == 'default':
+                request.session.pop('login_source', None)
+                return redirect('index')
+
+            from fv_analysis.models import Project
+            try:
+                Project.objects.get(title__iexact=login_source)
+            except Project.DoesNotExist:
+                request.session.pop('login_source', None)
+                return redirect('index')
+            return redirect('accounts:login')
+        return super().dispatch(request, *args, **kwargs)
+
+
+class DashboardView(CustomLoginRedirectMixin, View):
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any):
         project_slug = request.session.get('login_source')
 
@@ -293,7 +313,7 @@ class DashboardView(LoginRequiredMixin, View):
 class CustomLogoutView(LogoutView):
     next_page = reverse_lazy('index')
 
-    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any):
+    def dispatch(self, request, *args, **kwargs):
         request.session.pop('login_source', None)
         return super().dispatch(request, *args, **kwargs)
 
@@ -320,7 +340,7 @@ class CustomUserChangeForm(forms.ModelForm):
                 field.help_text = "El nombre de usuario no se puede modificar."
 
 
-class UserUpdateView(LoginRequiredMixin, UpdateView):
+class UserUpdateView(CustomLoginRedirectMixin, UpdateView):
     model = User
     form_class = CustomUserChangeForm
     template_name = "accounts/manage_user.html"
@@ -362,7 +382,7 @@ class DeleteUserForm(forms.Form):
 # Step 2: Confirmación de escritura
 
 
-class DeleteUserConfirmView(LoginRequiredMixin, FormView):
+class DeleteUserConfirmView(CustomLoginRedirectMixin, FormView):
     template_name = 'accounts/delete_user_confirm.html'
     form_class = DeleteUserForm
 
@@ -376,7 +396,7 @@ class DeleteUserConfirmView(LoginRequiredMixin, FormView):
 # Step 3: Confirmación final y borrado
 
 
-class DeleteUserView(LoginRequiredMixin, View):
+class DeleteUserView(CustomLoginRedirectMixin, View):
     def get(self, request):
         # Mostrar confirmación final
         return render(request, 'accounts/delete_user_final.html')

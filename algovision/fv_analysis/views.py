@@ -1,12 +1,15 @@
+from django.views.decorators.cache import never_cache
 import os
 import json
 import shutil
+
+from accounts.views import CustomLoginRedirectMixin
 
 from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import UserPassesTestMixin
 from django.http import JsonResponse, HttpRequest, Http404, FileResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
@@ -25,10 +28,20 @@ from .forms import AlgorithmForm
 from .tasks import ejecutar_algoritmo_task, install_requirements_task, REQUIREMENTS_PATH
 
 
-class HomepageView(TemplateView):
+class NoCacheMixin:
+    @method_decorator(never_cache)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+
+class HomepageView(NoCacheMixin, TemplateView):
     template_name = 'index.html'
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any):
+        # Limpiar cualquier proyecto guardado en la sesión
+        for key in ['login_source', 'project_id', 'source']:
+            request.session.pop(key, None)
+
         if request.user.is_authenticated:
             return redirect('dashboard')
         return super().dispatch(request, *args, **kwargs)
@@ -41,7 +54,7 @@ class FileUploadForm(forms.ModelForm):
 
 
 @method_decorator(login_required, name='dispatch')
-class FileManagerView(LoginRequiredMixin, View):
+class FileManagerView(CustomLoginRedirectMixin, View):
     template_name = 'file_manager.html'
 
     def get(self, request: HttpRequest):
@@ -242,7 +255,7 @@ class AnalysisView(View):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class RenameFileView(LoginRequiredMixin, View):
+class RenameFileView(CustomLoginRedirectMixin, View):
     def post(self, request: HttpRequest, file_id: int):
         file_obj = get_object_or_404(File, id=file_id, user=request.user)
         data = json.loads(request.body)
@@ -286,7 +299,7 @@ class RenameFileView(LoginRequiredMixin, View):
             return JsonResponse({'error': str(e)}, status=500)
 
 
-class ResultsView(LoginRequiredMixin, View):
+class ResultsView(CustomLoginRedirectMixin, View):
     template_name = "results.html"
 
     def get(self, request: HttpRequest):
@@ -328,7 +341,7 @@ class ResultsView(LoginRequiredMixin, View):
         return redirect("results")
 
 
-class DownloadOutputView(LoginRequiredMixin, View):
+class DownloadOutputView(CustomLoginRedirectMixin, View):
     def get(self, request: HttpRequest, output_id: int):
         try:
             output = Output.objects.get(
@@ -343,7 +356,7 @@ class DownloadOutputView(LoginRequiredMixin, View):
 LOG_PATH = os.path.join(settings.MEDIA_ROOT, 'envs', 'debug_install.log')
 
 
-class ManageRequirementsView(LoginRequiredMixin, UserPassesTestMixin, View):
+class ManageRequirementsView(CustomLoginRedirectMixin, UserPassesTestMixin, View):
     template_name = "manage_requirements.html"
 
     def get(self, request):
@@ -411,7 +424,7 @@ class ManageRequirementsView(LoginRequiredMixin, UserPassesTestMixin, View):
 REQUIREMENTS_LAST_MOD = 0
 
 
-class RequirementsJSONView(LoginRequiredMixin, UserPassesTestMixin, View):
+class RequirementsJSONView(CustomLoginRedirectMixin, UserPassesTestMixin, View):
     def get(self, request):
         global REQUIREMENTS_LAST_MOD
         packages = []
@@ -440,7 +453,7 @@ class RequirementsJSONView(LoginRequiredMixin, UserPassesTestMixin, View):
         return self.request.user.is_superuser
 
 
-class CreateAlgorithmView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+class CreateAlgorithmView(CustomLoginRedirectMixin, UserPassesTestMixin, CreateView):
     model = Algorithm
     form_class = AlgorithmForm
     template_name = "algorithms/create_algorithm.html"
@@ -451,7 +464,7 @@ class CreateAlgorithmView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return self.request.user.is_superuser
 
 
-class ManageAlgorithmsView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+class ManageAlgorithmsView(CustomLoginRedirectMixin, UserPassesTestMixin, ListView):
     model = Algorithm
     template_name = "algorithms/manage_algorithms.html"
     context_object_name = "algorithms"
@@ -485,7 +498,7 @@ class ManageAlgorithmsView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return context
 
 
-class UpdateAlgorithmView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+class UpdateAlgorithmView(CustomLoginRedirectMixin, UserPassesTestMixin, UpdateView):
     model = Algorithm
     form_class = AlgorithmForm
     template_name = 'algorithms/edit_algorithm.html'
@@ -517,7 +530,7 @@ class UpdateAlgorithmView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return super().form_valid(form)
 
 
-class DeleteAlgorithmView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+class DeleteAlgorithmView(CustomLoginRedirectMixin, UserPassesTestMixin, DeleteView):
     model = Algorithm
     success_url = reverse_lazy("manage_algorithms")
 
