@@ -4,7 +4,6 @@
 
 {% block sidebar_links %}
   <ul class="flex flex-col gap-1 text-gray-300 font-medium">
-
     <li>
       <a href="{% url 'file_manager' %}"
          class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white">
@@ -23,6 +22,12 @@
       <a href="{% url 'results' %}"
          class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white">
         📊 Mis resultados
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'accounts:manage_user' %}"
+         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white">
+        👤 Gestionar usuario
       </a>
     </li>
 
