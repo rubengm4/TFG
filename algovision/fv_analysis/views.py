@@ -38,12 +38,14 @@ class HomepageView(NoCacheMixin, TemplateView):
     template_name = 'index.html'
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any):
-        # Limpiar cualquier proyecto guardado en la sesión
-        for key in ['login_source', 'project_id', 'source']:
-            request.session.pop(key, None)
-
-        if request.user.is_authenticated:
+        # Solo limpiar si NO hay usuario
+        if not request.user.is_authenticated:
+            for key in ['login_source', 'project_id', 'source']:
+                request.session.pop(key, None)
+        else:
+            # usuario autenticado → ir a dashboard directamente
             return redirect('dashboard')
+
         return super().dispatch(request, *args, **kwargs)
 
 
