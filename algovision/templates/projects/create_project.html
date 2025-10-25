@@ -2,6 +2,48 @@
 
 {% block title %}Algovision | Crear proyecto{% endblock %}
 
+{% block sidebar_links %}
+  <ul class="flex flex-col gap-1 text-gray-300 font-medium">
+    <li>
+      <a href="{% url 'file_manager' %}" class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white">
+        📁 Mis archivos
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'analysis' %}" class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white">
+        🔍 Realizar análisis
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'results' %}" class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white">
+        📊 Mis resultados
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'accounts:manage_user' %}" class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white">
+        👤 Gestionar usuario
+      </a>
+    </li>
+    {% if user.is_superuser %}
+    <li>
+      <a href="{% url 'manage_algorithms' %}" class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white">
+        ⚙️ Gestionar algoritmos
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'manage_projects' %}" class="block py-2.5 px-4 rounded-lg transition-all text-orange-300 hover:bg-gray-800 hover:text-orange-400 font-semibold">
+        🗃️ Gestionar proyectos
+      </a>
+    </li>
+    {% endif %}
+    <li>
+      <a href="{% url 'accounts:logout' %}" class="block py-2.5 px-4 rounded-lg text-red-400 hover:bg-gray-800 hover:text-red-300 transition-all font-semibold">
+        🚪 Cerrar sesión
+      </a>
+    </li>
+  </ul>
+{% endblock %}
+
 {% block content %}
 <div class="flex flex-col items-center min-h-screen px-4 py-8 space-y-6">
 
