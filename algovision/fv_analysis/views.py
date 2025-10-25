@@ -24,7 +24,7 @@ from typing import Any, List, Dict
 
 from .aux_file_func import is_size_valid, is_type_valid, extension_getter, name_change
 from .models import File, Algorithm, Project, Execution, Output
-from .forms import AlgorithmForm
+from .forms import AlgorithmForm, ProjectForm
 from .tasks import ejecutar_algoritmo_task, install_requirements_task, REQUIREMENTS_PATH
 
 
@@ -557,7 +557,75 @@ class DeleteAlgorithmView(CustomLoginRedirectMixin, UserPassesTestMixin, DeleteV
         # Proceed with the usual deletion (calls obj.delete())
         return super().form_valid(form)
 
-# Errores
+# ✅ Crear proyecto
+
+
+class CreateProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, CreateView):
+    model = Project
+    form_class = ProjectForm
+    template_name = "projects/create_project.html"
+    success_url = reverse_lazy("manage_projects")
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def form_valid(self, form: Any):
+        messages.success(self.request, "Proyecto creado correctamente.")
+        return super().form_valid(form)
+
+    def form_invalid(self, form: Any):
+        messages.error(
+            self.request, "Por favor, corrige los errores del formulario.")
+        return super().form_invalid(form)
+
+
+# ✅ Listar proyectos
+class ManageProjectsView(CustomLoginRedirectMixin, UserPassesTestMixin, ListView):
+    model = Project
+    template_name = "projects/manage_projects.html"
+    context_object_name = "projects"
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def get_queryset(self):
+        return Project.objects.all().order_by("title")
+
+
+# ✅ Editar proyecto
+class UpdateProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, UpdateView):
+    model = Project
+    form_class = ProjectForm
+    template_name = "projects/edit_project.html"
+    success_url = reverse_lazy("manage_projects")
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def form_valid(self, form: Any):
+        messages.success(self.request, "Proyecto actualizado correctamente.")
+        return super().form_valid(form)
+
+    def form_invalid(self, form: Any):
+        messages.error(
+            self.request, "Por favor, corrige los errores del formulario.")
+        return super().form_invalid(form)
+
+
+# ✅ Eliminar proyecto
+class DeleteProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, DeleteView):
+    model = Project
+    success_url = reverse_lazy("manage_projects")
+    template_name = "projects/delete_project.html"
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def form_valid(self, form: Any):
+        project = self.get_object()
+        messages.success(
+            self.request, f"Proyecto '{project.title}' eliminado correctamente.")
+        return super().form_valid(form)
 
 
 class Custom403View(TemplateView):

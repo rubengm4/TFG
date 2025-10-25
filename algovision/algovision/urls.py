@@ -2,7 +2,25 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
-from fv_analysis.views import HomepageView, FileManagerView, AnalysisView, RenameFileView, ResultsView, DownloadOutputView, CreateAlgorithmView, ManageAlgorithmsView, UpdateAlgorithmView, DeleteAlgorithmView, Custom403View, Custom404View, ManageRequirementsView, RequirementsJSONView
+from fv_analysis.views import (
+    HomepageView,
+    FileManagerView,
+    AnalysisView,
+    RenameFileView,
+    ResultsView,
+    DownloadOutputView,
+    ManageRequirementsView,
+    RequirementsJSONView,
+    CreateProjectView,
+    ManageProjectsView,
+    UpdateProjectView,
+    DeleteProjectView,
+    CreateAlgorithmView,
+    ManageAlgorithmsView,
+    UpdateAlgorithmView,
+    DeleteAlgorithmView,
+    Custom403View,
+    Custom404View)
 from accounts.views import LoginHomeView, DashboardView
 
 urlpatterns = [
@@ -34,6 +52,12 @@ urlpatterns = [
          name='manage_requirements'),
     path('requirements/json/', RequirementsJSONView.as_view(),
          name='requirements_json'),
+    path("projects/manage/", ManageProjectsView.as_view(), name="manage_projects"),
+    path("projects/create/", CreateProjectView.as_view(), name="create_project"),
+    path("projects/edit/<int:pk>/",
+         UpdateProjectView.as_view(), name="edit_project"),
+    path("projects/delete/<int:pk>/",
+         DeleteProjectView.as_view(), name="delete_project"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 handler403 = Custom403View.as_view()

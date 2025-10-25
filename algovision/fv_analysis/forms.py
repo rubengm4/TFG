@@ -1,5 +1,5 @@
 from django import forms
-from .models import Algorithm
+from .models import Algorithm, Project
 
 
 class AlgorithmForm(forms.ModelForm):
@@ -43,3 +43,24 @@ class AlgorithmForm(forms.ModelForm):
                 "Debes seleccionar al menos un tipo soportado."
             )
         return supported_types
+
+
+class ProjectForm(forms.ModelForm):
+    class Meta:
+        model = Project
+        fields = ["title", "description", "start_date"]
+        widgets = {
+            "title": forms.TextInput(attrs={
+                "class": "w-full border border-gray-300 rounded-lg p-2",
+                "placeholder": "Título del proyecto"
+            }),
+            "description": forms.Textarea(attrs={
+                "class": "w-full border border-gray-300 rounded-lg p-2",
+                "rows": 4,
+                "placeholder": "Descripción del proyecto"
+            }),
+            "start_date": forms.DateInput(attrs={
+                "class": "w-full border border-gray-300 rounded-lg p-2",
+                "type": "date"
+            }),
+        }
