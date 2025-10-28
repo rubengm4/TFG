@@ -19,6 +19,10 @@ from fv_analysis.views import (
     ManageAlgorithmsView,
     UpdateAlgorithmView,
     DeleteAlgorithmView,
+    ManageUserProjectView,
+    CreateUserProjectView,
+    UpdateUserProjectView,
+    DeleteUserProjectView,
     Custom403View,
     Custom404View)
 from accounts.views import LoginHomeView, DashboardView
@@ -58,6 +62,15 @@ urlpatterns = [
          UpdateProjectView.as_view(), name="edit_project"),
     path("projects/delete/<int:pk>/",
          DeleteProjectView.as_view(), name="delete_project"),
+    path('projects/manage-projects-permissions/', ManageUserProjectView.as_view(),
+         name='manage_projects_permissions'),
+    path('user-project/create/', CreateUserProjectView.as_view(),
+         name='create_user_project'),
+    path('user-project/<int:pk>/edit/',
+         UpdateUserProjectView.as_view(), name='edit_user_project'),
+    path('user-project/<int:pk>/delete/',
+         DeleteUserProjectView.as_view(), name='delete_user_project'),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 handler403 = Custom403View.as_view()

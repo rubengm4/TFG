@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Algovision | Gestionar proyectos{% endblock %}
+{% block title %}Algovision | Gestionar permisos de usuario{% endblock %}
 
 {% block sidebar_links %}
   <ul class="flex flex-col gap-1 text-gray-300 font-medium">
@@ -31,7 +31,7 @@
       </a>
     </li>
     <li>
-      <a href="{% url 'manage_projects' %}" class="block py-2.5 px-4 rounded-lg transition-all text-orange-300 hover:bg-gray-800 hover:text-orange-400 font-semibold">
+      <a href="{% url 'manage_projects' %}" class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white">
         🗃️ Gestionar proyectos
       </a>
     </li>
@@ -49,9 +49,9 @@
 
   <!-- Header -->
   <div class="w-full flex justify-between max-w-6xl">
-    <a href="{% url 'dashboard' %}" 
+    <a href="{% url 'manage_projects' %}" 
        class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-all shadow">
-       ← Volver al dashboard
+       ← Volver a gestión de proyectos
     </a>
     <a href="{% url 'accounts:logout' %}" 
        class="inline-flex items-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow">
@@ -62,8 +62,8 @@
   <!-- Title -->
   <div class="text-center">
     <h2 class="text-3xl font-bold text-gray-800 flex items-center justify-center gap-3">
-      <i class="fas fa-project-diagram text-orange-600 drop-shadow-[0_0_8px_rgba(249,115,22,0.7)] animate-pulse-slow"></i>
-      Gestionar Proyectos
+      <i class="fas fa-user-shield text-orange-600 drop-shadow-[0_0_8px_rgba(249,115,22,0.7)] animate-pulse-slow"></i>
+      Gestionar Permisos de Usuario en Proyectos
     </h2>
   </div>
 
@@ -85,43 +85,37 @@
     </div>
   {% endif %}
 
-  <!-- Projects Table -->
+  <!-- Permissions Table -->
   <div class="bg-gradient-to-br from-orange-100 to-orange-300 shadow-lg rounded-xl p-6 w-full max-w-6xl hover:shadow-orange-400/50 hover:scale-[1.01] transition-all">
-    {% if projects %}
+    {% if user_projects %}
     <div class="overflow-x-auto rounded-xl border border-orange-200 shadow-inner">
       <table class="min-w-full text-sm text-left">
         <thead class="bg-orange-600 text-white">
           <tr>
             <th class="px-6 py-3 cursor-pointer" onclick="sortTableByColumn(0)">
-                <span class="inline-flex items-center gap-1">
-                    Título <span class="sort-arrow" data-index="0"></span>
-                </span>
+              Usuario <span class="sort-arrow" data-index="0"></span>
             </th>
             <th class="px-6 py-3 cursor-pointer" onclick="sortTableByColumn(1)">
-                <span class="inline-flex items-center gap-1">
-                    Descripción <span class="sort-arrow" data-index="1"></span>
-                </span>
+              Proyecto <span class="sort-arrow" data-index="1"></span>
             </th>
             <th class="px-6 py-3 cursor-pointer" onclick="sortTableByColumn(2)">
-                <span class="inline-flex items-center gap-1">
-                    Fecha de inicio <span class="sort-arrow" data-index="2"></span>
-                </span>
+              Fecha de unión <span class="sort-arrow" data-index="2"></span>
             </th>
             <th class="px-6 py-3">Acciones</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-          {% for project in projects %}
+          {% for up in user_projects %}
           <tr class="bg-white hover:bg-orange-50 transition">
-            <td class="px-6 py-4 font-medium">{{ project.title }}</td>
-            <td class="px-6 py-4 text-gray-700">{{ project.description|truncatechars:80 }}</td>
-            <td class="px-6 py-4">{{ project.start_date }}</td>
+            <td class="px-6 py-4 font-medium">{{ up.user.username }}</td>
+            <td class="px-6 py-4 text-gray-700">{{ up.project.title }}</td>
+            <td class="px-6 py-4">{{ up.joined_at }}</td>
             <td class="px-6 py-4 flex items-center gap-2">
-              <a href="{% url 'edit_project' project.id %}"
+              <a href="{% url 'edit_user_project' up.id %}"
                 class="flex items-center gap-1 text-sm text-orange-600 hover:text-orange-700 font-semibold transition">
                 <i class="fa fa-pencil-alt"></i> Editar
               </a>
-              <form method="post" action="{% url 'delete_project' project.id %}" class="inline delete-form">
+              <form method="post" action="{% url 'delete_user_project' up.id %}" class="inline delete-form">
                 {% csrf_token %}
                 <button type="submit"
                         class="flex items-center gap-1 text-sm text-red-600 hover:text-red-700 font-semibold transition">
@@ -136,21 +130,16 @@
     </div>
     {% else %}
     <div class="text-center py-6 text-gray-500 italic">
-      No hay proyectos creados todavía.
+      No hay relaciones usuario–proyecto registradas todavía.
     </div>
     {% endif %}
   </div>
 
   <!-- Buttons -->
   <div class="w-full max-w-6xl flex justify-start mt-4 space-x-4">
-    <a href="{% url 'create_project' %}"
+    <a href="{% url 'create_user_project' %}"
       class="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white py-2.5 px-6 rounded-lg font-bold shadow-lg shadow-orange-400/50 transition-all hover:shadow-orange-500/70 hover:scale-[1.02]">
-      <i class="fas fa-plus"></i> Crear nuevo proyecto
-    </a>
-
-    <a href="{% url 'manage_projects_permissions' %}"
-      class="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white py-2.5 px-6 rounded-lg font-bold shadow-lg shadow-orange-400/50 transition-all hover:shadow-orange-500/70 hover:scale-[1.02]">
-      <i class="fas fa-user-shield"></i> Gestionar permisos de usuario en proyectos
+      <i class="fas fa-plus"></i> Añadir usuario a proyecto
     </a>
   </div>
 </div>
@@ -190,7 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".delete-form").forEach(form => {
     form.addEventListener("submit", e => {
       e.preventDefault();
-      if (!confirm("¿Estás seguro de que quieres eliminar este proyecto?")) return;
+      if (!confirm("¿Estás seguro de que quieres eliminar esta relación usuario–proyecto?")) return;
       form.submit();
     });
   });

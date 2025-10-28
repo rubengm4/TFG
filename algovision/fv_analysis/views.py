@@ -23,8 +23,8 @@ from django.views.generic import TemplateView, CreateView, ListView, DeleteView,
 from typing import Any, List, Dict
 
 from .aux_file_func import is_size_valid, is_type_valid, extension_getter, name_change
-from .models import File, Algorithm, Project, Execution, Output
-from .forms import AlgorithmForm, ProjectForm
+from .models import File, Algorithm, Project, Execution, Output, UserProject
+from .forms import AlgorithmForm, ProjectForm, UserProjectForm
 from .tasks import ejecutar_algoritmo_task, install_requirements_task, REQUIREMENTS_PATH
 
 
@@ -557,8 +557,6 @@ class DeleteAlgorithmView(CustomLoginRedirectMixin, UserPassesTestMixin, DeleteV
         # Proceed with the usual deletion (calls obj.delete())
         return super().form_valid(form)
 
-# ✅ Crear proyecto
-
 
 class CreateProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, CreateView):
     model = Project
@@ -579,7 +577,6 @@ class CreateProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, CreateVie
         return super().form_invalid(form)
 
 
-# ✅ Listar proyectos
 class ManageProjectsView(CustomLoginRedirectMixin, UserPassesTestMixin, ListView):
     model = Project
     template_name = "projects/manage_projects.html"
@@ -592,7 +589,6 @@ class ManageProjectsView(CustomLoginRedirectMixin, UserPassesTestMixin, ListView
         return Project.objects.all().order_by("title")
 
 
-# ✅ Editar proyecto
 class UpdateProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, UpdateView):
     model = Project
     form_class = ProjectForm
@@ -612,11 +608,9 @@ class UpdateProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, UpdateVie
         return super().form_invalid(form)
 
 
-# ✅ Eliminar proyecto
 class DeleteProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, DeleteView):
     model = Project
     success_url = reverse_lazy("manage_projects")
-    template_name = "projects/delete_project.html"
 
     def test_func(self):
         return self.request.user.is_superuser
@@ -626,6 +620,80 @@ class DeleteProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, DeleteVie
         messages.success(
             self.request, f"Proyecto '{project.title}' eliminado correctamente.")
         return super().form_valid(form)
+
+
+class CreateUserProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, CreateView):
+    model = UserProject
+    form_class = UserProjectForm
+    template_name = "projects/create_user_projects.html"
+    success_url = reverse_lazy("manage_projects_permissions")
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def form_valid(self, form):
+        messages.success(
+            self.request, "Usuario añadido correctamente al proyecto.")
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        messages.error(
+            self.request, "Por favor, corrige los errores del formulario.")
+        return super().form_invalid(form)
+
+
+class ManageUserProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, ListView):
+    model = UserProject
+    template_name = "projects/manage_projects_permissions.html"
+    context_object_name = "user_projects"
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def get_queryset(self):
+        return UserProject.objects.select_related('user', 'project').order_by('project__title', 'user__username')
+
+
+class UpdateUserProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, UpdateView):
+    model = UserProject
+    form_class = UserProjectForm
+    template_name = "projects/edit_user_projects.html"
+    success_url = reverse_lazy("manage_projects_permissions")
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def form_valid(self, form):
+        messages.success(
+            self.request, "Relación usuario–proyecto actualizada correctamente.")
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        messages.error(
+            self.request, "Por favor, corrige los errores del formulario.")
+        return super().form_invalid(form)
+
+
+class DeleteUserProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, DeleteView):
+    model = UserProject
+    template_name = "projects/delete_user_project.html"
+    success_url = reverse_lazy("manage_projects_permissions")
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def form_valid(self, form: Any):
+        obj = self.get_object()
+        messages.success(
+            self.request,
+            f"La relación entre '{obj.user.username}' y el proyecto '{obj.project.title}' se eliminó correctamente."
+        )
+        return super().form_valid(form)
+
+    def form_invalid(self, form: Any):
+        messages.error(
+            self.request, "No se pudo eliminar la relación usuario–proyecto.")
+        return super().form_invalid(form)
 
 
 class Custom403View(TemplateView):

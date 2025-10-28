@@ -1,5 +1,5 @@
 from django import forms
-from .models import Algorithm, Project
+from .models import Algorithm, Project, UserProject
 
 
 class AlgorithmForm(forms.ModelForm):
@@ -63,4 +63,13 @@ class ProjectForm(forms.ModelForm):
                 "class": "w-full border border-gray-300 rounded-lg p-2",
                 "type": "date"
             }),
+        }
+
+
+class UserProjectForm(forms.ModelForm):
+    class Meta:
+        model = UserProject
+        fields = ['user', 'project', 'joined_at']
+        widgets = {
+            'joined_at': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
         }
