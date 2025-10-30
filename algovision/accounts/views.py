@@ -13,7 +13,7 @@ from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import ValidationError
 from django.http import HttpRequest
 from django.shortcuts import redirect, render
-from django.urls import reverse_lazy, reverse, resolve
+from django.urls import reverse_lazy, reverse, resolve  # type: ignore
 from django.utils import timezone
 
 # Django views imports
@@ -249,7 +249,7 @@ class LoginHomeView(TemplateView):
 
 
 class CustomLoginRedirectMixin(AccessMixin):
-    def dispatch(self, request, *args, **kwargs):
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any):
         try:
             _ = resolve(request.path)
         except Exception as e:
@@ -318,7 +318,7 @@ class DashboardView(CustomLoginRedirectMixin, View):
 class CustomLogoutView(LogoutView):
     next_page = reverse_lazy('index')
 
-    def dispatch(self, request, *args, **kwargs):
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any):
         request.session.pop('login_source', None)
         return super().dispatch(request, *args, **kwargs)
 
@@ -332,7 +332,7 @@ class CustomUserChangeForm(forms.ModelForm):
         model = User
         fields = ('username', 'email', 'first_name', 'last_name')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         tailwind_class = (
             'w-full px-3 py-2 rounded border border-gray-300 bg-white text-gray-900 '
@@ -391,8 +391,8 @@ class DeleteUserConfirmView(CustomLoginRedirectMixin, FormView):
     template_name = 'accounts/delete_user_confirm.html'
     form_class = DeleteUserForm
 
-    def form_valid(self, form):
-        confirm_text = form.cleaned_data['confirm_text']
+    def form_valid(self, form: form_class):
+        confirm_text: str = form.cleaned_data['confirm_text']
         if confirm_text == "DELETE":
             return redirect('accounts:delete_user_final')
         form.add_error('confirm_text', 'Debes escribir DELETE exactamente.')
@@ -402,11 +402,11 @@ class DeleteUserConfirmView(CustomLoginRedirectMixin, FormView):
 
 
 class DeleteUserView(CustomLoginRedirectMixin, View):
-    def get(self, request):
+    def get(self, request: HttpRequest):
         # Mostrar confirmación final
         return render(request, 'accounts/delete_user_final.html')
 
-    def post(self, request):
+    def post(self, request: HttpRequest):
         user = request.user
         # Aquí podrías eliminar archivos y ejecuciones asociados
         user.delete()
