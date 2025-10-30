@@ -14,7 +14,7 @@
 
     <li>
       <a href="{% url 'analysis' %}"
-         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white">
+         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white font-semibold">
         🔍 Realizar análisis
       </a>
     </li>
@@ -34,7 +34,7 @@
     {% if user.is_superuser %}
     <li>
       <a href="{% url 'manage_algorithms' %}"
-         class="block py-2.5 px-4 rounded-lg transition-all text-indigo-300 hover:bg-gray-800 hover:text-indigo-400 font-semibold">
+         class="block py-2.5 px-4 rounded-lg transition-all text-indigo-300 hover:bg-gray-800 hover:text-indigo-400">
         ⚙️ Gestionar algoritmos
       </a>
     </li>
