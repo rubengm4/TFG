@@ -233,6 +233,11 @@ class CustomLoginView(LoginView):
     def get_success_url(self):
         return reverse('dashboard')
 
+    def get_context_data(self, **kwargs: Any):
+        context = super().get_context_data(**kwargs)
+        context['source'] = self.request.session.get('login_source', '')
+        return context
+
 
 class LoginHomeView(TemplateView):
     template_name = 'accounts/login_home.html'
