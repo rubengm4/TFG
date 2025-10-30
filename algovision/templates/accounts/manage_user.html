@@ -28,7 +28,7 @@
     </li>
     <li>
       <a href="{% url 'accounts:manage_user' %}"
-         class="block py-2.5 px-4 rounded-lg transition-all text-blue-400 hover:bg-gray-800 hover:text-blue-500 font-semibold">
+         class="block py-2.5 px-4 rounded-lg transition-all text-violet-400 hover:bg-gray-800 hover:text-violet-500 font-semibold">
         👤 Gestionar usuario
       </a>
     </li>
@@ -72,10 +72,10 @@
   </div>
 
   <!-- Card -->
-  <div class="bg-gradient-to-br from-blue-100 to-indigo-200 rounded-xl shadow-lg p-8 w-full max-w-md transition-all hover:shadow-indigo-300/50 hover:scale-[1.01]">
+  <div class="bg-gradient-to-br from-violet-100 to-violet-200 rounded-xl shadow-lg p-8 w-full max-w-md transition-all hover:shadow-indigo-300/50 hover:scale-[1.01]">
 
     <h2 class="text-3xl font-bold text-gray-800 text-center mb-6">
-      <i class="fas fa-user-cog text-blue-700 mr-2"></i>Gestionar usuario
+      <i class="fas fa-user-cog text-violet-700 mr-2"></i>Gestionar usuario
     </h2>
 
     <!-- Messages -->
@@ -105,7 +105,7 @@
       {% for field in form %}
         <div>
           <label for="{{ field.id_for_label }}" class="block text-gray-700 font-semibold mb-1">
-            <i class="fas fa-angle-right text-blue-600 mr-1"></i> {{ field.label }}
+            <i class="fas fa-angle-right text-violet-600 mr-1"></i> {{ field.label }}
           </label>
           {{ field }}
           {% if field.help_text %}
@@ -119,7 +119,7 @@
 
       <!-- Submit -->
       <button type="submit" 
-              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg shadow-md flex items-center justify-center gap-2 transition-all hover:scale-[1.02] hover:shadow-blue-400/60">
+              class="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2 rounded-lg shadow-md flex items-center justify-center gap-2 transition-all hover:scale-[1.02] hover:shadow-violet-400/60">
         <i class="fas fa-save"></i> Guardar cambios
       </button>
 
@@ -128,7 +128,7 @@
         ¿Quieres cambiar tu contraseña?
         <br>
         <a href="{% url 'accounts:password_change' %}" 
-           class="text-indigo-600 hover:text-indigo-700 font-semibold inline-flex items-center gap-1 transition-colors">
+           class="text-violet-600 hover:text-violet-700 font-semibold inline-flex items-center gap-1 transition-colors">
           <i class="fas fa-key"></i> Cambiar contraseña
         </a>
       </p>
@@ -149,7 +149,7 @@
   input[type="email"],
   input[type="checkbox"] {
     @apply w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900
-           focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors;
+           focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors;
   }
 
   input[readonly] {
@@ -161,7 +161,7 @@
   }
 
   .form-checkbox {
-    @apply w-5 h-5 text-blue-600;
+    @apply w-5 h-5 text-violet-600;
   }
 </style>
 {% endblock %}
