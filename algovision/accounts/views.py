@@ -22,7 +22,7 @@ from django.views.generic import TemplateView, UpdateView
 from django.views.generic.edit import FormView
 
 # Local app imports
-from fv_analysis.models import Project, UserProject, Execution, File, Algorithm
+from analysis.models import Project, UserProject, Execution, File, Algorithm
 
 
 # --- Custom Forms ---
@@ -138,8 +138,8 @@ class SetSourceAndRedirectToLogin(View):
             request.session['project_id'] = None
 
         # Redirigir a la pantalla de login del proyecto seleccionado
-        if source == 'fv-analysis':
-            return redirect('fv_analysis_home')
+        if source == 'pv-analysis':
+            return redirect('pv_analysis_home')
         elif source == 'people-analysis':
             return redirect('people_analysis_home')
         elif source == 'stats-analysis':
@@ -262,7 +262,7 @@ class CustomLoginRedirectMixin(AccessMixin):
                 request.session.pop('login_source', None)
                 return redirect('index')
 
-            from fv_analysis.models import Project
+            from analysis.models import Project
             try:
                 Project.objects.get(title__iexact=login_source)
             except Project.DoesNotExist:

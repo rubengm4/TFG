@@ -49,8 +49,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'fv_analysis',
     'accounts',
+    'analysis',
 ]
 
 MIDDLEWARE = [

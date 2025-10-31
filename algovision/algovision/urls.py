@@ -2,7 +2,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
-from fv_analysis.views import (
+from analysis.views import (
     HomepageView,
     FileManagerView,
     AnalysisView,
@@ -31,7 +31,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', HomepageView.as_view(), name='index'),
     path('accounts/', include('accounts.urls')),
-    path('fv-analysis-home/', LoginHomeView.as_view(), name='fv_analysis_home'),
+    path('pv-analysis-home/', LoginHomeView.as_view(), name='pv_analysis_home'),
     path('people-analysis-home/', LoginHomeView.as_view(),
          name='people_analysis_home'),
     path('stats-analysis-home/', LoginHomeView.as_view(),

@@ -18,12 +18,12 @@
   <!-- Cards Container -->
   <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-6xl px-4">
 
-    <!-- FV Analysis Card -->
+    <!-- PV Analysis Card -->
     <form method="post" action="{% url 'accounts:set_source' %}" class="bg-gradient-to-br from-teal-100 to-teal-300 shadow-lg rounded-xl p-6 flex flex-col items-center hover:shadow-teal-400/50 hover:scale-[1.01] transition-all">
       {% csrf_token %}
-      <input type="hidden" name="source" value="fv-analysis" />
+      <input type="hidden" name="source" value="pv-analysis" />
       <i class="fas fa-solar-panel text-5xl text-teal-600 mb-4"></i>
-      <h3 class="text-xl font-bold text-gray-800 mb-2">FV Analysis</h3>
+      <h3 class="text-xl font-bold text-gray-800 mb-2">PV Analysis</h3>
       <p class="text-gray-600 text-center mb-4">Analiza y gestiona los algoritmos de placas fotovoltaicas</p>
       <button type="submit" class="mt-auto bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-6 rounded-lg transition-all w-full">Abrir</button>
     </form>

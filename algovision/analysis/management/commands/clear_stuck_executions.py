@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from fv_analysis.models import Execution
+from analysis.models import Execution
 from datetime import timedelta
 
 

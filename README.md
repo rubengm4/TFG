@@ -18,7 +18,7 @@ Trabajo de Fin de Grado
    ```python
    path('example-project-home/', LoginHomeView.as_view(), name='example_project_home'),
    ```
-4. En _fv_analysis/templates/index.html_, añadir un elemento similar al siguiente, para crear un botón con un enlace al nuevo proyecto, cambiando Example y _value="example-project"_ por el nombre del proyecto:
+4. En _analysis/templates/index.html_, añadir un elemento similar al siguiente, para crear un botón con un enlace al nuevo proyecto, cambiando Example y _value="example-project"_ por el nombre del proyecto:
 
    ```html
    <div class="col-auto">

@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from fv_analysis.models import Algorithm, Project
+from analysis.models import Algorithm, Project
 from django.conf import settings
 import os
 
