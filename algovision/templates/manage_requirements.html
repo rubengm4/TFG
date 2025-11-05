@@ -81,6 +81,35 @@
     {% endfor %}
   {% endif %}
 
+  <!-- === Upload/Download Controls === -->
+  <div class="bg-gradient-to-br from-green-100 to-green-300 shadow-lg rounded-xl p-4 w-full max-w-6xl hover:shadow-green-400/50 hover:scale-[1.01] transition-all flex flex-wrap gap-3 items-center justify-between">
+    
+    <!-- Download requirements.txt -->
+    <a href="{% url 'download_requirements' %}" 
+      class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold shadow flex items-center justify-center gap-2 hover:shadow-green-500/70 transition hover:scale-[1.02]">
+      <i class="fas fa-download"></i> Descargar requirements.txt
+    </a>
+
+    <!-- Upload requirements.txt -->
+    <form method="post" enctype="multipart/form-data" action="{% url 'upload_requirements' %}" class="flex items-center gap-2">
+      {% csrf_token %}
+      <div class="relative">
+        <input type="file" name="requirements_file" id="requirementsFileInput"
+              accept=".txt" class="peer absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+        <div id="requirementsFileLabel"
+            class="border border-green-500 rounded-lg p-2 bg-white/90 flex items-center justify-between gap-2 focus-within:ring-2 focus-within:ring-green-500 transition-all cursor-pointer min-w-[230px]">
+          <span id="requirementsFileName" class="text-gray-700 truncate">Selecciona requirements.txt</span>
+          <i class="fas fa-upload text-green-600"></i>
+        </div>
+      </div>
+
+      <button type="submit"
+              class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-bold flex items-center justify-center gap-2 shadow hover:shadow-green-500/70 transition hover:scale-[1.02]">
+        <i class="fas fa-cloud-upload-alt animate-pulse-slow"></i> Subir
+      </button>
+    </form>
+  </div>
+
   <form method="POST" id="requirements-form">
     {% csrf_token %}
     <table class="w-full border border-gray-300 rounded-lg overflow-hidden">
@@ -240,7 +269,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   }
 
-  // === Submit AJAX ===
+  // === Submit AJAX (Guardar e instalar) ===
   document.getElementById("requirements-form").addEventListener("submit", async function(e) {
     e.preventDefault(); // evitamos recarga de página
 
@@ -270,6 +299,65 @@ document.addEventListener("DOMContentLoaded", function() {
       installationInProgress = false;
     }
   });
+
+  // === UPLOAD: mostrar nombre del archivo y subir con reload ===
+  const fileInput = document.getElementById("requirementsFileInput");
+  const fileNameLabel = document.getElementById("requirementsFileName");
+  const uploadForm = document.querySelector("form[action*='upload_requirements']");
+
+  // If any of these are missing, do nothing (defensive)
+  if (fileInput && fileNameLabel) {
+    // Show filename when selected (works for invisible input)
+    fileInput.addEventListener("change", function (e) {
+      const f = e.target.files && e.target.files[0];
+      if (f) {
+        // show only the filename (no path)
+        fileNameLabel.textContent = f.name;
+        fileNameLabel.classList.add("font-semibold", "text-green-700");
+      } else {
+        fileNameLabel.textContent = "Selecciona requirements.txt";
+        fileNameLabel.classList.remove("font-semibold", "text-green-700");
+      }
+    });
+  }
+
+  if (uploadForm && fileInput) {
+    uploadForm.addEventListener("submit", async function(e) {
+      e.preventDefault();
+
+      const f = fileInput.files && fileInput.files[0];
+      if (!f) {
+        alert("Selecciona un archivo antes de subir.");
+        return;
+      }
+
+      const formData = new FormData(uploadForm);
+
+      try {
+        const res = await fetch(uploadForm.action, {
+          method: "POST",
+          body: formData,
+          credentials: "same-origin"
+        });
+
+        // If backend redirects, fetch will follow it and res.redirected will be true.
+        // Either way, reload the page so Django messages show and page state updates.
+        if (res.ok || res.redirected) {
+          // Reload immediately (you requested no delay)
+          window.location.reload();
+        } else {
+          // try to read server error message if any
+          let txt = "";
+          try { txt = await res.text(); } catch(_) {}
+          console.error("Upload failed:", res.status, txt);
+          alert("Error al subir el archivo requirements.txt.");
+        }
+      } catch (err) {
+        console.error("Error al subir archivo:", err);
+        alert("Error al subir el archivo. Revisa la consola.");
+      }
+    });
+  }
 });
 </script>
 {% endblock %}

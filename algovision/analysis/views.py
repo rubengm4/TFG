@@ -455,6 +455,35 @@ class RequirementsJSONView(CustomLoginRedirectMixin, UserPassesTestMixin, View):
         return self.request.user.is_superuser
 
 
+class DownloadRequirementsView(View):
+    def get(self, request: HttpRequest):
+        if not os.path.exists(REQUIREMENTS_PATH):
+            raise Http404("El archivo requirements_global.txt no existe.")
+        return FileResponse(open(REQUIREMENTS_PATH, 'rb'), as_attachment=True, filename='requirements_global.txt')
+
+
+class UploadRequirementsView(View):
+    def post(self, request: HttpRequest):
+        file = request.FILES.get('requirements_file')
+        if not file:
+            messages.error(request, "No se seleccionó ningún archivo.")
+            return redirect('manage_requirements')
+
+        if not file.name.endswith('.txt'):
+            messages.error(request, "Solo se permiten archivos .txt.")
+            return redirect('manage_requirements')
+
+        # Guardar el nuevo archivo reemplazando el actual
+        with open(REQUIREMENTS_PATH, 'wb+') as dest:
+            for chunk in file.chunks():
+                dest.write(chunk)
+
+        install_requirements_task.delay()
+
+        messages.success(request, f"Archivo {file.name} subido correctamente.")
+        return redirect('manage_requirements')
+
+
 class CreateAlgorithmView(CustomLoginRedirectMixin, UserPassesTestMixin, CreateView):
     model = Algorithm
     form_class = AlgorithmForm
