@@ -466,22 +466,23 @@ class UploadRequirementsView(View):
     def post(self, request: HttpRequest):
         file = request.FILES.get('requirements_file')
         if not file:
-            messages.error(request, "No se seleccionó ningún archivo.")
-            return redirect('manage_requirements')
+            return JsonResponse({'status': 'error', 'message': 'No se seleccionó ningún archivo.'}, status=400)
 
         if not file.name.endswith('.txt'):
-            messages.error(request, "Solo se permiten archivos .txt.")
-            return redirect('manage_requirements')
+            return JsonResponse({'status': 'error', 'message': 'Solo se permiten archivos .txt.'}, status=400)
 
-        # Guardar el nuevo archivo reemplazando el actual
+        # Guardar archivo
         with open(REQUIREMENTS_PATH, 'wb+') as dest:
             for chunk in file.chunks():
                 dest.write(chunk)
 
         install_requirements_task.delay()
 
-        messages.success(request, f"Archivo {file.name} subido correctamente.")
-        return redirect('manage_requirements')
+        return JsonResponse({
+            'status': 'ok',
+            'message': f'Archivo {file.name} subido correctamente.',
+            'installation_started': True
+        })
 
 
 class CreateAlgorithmView(CustomLoginRedirectMixin, UserPassesTestMixin, CreateView):

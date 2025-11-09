@@ -91,7 +91,7 @@
     </a>
 
     <!-- Upload requirements.txt -->
-    <form method="post" enctype="multipart/form-data" action="{% url 'upload_requirements' %}" class="flex items-center gap-2">
+    <form id="uploadForm" method="post" enctype="multipart/form-data" action="{% url 'upload_requirements' %}" class="flex items-center gap-2">
       {% csrf_token %}
       <div class="relative">
         <input type="file" name="requirements_file" id="requirementsFileInput"
@@ -181,137 +181,107 @@ document.addEventListener("DOMContentLoaded", function() {
   let installationInProgress = false;
   let refreshInterval = null;
 
-  // === Función para activar/desactivar modo edición ===
+  // === Helper: toggle edit mode ===
   function setEditingMode(val) {
     isEditing = !!val;
-
     document.querySelectorAll(".package-input").forEach(inp => {
       inp.readOnly = !isEditing;
       inp.classList.toggle("bg-gray-100", !isEditing);
     });
-
     addRowBtn.classList.toggle("hidden", !isEditing);
     saveBtn.classList.toggle("hidden", !isEditing);
     cancelBtn.classList.toggle("hidden", !isEditing);
-
-    // Ocultamos el botón de editar mientras estamos en modo edición
     editToggle.classList.toggle("hidden", isEditing);
-
     document.querySelectorAll("button.remove-row").forEach(btn => {
       btn.classList.toggle("hidden", !isEditing);
     });
   }
 
-  // Inicialmente desactivado
   setEditingMode(false);
 
-  // === Botón Editar ===
-  editToggle.addEventListener("click", function() {
-    setEditingMode(true);
-    const first = document.querySelector(".package-input");
-    if (first) first.focus();
-  });
-
-  // === Botón Cancelar ===
-  cancelBtn.addEventListener("click", function() {
-    location.reload();
-  });
-
-  // === Añadir fila ===
-  addRowBtn.addEventListener("click", function() {
-    if (!isEditing) return;
-
-    const row = document.createElement("tr");
-    row.className = "bg-white border-b hover:bg-green-50 transition";
-    row.innerHTML = `
-      <td class="px-2 py-1">
-        <input type="text" name="package_name" value="" class="package-input w-full border rounded px-2 py-1">
-      </td>
-      <td class="px-2 py-1">
-        <input type="text" name="package_version" value="" placeholder="latest" class="package-input w-full border rounded px-2 py-1">
-      </td>
-      <td class="px-2 py-1 text-center">
-        <button type="button" class="remove-row bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded">
-          <i class="fas fa-trash"></i>
-        </button>
-      </td>
-    `;
-    tbody.appendChild(row);
-    document.querySelectorAll("button.remove-row").forEach(btn => btn.classList.toggle("hidden", !isEditing));
-  });
-
-  // === Eliminar fila ===
-  tbody.addEventListener("click", function(e) {
-    const btn = e.target.closest("button.remove-row");
-    if (!btn || !isEditing) return;
-    btn.closest("tr").remove();
-  });
-
-  // === Función para refrescar logs ===
+  // === Refresh logs periodically ===
   async function refreshLogs() {
     try {
       const res = await fetch(REQUIREMENTS_URL + "?logs_only=1", { cache: "no-store" });
       if (!res.ok) return;
+
       const text = await res.text();
       logTextarea.value = text;
       logTextarea.scrollTop = logTextarea.scrollHeight;
 
-      // Detecta finalización de instalación
-      if (installationInProgress && text.includes(FINISH_PHRASE)) {
-        installationInProgress = false;
-        clearInterval(refreshInterval);
-
-        // Esperamos un pequeño delay para que el requirements_global.txt se actualice
-        setTimeout(() => location.reload(), 500);
+      if (text.includes(FINISH_PHRASE)) {
+        if (installationInProgress) {
+          installationInProgress = false;
+          clearInterval(refreshInterval);
+          setTimeout(() => location.reload(), 1000);
+        }
+      } else {
+        if (!installationInProgress && text.trim() !== "") {
+          installationInProgress = true;
+        }
       }
-    } catch (err) {
-      console.error("Error refrescando logs:", err);
+    } catch {
+      // silently ignore errors
     }
   }
 
-  // === Submit AJAX (Guardar e instalar) ===
-  document.getElementById("requirements-form").addEventListener("submit", async function(e) {
-    e.preventDefault(); // evitamos recarga de página
-
+  // === Handle AJAX submit (Guardar e Instalar) ===
+  async function handleAsyncAction(url, formData) {
     if (installationInProgress) return;
-
-    // Recolectamos datos del form
-    const formData = new FormData(this);
     installationInProgress = true;
-
-    // Deshabilitamos edición mientras instalamos
     setEditingMode(false);
 
     try {
-      const res = await fetch(REQUIREMENTS_URL, {
-        method: "POST",
-        body: formData,
-      });
-      if (!res.ok) throw new Error("Error en instalación");
-
-      // Empezamos a refrescar logs periódicamente
-      await refreshLogs(); // refresco inmediato
+      const res = await fetch(url, { method: "POST", body: formData });
+      if (!res.ok) throw new Error("Error en la solicitud");
+      await refreshLogs();
       refreshInterval = setInterval(refreshLogs, CHECK_INTERVAL_MS);
-
     } catch (err) {
-      console.error("Error en submit AJAX:", err);
-      alert("Error al instalar paquetes. Mira la consola.");
+      alert("Error: " + err.message);
       installationInProgress = false;
     }
+  }
+
+  // === Edit, cancel, add, remove ===
+  editToggle.addEventListener("click", () => {
+    setEditingMode(true);
+    document.querySelector(".package-input")?.focus();
+  });
+  cancelBtn.addEventListener("click", () => location.reload());
+  addRowBtn.addEventListener("click", () => {
+    if (!isEditing) return;
+    const row = document.createElement("tr");
+    row.className = "bg-white border-b hover:bg-green-50 transition";
+    row.innerHTML = `
+      <td class="px-2 py-1"><input type="text" name="package_name" class="package-input w-full border rounded px-2 py-1"></td>
+      <td class="px-2 py-1"><input type="text" name="package_version" placeholder="latest" class="package-input w-full border rounded px-2 py-1"></td>
+      <td class="px-2 py-1 text-center">
+        <button type="button" class="remove-row bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded">
+          <i class="fas fa-trash"></i>
+        </button>
+      </td>`;
+    tbody.appendChild(row);
+  });
+  tbody.addEventListener("click", e => {
+    const btn = e.target.closest("button.remove-row");
+    if (btn && isEditing) btn.closest("tr").remove();
   });
 
-  // === UPLOAD: mostrar nombre del archivo y subir con reload ===
+  // === Guardar e Instalar submit ===
+  document.getElementById("requirements-form").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    await handleAsyncAction(REQUIREMENTS_URL, new FormData(this));
+  });
+
+  // === Upload requirements.txt ===
   const fileInput = document.getElementById("requirementsFileInput");
   const fileNameLabel = document.getElementById("requirementsFileName");
-  const uploadForm = document.querySelector("form[action*='upload_requirements']");
+  const uploadForm = document.getElementById("uploadForm");
 
-  // If any of these are missing, do nothing (defensive)
   if (fileInput && fileNameLabel) {
-    // Show filename when selected (works for invisible input)
-    fileInput.addEventListener("change", function (e) {
-      const f = e.target.files && e.target.files[0];
+    fileInput.addEventListener("change", e => {
+      const f = e.target.files?.[0];
       if (f) {
-        // show only the filename (no path)
         fileNameLabel.textContent = f.name;
         fileNameLabel.classList.add("font-semibold", "text-green-700");
       } else {
@@ -321,40 +291,45 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
 
-  if (uploadForm && fileInput) {
+  if (uploadForm) {
     uploadForm.addEventListener("submit", async function(e) {
       e.preventDefault();
 
-      const f = fileInput.files && fileInput.files[0];
+      const f = fileInput.files?.[0];
       if (!f) {
         alert("Selecciona un archivo antes de subir.");
         return;
       }
 
       const formData = new FormData(uploadForm);
+      installationInProgress = true;
+      setEditingMode(false);
 
       try {
-        const res = await fetch(uploadForm.action, {
-          method: "POST",
-          body: formData,
-          credentials: "same-origin"
-        });
+        const res = await fetch(uploadForm.action, { method: "POST", body: formData });
+        const data = await res.json().catch(() => null);
 
-        // If backend redirects, fetch will follow it and res.redirected will be true.
-        // Either way, reload the page so Django messages show and page state updates.
-        if (res.ok || res.redirected) {
-          // Reload immediately (you requested no delay)
-          window.location.reload();
+        if (!res.ok || !data || data.status !== "ok") {
+          throw new Error(data?.message || "Error al subir el archivo.");
+        }
+
+        if (data.installation_started) {
+          let attempts = 0;
+          while (attempts < 15) {
+            const logRes = await fetch(REQUIREMENTS_URL + "?logs_only=1", { cache: "no-store" });
+            const logText = await logRes.text();
+            if (logText.trim().length > 0) break;
+            await new Promise(r => setTimeout(r, 1000));
+            attempts++;
+          }
+          await refreshLogs();
+          refreshInterval = setInterval(refreshLogs, CHECK_INTERVAL_MS);
         } else {
-          // try to read server error message if any
-          let txt = "";
-          try { txt = await res.text(); } catch(_) {}
-          console.error("Upload failed:", res.status, txt);
-          alert("Error al subir el archivo requirements.txt.");
+          location.reload();
         }
       } catch (err) {
-        console.error("Error al subir archivo:", err);
-        alert("Error al subir el archivo. Revisa la consola.");
+        alert("Error: " + err.message);
+        installationInProgress = false;
       }
     });
   }
