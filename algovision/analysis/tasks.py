@@ -138,49 +138,53 @@ def install_requirements_task():
         log_debug(f"ERROR: No se encontró Python en {python_exec}")
         return
 
-    # Leer paquetes actuales del entorno
-    current_packages = set()
-    try:
-        result = subprocess.run(
-            [str(python_exec), "-m", "pip", "freeze"], capture_output=True, text=True, check=True)
-        for line in result.stdout.splitlines():
-            if line.strip():
-                current_packages.add(line.strip().split('==')[0])
-        log_debug(f"Paquetes actualmente en entorno: {current_packages}")
-    except Exception as e:
-        log_debug(f"ERROR al listar paquetes actuales: {str(e)}")
-
-    # Leer paquetes nuevos del archivo
-    new_packages = set()
+    # Leer paquetes normales del requirements (excluyendo object-detection)
+    normal_requirements = []
+    special_packages = {}
     if REQUIREMENTS_PATH.exists():
         for line in REQUIREMENTS_PATH.read_text().splitlines():
             line = line.strip()
-            if line:
-                new_packages.add(line.split('==')[0])
-    log_debug(
-        f"Paquetes deseados según requirements_global.txt: {new_packages}")
+            if not line or line.startswith("#"):
+                continue
+            if "object-detection" in line:
+                special_packages["object-detection"] = "https://github.com/tensorflow/models.git"
+            else:
+                normal_requirements.append(line)
 
-    # Desinstalar los paquetes que ya no deberían estar
-    to_remove = current_packages - new_packages
-    for pkg in to_remove:
-        log_debug(f"Desinstalando paquete eliminado: {pkg}")
-        subprocess.run([str(python_exec), "-m", "pip", "uninstall",
-                       "-y", pkg], capture_output=True, text=True)
+    # Crear un archivo temporal para pip
+    tmp_requirements_path = REQUIREMENTS_PATH.parent / "tmp_requirements.txt"
+    tmp_requirements_path.write_text("\n".join(normal_requirements))
 
-    # Instalar paquetes del requirements
-    cmd = [str(python_exec), "-m", "pip", "install",
-           "-r", str(REQUIREMENTS_PATH)]
-    log_debug(f"Ejecutando comando instalación: {' '.join(cmd)}")
+    # Instalar paquetes normales
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        log_debug("STDOUT pip install:\n" + result.stdout)
-        log_debug("STDERR pip install:\n" + result.stderr)
-
-        if result.returncode == 0:
-            log_debug("Instalación completada correctamente.")
-            actualizar_requirements_global.delay()
-        else:
-            log_debug(f"ERROR: pip install retornó código {result.returncode}")
-
+        log_debug(
+            f"Instalando paquetes normales: {python_exec} -m pip install -r {tmp_requirements_path}")
+        subprocess.run([str(python_exec), "-m", "pip", "install", "-r", str(tmp_requirements_path)],
+                       check=True, text=True)
+        log_debug("Paquetes normales instalados correctamente.")
     except Exception as e:
-        log_debug(f"EXCEPCIÓN durante instalación: {str(e)}")
+        log_debug(f"ERROR al instalar paquetes normales: {str(e)}")
+
+    # Instalar Object Detection API desde GitHub
+    try:
+        if "object-detection" in special_packages:
+            tf_models_dir = Path(settings.MEDIA_ROOT) / "envs" / "models"
+            if not tf_models_dir.exists():
+                log_debug("Clonando TensorFlow Models...")
+                subprocess.run([str(python_exec), "-m", "git", "clone", special_packages["object-detection"], str(tf_models_dir)],
+                               check=True)
+            research_dir = tf_models_dir / "research"
+            if research_dir.exists():
+                log_debug("Instalando Object Detection API (editable)...")
+                subprocess.run([str(python_exec), "-m", "pip", "install", "-e", str(research_dir)],
+                               check=True)
+                log_debug("Object Detection API instalada correctamente.")
+            else:
+                log_debug(
+                    "ERROR: No se encontró la carpeta research en tensorflow/models")
+    except Exception as e:
+        log_debug(f"EXCEPCIÓN al instalar Object Detection API: {str(e)}")
+
+    # Actualizar requirements_global.txt
+    actualizar_requirements_global.delay()
+    log_debug("Instalación completada correctamente.")

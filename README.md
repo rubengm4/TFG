@@ -247,12 +247,17 @@ pip check
 pip freeze | sed -n '1,20p'
 
 # 9) Run your script (example)
-python thermal_script.py /path/to/input.mp4 ./outdir
+python thermal_script.py /path/to/input.ext ./outdir
 
 # 10) If an error appears, just add it to .venv using
+
+ModuleNotFoundError: No module named 'tensorflow'
+
+## Note: Maybe you will need to search in the internet for the error and it will tell you what package do you need to install, executing:
 pip install package_name
 
-# Maybe you will need to search in the internet for the error and it will tell you what package do you need to install
+## Repeat this until all packages needed are installed and script executes perfectly. Once it does, go to TODO
+
 ```
 
 ---
