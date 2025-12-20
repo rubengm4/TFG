@@ -35,7 +35,24 @@ Trabajo de Fin de Grado
    </div>
    ```
 
-10. Now our project will be configured correctly and appearing in the frontend, so we can now access with our administrator or create a new user. But the project can be accessed from now on.
+10. (Opcional pero recomendable) Añadir el proyecto a la sidebar en _analysis/templates/index.html_. El icono se modifica editando la clase del elemento _<i>_, y habría que modificar el _value_ poniendo el nombre del proyecto en vez de _example_analysis_ y cambiando Example también (aunque ese cambio es visual)
+
+    ```html
+    <li>
+      <form method="post" action="{% url 'accounts:set_source' %}">
+        {% csrf_token %}
+        <input type="hidden" name="source" value="example-analysis" />
+        <button
+          type="submit"
+          class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white text-left w-full"
+        >
+          <i class="fas fa-solar-panel text-teal-600"></i> Example
+        </button>
+      </form>
+    </li>
+    ```
+
+11. Now our project will be configured correctly and appearing in the frontend, so we can now access with our administrator or create a new user. But the project can be accessed from now on.
 
 ---
 

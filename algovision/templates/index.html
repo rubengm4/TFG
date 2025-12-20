@@ -3,6 +3,35 @@
 
 {% block title %}Algovision{% endblock %}
 
+{% block sidebar_links %}
+  <ul class="flex flex-col gap-1 text-gray-300 font-medium">
+
+    <li>
+      <form method="post" action="{% url 'accounts:set_source' %}">
+      {% csrf_token %}
+      <input type="hidden" name="source" value="pv-analysis" />
+      <button type="submit" class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white text-left w-full"><i class="fas fa-solar-panel text-teal-600"></i> Análisis FV</button>
+      </form>
+    </li>
+
+    <li>
+      <form method="post" action="{% url 'accounts:set_source' %}">
+      {% csrf_token %}
+      <input type="hidden" name="source" value="people-analysis" />
+      <button type="submit" class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white text-left w-full"><i class="fas fa-users text-orange-600"></i> Análisis Personas</button>
+      </form>
+    </li>
+
+    <li>
+      <form method="post" action="{% url 'accounts:set_source' %}">
+      {% csrf_token %}
+      <input type="hidden" name="source" value="stats-analysis" />
+      <button type="submit" class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white text-left w-full"><i class="fas fa-chart-pie text-purple-600"></i> Análisis FV</button>
+      </form>
+    </li>
+  </ul>
+{% endblock %}
+
 {% block content %}
 <div class="flex flex-col items-center min-h-screen px-4 py-8 space-y-6">
 
