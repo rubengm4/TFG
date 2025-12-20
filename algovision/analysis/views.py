@@ -695,7 +695,7 @@ class UpdateUserProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, Updat
 
     def form_valid(self, form):
         messages.success(
-            self.request, "Relación usuario–proyecto actualizada correctamente.")
+            self.request, "Relación usuario-proyecto actualizada correctamente.")
         return super().form_valid(form)
 
     def form_invalid(self, form):
@@ -722,7 +722,7 @@ class DeleteUserProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, Delet
 
     def form_invalid(self, form: Any):
         messages.error(
-            self.request, "No se pudo eliminar la relación usuario–proyecto.")
+            self.request, "No se pudo eliminar la relación usuario-proyecto.")
         return super().form_invalid(form)
 
 

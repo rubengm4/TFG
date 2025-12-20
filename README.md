@@ -331,3 +331,255 @@ pip install -r requirements.txt -v
 # Check dependency conflicts
 pip check
 ```
+
+## Creating algorithms for the photovoltaic menu: scripts, structure, files...
+
+### Choose a model and download the files, the structure should be something like this (after you have cloned the [Tensorflow models folder from github](placeholder-link) and eliminated all folders which are not the research/, as it contains the utils we use to analyze images):
+
+```markdown
+X_detector/
+├── models/
+│ └── research/
+│ └── object_detection/
+│ └── detection.py # Key file
+│
+├── workspace_X/ # You should have as many of this as models of detectors you want (hotspots, panels, hotspots + panels...etc)
+│ ├── data/
+│ │ └── L2/
+│ │ └── label_map.pbtxt
+│ │
+│ └── saved_models/
+│ ├── checkpoint/
+│ ├── frozen_inference_graph.rb
+│ ├── model.ckpt.data-00000-of-00001
+│ ├── model.ckpt.index
+│ ├── model.ckpt.meta
+│ ├── pipeline.config
+│ └── saved_model/
+│ ├── variables/
+│ └── saved_model.pb
+│
+└── main.py # Key file
+```
+
+I'll break down the folders in next steps, but it is crucial for you to have a similar structure to this.
+
+### detection.py: It contains the code you need to detect objects in your images. THe structure should be something like this file, which is the detection file used for hotspot detection:
+
+```python
+import os
+import numpy as np
+from PIL import Image
+import tensorflow as tf
+from object_detection.utils import label_map_util, visualization_utils as vis_util #IMPORTANT: Maintain this path
+import argparse
+from PIL.ExifTags import TAGS
+
+# ----------------------------- ARGUMENTS -----------------------------
+
+parser = argparse.ArgumentParser(
+    description="Hotspot detection using TensorFlow frozen model")
+parser.add_argument("-hs_m", "--hotspots_saved_model_dir",
+                    type=str, help="Hotspot model directory")
+parser.add_argument("-hs_l", "--hotspots_label_map",
+                    type=str, help="Hotspot label map path")
+parser.add_argument("-i", "--input_image", type=str, help="Input image path")
+parser.add_argument("-o", "--outputs_dir", type=str, help="Output directory")
+parser.add_argument("--hotspot_thresh", type=float,
+                    default=0.3, help="Hotspot detection threshold")
+args = parser.parse_args()
+
+# ----------------------------- UTILS -----------------------------
+
+
+def load_graph(frozen_graph_path):
+    graph = tf.Graph()
+    with graph.as_default():
+        graph_def = tf.compat.v1.GraphDef()
+        with tf.io.gfile.GFile(frozen_graph_path, 'rb') as f:
+            graph_def.ParseFromString(f.read())
+            tf.import_graph_def(graph_def, name='')
+    return graph
+
+
+def load_image_np(image_path):
+    return np.array(Image.open(image_path)).astype(np.uint8)
+
+
+def get_exif_gps(image):
+    try:
+        exif = image._getexif()
+        if not exif:
+            return "N/A"
+        decoded = {TAGS.get(k, k): v for k, v in exif.items()}
+        gps = decoded.get('GPSInfo')
+        if not gps:
+            return "N/A"
+        return '{0} {1} {2} {3}, {4} {5} {6} {7}'.format(
+            gps[2][0], gps[2][1], gps[2][2], gps[1],
+            gps[4][0], gps[4][1], gps[4][2], gps[3]
+        )
+    except:
+        return "N/A"
+
+# ----------------------------- LOAD MODEL -----------------------------
+
+
+hotspots_graph = load_graph(os.path.join(
+    args.hotspots_saved_model_dir, 'frozen_inference_graph.pb'))
+hotspots_category_index = label_map_util.create_category_index_from_labelmap(
+    args.hotspots_label_map, use_display_name=True
+)
+
+os.makedirs(args.outputs_dir, exist_ok=True)
+csv_path = os.path.join(args.outputs_dir, "outputs.csv")
+csv = open(csv_path, "w")
+csv.write("image,GPS\n")
+
+# ----------------------------- PROCESS SINGLE IMAGE -----------------------------
+
+img_path = args.input_image
+img_name = os.path.basename(img_path)
+base_name = os.path.splitext(img_name)[0]
+
+image_np = load_image_np(img_path)
+image_expanded = np.expand_dims(image_np, axis=0)
+
+gps = get_exif_gps(Image.open(img_path))
+csv.write(f"{base_name},{gps}\n")
+
+with hotspots_graph.as_default():
+    with tf.compat.v1.Session(graph=hotspots_graph) as sess:
+        image_tensor = hotspots_graph.get_tensor_by_name('image_tensor:0')
+        boxes = hotspots_graph.get_tensor_by_name('detection_boxes:0')
+        scores = hotspots_graph.get_tensor_by_name('detection_scores:0')
+        classes = hotspots_graph.get_tensor_by_name('detection_classes:0')
+        num_detections = hotspots_graph.get_tensor_by_name('num_detections:0')
+
+        out_boxes, out_scores, out_classes, out_num = sess.run(
+            [boxes, scores, classes, num_detections],
+            feed_dict={image_tensor: image_expanded}
+        )
+
+        out_boxes = np.squeeze(out_boxes)
+        out_scores = np.squeeze(out_scores)
+        out_classes = np.squeeze(out_classes).astype(int)
+
+        valid = np.where(out_scores >= args.hotspot_thresh)[0]
+
+        if len(valid) == 0:
+            csv.close()
+            print("No hotspots detected.")
+            exit(0)
+
+        output_dir = os.path.join(args.outputs_dir, base_name)
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Crop each detected hotspot
+        h, w = image_np.shape[:2]
+        hotspot_num = 0
+
+        for i in valid:
+            hotspot_num += 1
+            ymin, xmin, ymax, xmax = out_boxes[i]
+            ymin, xmin, ymax, xmax = int(
+                ymin * h), int(xmin * w), int(ymax * h), int(xmax * w)
+            crop = image_np[ymin:ymax, xmin:xmax]
+            Image.fromarray(crop).save(os.path.join(
+                output_dir, f"{base_name}_hs{hotspot_num}.jpg"))
+
+        # Draw detections on full image
+        vis_util.visualize_boxes_and_labels_on_image_array(
+            image_np,
+            out_boxes[valid],
+            out_classes[valid],
+            out_scores[valid],
+            hotspots_category_index,
+            use_normalized_coordinates=True,
+            line_thickness=3,
+            min_score_thresh=args.hotspot_thresh
+        )
+
+        Image.fromarray(image_np).save(
+            os.path.join(output_dir, f"{base_name}.jpg"))
+
+csv.close()
+print(f"Hotspot detections saved in: {args.outputs_dir}")
+```
+
+As you can see, there are several modules:
+
+- Argument module: It loads everything related to location of the files
+- Utils: Auxiliar functions which are used later
+- Load model: It loads the model from the paths defined in the arguments (Ideally, the ones from step 1)
+- Process image: This is the part of image processing and savinf the data in outputs.
+
+This detection.py could work on itself by executing it, but for commodity and standarization of the app, I've decided to create a main.py file, explained in the next section, that controls with which arguments this file is called.
+
+_Note: Some little tweaks should be made in order to have the correct naming for panel detection instead of hotspots, but technically you could load the panel model, and put the panel files in those folders with those names and you could make it work. For convenience, I recommend NOT to do it, and create that structure for every algorithm and change a bit the namings in detection.py / main.py, for exportability and standarization reasons_
+
+### main.py
+
+```python
+import sys
+import subprocess
+import tempfile
+from pathlib import Path
+import zipfile
+import os
+
+
+def main():
+    if len(sys.argv) != 3:
+        print("Uso: python main.py <input_image> <output_zip>")
+        sys.exit(1)
+
+    input_image = Path(sys.argv[1])
+    output_zip = Path(sys.argv[2])
+    base_path = Path(__file__).parent
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_dir = Path(temp_dir)
+
+        outputs_dir = temp_dir / "detections"
+        outputs_dir.mkdir(parents=True, exist_ok=True)
+
+        try:
+            subprocess.run([
+                sys.executable,
+                "-m", "object_detection.detection",
+                "-hs_m", str(base_path / "workspace_hotspots/saved_models"),
+                "-hs_l", str(base_path /
+                             "workspace_hotspots/data/L2/label_map.pbtxt"),
+                "-i", str(input_image),
+                "-o", str(outputs_dir)
+            ],
+                check=True,
+                env={**os.environ,
+                     "PYTHONPATH": str(base_path / "models/research")}
+            )
+
+            with zipfile.ZipFile(output_zip, 'w') as zipf:
+                for file in outputs_dir.rglob('*'):
+                    zipf.write(file, arcname=file.relative_to(outputs_dir))
+
+            print(f"ZIP de salida creado: {output_zip}")
+
+        except subprocess.CalledProcessError as e:
+            print(f"Error ejecutando detection.py: {e}")
+            sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
+
+```
+
+This `main.py` file is similar to the ones described on the general one but including the paths of the image to analyze and the detection module.
+
+### workspace_X/: This folder contains two subfolders
+
+- data/L2: This contains the file `label_map.pbtxt`, which has in it the labels for the distinct hotspots/panels
+- saved_models/: This is where your model should be contained
+
+### Once you have these files and folders, you can compile these three (`workspace_X/`, `models/`, `main.py`) into a _.zip_ file and upload them as an algorithm into the application.

@@ -179,7 +179,7 @@ class RegisterView(FormView):  # type: ignore
         try:
             project = Project.objects.get(title__iexact=project_slug)
         except Project.DoesNotExist:
-            messages.error(self.request, "Project does not exist.")
+            messages.error(self.request, "El proyecto no existe.")
             user.delete()
             return self.form_invalid(form)
 

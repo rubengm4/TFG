@@ -65,14 +65,14 @@
     </a>
   </div>
 
-  <!-- Title -->
+  <!-- Título -->
   <div class="text-center">
     <h2 class="text-3xl font-bold text-gray-800">
       <i class="fas fa-file-upload text-red-600 drop-shadow-[0_0_8px_rgba(250,68,68,0.7)] animate-pulse-slow"></i> Gestor de Archivos
     </h2>
   </div>
 
-  <!-- Upload form -->
+  <!-- Form subida de archivo -->
   <div class="bg-gradient-to-br from-red-100 to-red-300 shadow-lg rounded-xl p-6 w-full max-w-6xl hover:shadow-red-400/50 hover:scale-[1.01] transition-all">
     <form method="post" enctype="multipart/form-data" class="space-y-4">
       {% csrf_token %}
@@ -113,7 +113,7 @@
   </div>
   {% endif %}
 
-  <!-- File list -->
+  <!-- Lista de archivos -->
   <div class="bg-gradient-to-br from-red-100 to-red-300 shadow-lg rounded-xl p-6 w-full max-w-6xl hover:shadow-red-400/50 hover:scale-[1.01] transition-all">
     {% if files %}
     <div class="overflow-x-auto rounded-xl border border-red-200 shadow-inner">
@@ -150,7 +150,7 @@
             <td class="px-6 py-4">{{ file.type }}</td>
             <td class="px-6 py-4">{{ file.upload_date|date:"d/m/Y H:i" }}</td>
             <td class="px-6 py-4 flex items-center gap-3">
-              <!-- Analyze -->
+              <!-- Analizar -->
               <form method="post" action="{% url 'analysis' %}" class="inline">
                 {% csrf_token %}
                 <input type="hidden" name="file_id" value="{{ file.id }}">
@@ -159,13 +159,13 @@
                   <i class="fas fa-chart-line"></i> Analizar
                 </button>
               </form>
-              <!-- Edit -->
+              <!-- Editar -->
               <a href="javascript:void(0);" 
                 onclick="makeEditable(this.closest('tr').querySelector('td:first-child'), {{ file.id }})"
                 class="text-red-600 hover:text-red-800 font-semibold transition flex items-center gap-1">
                 <i class="fa fa-pencil-alt"></i> Editar
               </a>
-              <!-- Delete -->
+              <!-- Borrar -->
               <form method="post" class="inline"
                     onsubmit="return confirm('¿Estás seguro de que quieres eliminar este archivo?');">
                 {% csrf_token %}
@@ -188,7 +188,7 @@
     {% endif %}
   </div>
 
-  <!-- Floating alerts -->
+  <!-- Alertas -->
   <div id="alerts-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 w-80 z-50"></div>
 </div>
 {% endblock %}

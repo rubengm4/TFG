@@ -81,16 +81,16 @@
     {% endfor %}
   {% endif %}
 
-  <!-- === Upload/Download Controls === -->
+  <!-- Controles para Subir/Descargar -->
   <div class="bg-gradient-to-br from-green-100 to-green-300 shadow-lg rounded-xl p-4 w-full max-w-6xl hover:shadow-green-400/50 hover:scale-[1.01] transition-all flex flex-wrap gap-3 items-center justify-between">
     
-    <!-- Download requirements.txt -->
+    <!-- Descargar requirements.txt -->
     <a href="{% url 'download_requirements' %}" 
       class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold shadow flex items-center justify-center gap-2 hover:shadow-green-500/70 transition hover:scale-[1.02]">
       <i class="fas fa-download"></i> Descargar requirements.txt
     </a>
 
-    <!-- Upload requirements.txt -->
+    <!-- Subir requirements.txt -->
     <form id="uploadForm" method="post" enctype="multipart/form-data" action="{% url 'upload_requirements' %}" class="flex items-center gap-2">
       {% csrf_token %}
       <div class="relative">
@@ -181,7 +181,7 @@ document.addEventListener("DOMContentLoaded", function() {
   let installationInProgress = false;
   let refreshInterval = null;
 
-  // === Helper: toggle edit mode ===
+  // Toggle modo edición
   function setEditingMode(val) {
     isEditing = !!val;
     document.querySelectorAll(".package-input").forEach(inp => {
@@ -199,7 +199,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
   setEditingMode(false);
 
-  // === Refresh logs periodically ===
+  // Refresca logs periódicamente
   async function refreshLogs() {
     try {
       const res = await fetch(REQUIREMENTS_URL + "?logs_only=1", { cache: "no-store" });
@@ -221,11 +221,11 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     } catch {
-      // silently ignore errors
+      // Ignora errores de manera silenciosa
     }
   }
 
-  // === Handle AJAX submit (Guardar e Instalar) ===
+  // Guardar e instalar de manera async
   async function handleAsyncAction(url, formData) {
     if (installationInProgress) return;
     installationInProgress = true;
@@ -242,7 +242,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   }
 
-  // === Edit, cancel, add, remove ===
+  // Editar, cancelar, añadir, borrar
   editToggle.addEventListener("click", () => {
     setEditingMode(true);
     document.querySelector(".package-input")?.focus();
@@ -267,13 +267,13 @@ document.addEventListener("DOMContentLoaded", function() {
     if (btn && isEditing) btn.closest("tr").remove();
   });
 
-  // === Guardar e Instalar submit ===
+  // Guardar e Instalar submit
   document.getElementById("requirements-form").addEventListener("submit", async function(e) {
     e.preventDefault();
     await handleAsyncAction(REQUIREMENTS_URL, new FormData(this));
   });
 
-  // === Upload requirements.txt ===
+  // Subir requirements.txt
   const fileInput = document.getElementById("requirementsFileInput");
   const fileNameLabel = document.getElementById("requirementsFileName");
   const uploadForm = document.getElementById("uploadForm");

@@ -6,44 +6,44 @@
 {% block content %}
 <div class="flex flex-col items-center min-h-screen px-4 py-8 space-y-6">
 
-  <!-- Title -->
+  <!-- Título -->
   <div class="text-center">
     <h2 class="text-3xl font-bold text-gray-800 flex items-center justify-center gap-3">
       <i class="fas fa-brain text-blue-500 drop-shadow-[0_0_8px_rgba(21,101,192,0.7)] animate-pulse-slow"></i>
       Algovision
     </h2>
-    <p class="text-gray-600 mt-2">Aplicación de gestión de algoritmos de IA</p>
+    <p class="text-gray-600 mt-2">Plataforma de gestión de algoritmos de IA</p>
   </div>
 
   <!-- Cards Container -->
   <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-6xl px-4">
 
-    <!-- PV Analysis Card -->
+    <!-- Análisis FV Card -->
     <form method="post" action="{% url 'accounts:set_source' %}" class="bg-gradient-to-br from-teal-100 to-teal-300 shadow-lg rounded-xl p-6 flex flex-col items-center hover:shadow-teal-400/50 hover:scale-[1.01] transition-all">
       {% csrf_token %}
       <input type="hidden" name="source" value="pv-analysis" />
       <i class="fas fa-solar-panel text-5xl text-teal-600 mb-4"></i>
-      <h3 class="text-xl font-bold text-gray-800 mb-2">PV Analysis</h3>
-      <p class="text-gray-600 text-center mb-4">Analiza y gestiona los algoritmos de placas fotovoltaicas</p>
+      <h3 class="text-xl font-bold text-gray-800 mb-2">Análisis FV</h3>
+      <p class="text-gray-600 text-center mb-4">Gestión de algotimos de detección de paneles fotovoltaicos</p>
       <button type="submit" class="mt-auto bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-6 rounded-lg transition-all w-full">Abrir</button>
     </form>
 
-    <!-- People Analysis Card -->
+    <!-- Análisis Personas Card -->
     <form method="post" action="{% url 'accounts:set_source' %}" class="bg-gradient-to-br from-orange-100 to-orange-300 shadow-lg rounded-xl p-6 flex flex-col items-center hover:shadow-orange-400/50 hover:scale-[1.01] transition-all">
       {% csrf_token %}
       <input type="hidden" name="source" value="people-analysis" />
       <i class="fas fa-users text-5xl text-orange-600 mb-4"></i>
-      <h3 class="text-xl font-bold text-gray-800 mb-2">People Analysis</h3>
-      <p class="text-gray-600 text-center mb-4">Gestión de análisis de personas y algoritmos relacionados</p>
+      <h3 class="text-xl font-bold text-gray-800 mb-2">Análisis Personas</h3>
+      <p class="text-gray-600 text-center mb-4">Gestión de algoritmos para análisis de personas en interiores</p>
       <button type="submit" class="mt-auto bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-6 rounded-lg transition-all w-full">Abrir</button>
     </form>
 
-    <!-- Stats Analysis Card -->
+    <!-- Estadísticas Card -->
     <form method="post" action="{% url 'accounts:set_source' %}" class="bg-gradient-to-br from-purple-100 to-purple-300 shadow-lg rounded-xl p-6 flex flex-col items-center hover:shadow-purple-400/50 hover:scale-[1.01] transition-all">
       {% csrf_token %}
       <input type="hidden" name="source" value="stats-analysis" />
       <i class="fas fa-chart-pie text-5xl text-purple-600 mb-4"></i>
-      <h3 class="text-xl font-bold text-gray-800 mb-2">Stats Analysis</h3>
+      <h3 class="text-xl font-bold text-gray-800 mb-2">Estadísticas</h3>
       <p class="text-gray-600 text-center mb-4">Generación de estadísticas y tendencias a partir de archivos CSV</p>
       <button type="submit" class="mt-auto bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-all w-full">Abrir</button>
     </form>

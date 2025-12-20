@@ -60,7 +60,7 @@
 {% block content %}
 <div class="flex flex-col items-center min-h-screen px-4 py-8 space-y-6">
 
-  <!-- Logout button top right -->
+  <!-- Botón logout arriba a la derecha -->
   <div class="w-full flex justify-between items-center">
     <div class="flex space-x-2">
       <a href="{% url 'accounts:manage_user' %}" 
@@ -84,7 +84,7 @@
 
 
 
-    <!-- Messages -->
+    <!-- Mensajes -->
   {% if messages %}
     {% for message in messages %}
       {% if "error" in message.tags %}
@@ -97,20 +97,16 @@
     {% endfor %}
   {% endif %}
 
-
-  <!-- Welcome Info -->
+  <!-- Información de bienvenida-->
   <div class="text-center">
-    <h2 class="text-3xl font-bold text-gray-800">Bienvenido, {{ user.username }}</h2>
-    <p class="text-gray-600 mt-2">Estás en el proyecto: <strong>{{ project_slug }}</strong></p>
-    {% if last_login %}
-      <p class="text-gray-500 text-sm mt-1">Último acceso: {{ last_login|date:"d M Y H:i" }}</p>
-    {% endif %}
+    <h2 class="text-3xl font-bold text-gray-800"> <i class="fa-solid fa-door-open"></i> Bienvenido, {{ user.username }}</h2>
+    <p class="text-gray-600 mt-2"><i class="fa-solid fa-location-pin"></i> Estás en el proyecto: <strong>{{ project_slug }}</strong></p>
   </div>
 
-  <!-- First Row: 3 Main Cards with gradients -->
+  <!-- Primera fila: 3 cartas principales con gradientes-->
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-7xl mt-6">
 
-    <!-- Archivos subidos (red) -->
+    <!-- Archivos subidos (rojo) -->
     <div class="bg-gradient-to-br from-red-100 to-red-300 shadow rounded-lg p-6 flex flex-col items-center 
                 hover:shadow-red-400/60 hover:scale-105 transition-all">
       <i class="fas fa-file-upload fa-3x text-red-600 mb-3"></i>
@@ -122,7 +118,7 @@
       </a>
     </div>
 
-    <!-- Análisis realizados (yellow) -->
+    <!-- Análisis realizados (amarillo) -->
     <div class="bg-gradient-to-br from-yellow-200 to-yellow-400 shadow rounded-lg p-6 flex flex-col items-center 
                 hover:shadow-yellow-400/60 hover:scale-105 transition-all">
       <i class="fas fa-chart-line fa-3x text-yellow-600 mb-3"></i>
@@ -134,7 +130,7 @@
       </a>
     </div>
 
-    <!-- Algoritmos del proyecto (green) -->
+    <!-- Algoritmos del proyecto (verde) -->
     <div class="bg-gradient-to-br from-green-400 to-green-600 shadow rounded-lg p-6 flex flex-col items-center 
                 hover:shadow-green-400/60 hover:scale-105 transition-all">
       <i class="fas fa-cogs fa-3x text-green-700 mb-3"></i>
@@ -150,7 +146,7 @@
 
   </div>
 
-  <!-- Second Row: Resultados Recientes (blue) -->
+  <!-- Segunda fila: Resultados Recientes (azul)-->
   <div class="w-full max-w-7xl mt-6">
     <div class="bg-gradient-to-br from-blue-200 to-blue-400 shadow rounded-lg p-6 flex flex-col 
                 hover:shadow-blue-400/60 hover:scale-105 transition-all">
@@ -162,7 +158,7 @@
           {% for result in recent_results %}
             <div class="flex items-center justify-between p-2 bg-gray-50 rounded hover:bg-gray-100 transition-all">
               <div class="flex items-center gap-2">
-                <!-- Status indicator with stronger pulse/glow -->
+                <!-- Indicador del estado de la ejecución-->
                 {% if result.status == 'FINISHED' %}
                   <span class="w-3 h-3 rounded-full bg-green-500 inline-block animate-pulse shadow-lg shadow-green-500/70"></span>
                 {% elif result.status == 'PENDING' %}
@@ -182,7 +178,7 @@
           {% endfor %}
         </div>
 
-        <!-- "Ver todos" button (dark blue to match) -->
+        <!-- Botón "Ver todos" (azul oscuro para que siga el código de colores) -->
         <a href="{% url 'results' %}" 
            class="mt-3 w-full bg-blue-700 hover:bg-blue-800 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-500/50 transition-all transform hover:scale-105">
            <i class="fas fa-list"></i> Ver todos

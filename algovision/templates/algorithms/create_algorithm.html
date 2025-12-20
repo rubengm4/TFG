@@ -72,7 +72,7 @@
     </a>
   </div>
 
-  <!-- Title -->
+  <!-- Título -->
   <div class="text-center w-full max-w-6xl">
     <h2 class="text-3xl font-bold text-gray-800 flex items-center justify-center gap-3">
       <i class="fas fa-cogs text-green-500 drop-shadow-[0_0_8px_rgba(34,197,94,0.7)] animate-pulse-slow"></i>
@@ -87,8 +87,26 @@
       
       {% for field in form %}
         <div>
-          <label for="{{ field.id_for_label }}" class="block font-semibold text-gray-700 mb-2">
-            {{ field.label }}
+          <label for="{{ field.id_for_label }}" class="block text-gray-700 font-semibold mb-1">
+            {% if field.label == "Name" %}
+              <i class="fas fa-angle-right text-green-600 mr-1"></i>Nombre
+            {% elif field.label == "Project" %}
+              <i class="fas fa-angle-right text-green-600 mr-1"></i>Proyecto
+            {% elif field.label == "Version" %}
+              <i class="fas fa-angle-right text-green-600 mr-1"></i>Versión
+            {% elif field.label == "Description" %}
+              <i class="fas fa-angle-right text-green-600 mr-1"></i>Descripción
+            {% elif field.label == "Archive" %}
+              <i class="fas fa-angle-right text-green-600 mr-1"></i>Archivo
+            {% elif field.label == "Version" %}
+              <i class="fas fa-angle-right text-green-600 mr-1"></i>Versión
+            {% elif field.label == "Supported types" %}
+              <i class="fas fa-angle-right text-green-600 mr-1"></i>Tipos soportados
+            {% elif field.label == "Requires two files" %}
+              <i class="fas fa-angle-right text-green-600 mr-1"></i>¿Necesita dos archivos?
+            {% else  %}
+              <i class="fas fa-angle-right text-green-600 mr-1"></i>{{ field.label }}
+            {% endif %}
           </label>
           {{ field }}
           {% if field.help_text %}
@@ -100,17 +118,21 @@
         </div>
       {% endfor %}
 
-      <!-- Submit button -->
+      <!-- Submit -->
       <div class="flex items-center gap-4 pt-2">
         <button type="submit"
                 class="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-2.5 px-6 rounded-lg font-bold shadow-lg shadow-green-400/50 transition-all hover:shadow-green-500/70 hover:scale-[1.02] animate-pulse-slow">
           <i class="fas fa-check animate-pulse-slow"></i> Crear Algoritmo
         </button>
+        <a href="{% url 'manage_algorithms' %}"
+           class="flex items-center justify-center gap-2 border border-gray-300 hover:bg-gray-100 text-gray-700 py-2.5 px-6 rounded-lg font-medium shadow transition-all hover:scale-[1.02]">
+          <i class="fas fa-times"></i> Cancelar
+        </a>
       </div>
     </form>
   </div>
 
-  <!-- Messages -->
+  <!-- Mensajes -->
   {% if messages %}
     <div class="w-full max-w-6xl">
       {% for message in messages %}
