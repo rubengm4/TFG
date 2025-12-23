@@ -26,13 +26,28 @@ Trabajo de Fin de Grado
 9. In _analysis/templates/index.html_, add a similar element to the following to create a button with a link to the new project, changing Example and _value="example-project"_ by the new project's name.
 
    ```html
-   <div class="col-auto">
-     <form method="post" action="{% url 'accounts:set_source' %}">
-       {% csrf_token %}
-       <input type="hidden" name="source" value="example-project" />
-       <button type="submit" class="btn btn-primary px-4">Example</button>
-     </form>
-   </div>
+   <!-- Análisis FV Card -->
+   <form
+     method="post"
+     action="{% url 'accounts:set_source' %}"
+     class="bg-gradient-to-br from-teal-100 to-teal-300 shadow-lg rounded-xl p-8 flex flex-col items-center hover:shadow-teal-400/50 hover:scale-[1.02] transition-all w-full max-w-sm md:max-w-md"
+   >
+     {% csrf_token %}
+     <input type="hidden" name="source" value="pv-analysis" />
+     <i class="fas fa-solar-panel text-6xl md:text-7xl text-teal-600 mb-6"></i>
+     <h3 class="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-3">
+       Example
+     </h3>
+     <p class="text-gray-600 text-center mb-6 text-center text-sm md:text-lg">
+       Lorem ipsum sit dolor amet
+     </p>
+     <button
+       type="submit"
+       class="mt-auto bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 px-6 rounded-lg transition-all w-full text-lg md:text-xl"
+     >
+       Abrir
+     </button>
+   </form>
    ```
 
 10. (Opcional pero recomendable) Añadir el proyecto a la sidebar en _analysis/templates/index.html_. El icono se modifica editando la clase del elemento _<i>_, y habría que modificar el _value_ poniendo el nombre del proyecto en vez de _example_analysis_ y cambiando Example también (aunque ese cambio es visual)
