@@ -6,21 +6,19 @@
 
 {% block sidebar_links %}
   <ul class="flex flex-col gap-1 text-gray-300 font-medium">
-
     <li>
       <a href="{% url 'accounts:login' %}"
-         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white font-semibold">
-        🔑 Iniciar sesión
+         class="block py-2.5 px-4 rounded-lg transition-all text-rose-500 hover:bg-gray-800 font-semibold">
+        <i class="fas fa-sign-in-alt text-rose-500"></i> Iniciar sesión
       </a>
     </li>
 
     <li>
       <a href="{% url 'accounts:register' %}"
-         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white">
-        📝 Registrarse
+         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800">
+        <i class="fas fa-user-plus text-fuchsia-500"></i> Registrarse
       </a>
     </li>
-
   </ul>
 {% endblock %}
 
