@@ -1,149 +1,127 @@
-{% extends "base.html" %} {% load static %} {% load dynamic_url %} {% block
-title %}Algovision | Registrarse{% endblock %} {% block sidebar_links %}
-<ul class="flex flex-col gap-1 text-gray-300 font-medium">
-  <li>
-    <a
-      href="{% url 'accounts:login' %}"
-      class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800"
-    >
-      <i class="fas fa-sign-in-alt text-rose-500"></i> Iniciar sesión
-    </a>
-  </li>
+{% extends "base.html" %}
+{% load static %}
+{% load dynamic_url %}
 
-  <li>
-    <a
-      href="{% url 'accounts:register' %}"
-      class="block py-2.5 px-4 rounded-lg transition-all text-fuchsia-500 hover:bg-gray-800 font-semibold"
-    >
-      <i class="fas fa-user-plus text-fuchsia-500"></i> Registrarse
-    </a>
-  </li>
-</ul>
-{% endblock %} {% block content %}
-<div
-  class="flex flex-col items-center justify-center min-h-screen px-4 py-8 space-y-6"
->
+{% block title %}Algovision | Registrarse{% endblock %}
+
+{% block sidebar_links %}
+  <ul class="flex flex-col gap-1 text-gray-300 font-medium">
+    <li>
+      <a href="{% url 'accounts:login' %}"
+         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800">
+        <i class="fas fa-sign-in-alt text-rose-500"></i> Iniciar sesión
+      </a>
+    </li>
+
+    <li>
+      <a href="{% url 'accounts:register' %}"
+         class="block py-2.5 px-4 rounded-lg transition-all text-fuchsia-500 hover:bg-gray-800 font-semibold">
+        <i class="fas fa-user-plus text-fuchsia-500"></i> Registrarse
+      </a>
+    </li>
+  </ul>
+{% endblock %}
+
+
+{% block content %}
+<div class="flex flex-col items-center justify-center min-h-screen px-4 py-8 space-y-6">
+
   <!-- Botón de volver centrado -->
   <div class="w-full flex justify-center">
-    <a
-      href="{% dynamic_url source|add:'_home' %}"
-      class="inline-flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg shadow transition-all hover:scale-[1.02]"
-    >
-      <i
-        class="fas fa-arrow-left transition-transform duration-300 ease-in-out group-hover:-translate-x-1"
-      ></i>
+    <a href="{% dynamic_url source|add:'_home' %}" 
+       class="inline-flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg shadow transition-all hover:scale-[1.02]">
+      <i class="fas fa-arrow-left transition-transform duration-300 ease-in-out group-hover:-translate-x-1"></i>
       Volver al menú {{ source }}
     </a>
   </div>
 
   <!-- Register Card -->
-  <div
-    class="bg-gradient-to-br from-indigo-100 to-purple-200 rounded-xl shadow-lg p-8 w-full max-w-md transition-all hover:shadow-purple-300/50 hover:scale-[1.01]"
-  >
-    <h2 class="text-3xl font-bold text-gray-800 text-center mb-6">
-      Registrarse
-    </h2>
+  <div class="bg-gradient-to-br from-indigo-100 to-purple-200 rounded-xl shadow-lg p-8 w-full max-w-md transition-all hover:shadow-purple-300/50 hover:scale-[1.01]">
+
+    <h2 class="text-3xl font-bold text-gray-800 text-center mb-6">Registrarse</h2>
 
     <!-- Mensajes -->
-    {% if messages %} {% for message in messages %} {% if "error" in
-    message.tags %}
-    <div class="bg-red-100 text-red-700 p-2 rounded w-full text-center mb-2">
-      {{ message }}
-    </div>
-    {% elif "success" in message.tags %}
-    <div
-      class="bg-green-100 text-green-700 p-2 rounded w-full text-center mb-2"
-    >
-      {{ message }}
-    </div>
-    {% else %}
-    <div class="bg-gray-100 text-gray-700 p-2 rounded w-full text-center mb-2">
-      {{ message }}
-    </div>
-    {% endif %} {% endfor %} {% endif %} {% if form.non_field_errors %}
-    <div class="bg-red-100 text-red-700 p-2 rounded w-full text-center mb-3">
-      {% for error in form.non_field_errors %}
-      <div>{{ error }}</div>
+    {% if messages %}
+      {% for message in messages %}
+        {% if "error" in message.tags %}
+          <div class="bg-red-100 text-red-700 p-2 rounded w-full text-center mb-2">{{ message }}</div>
+        {% elif "success" in message.tags %}
+          <div class="bg-green-100 text-green-700 p-2 rounded w-full text-center mb-2">{{ message }}</div>
+        {% else %}
+          <div class="bg-gray-100 text-gray-700 p-2 rounded w-full text-center mb-2">{{ message }}</div>
+        {% endif %}
       {% endfor %}
-    </div>
+    {% endif %}
+
+    {% if form.non_field_errors %}
+      <div class="bg-red-100 text-red-700 p-2 rounded w-full text-center mb-3">
+        {% for error in form.non_field_errors %}
+          <div>{{ error }}</div>
+        {% endfor %}
+      </div>
     {% endif %}
 
     <!-- Form -->
     <form method="post" novalidate class="space-y-4 text-left">
-      {% csrf_token %} {% for field in form %}
-      <div>
-        <label
-          for="{{ field.id_for_label }}"
-          class="block text-gray-700 font-semibold mb-1"
-        >
-          {% if field.label == "Username" %}
-          <i class="fas fa-angle-right text-blue-600 mr-1"></i>Usuario {% elif
-          field.label == "First name" %}
-          <i class="fas fa-angle-right text-blue-600 mr-1"></i>Nombre {% elif
-          field.label == "Last name" %}
-          <i class="fas fa-angle-right text-blue-600 mr-1"></i>Apellido/s {%
-          elif field.label == "Password" %}
-          <i class="fas fa-angle-right text-blue-600 mr-1"></i>Contraseña {%
-          elif field.label == "Password confirmation" %}
-          <i class="fas fa-angle-right text-blue-600 mr-1"></i>Confirmar
-          contraseña {% else %}
-          <i class="fas fa-angle-right text-blue-600 mr-1"></i>{{ field.label }}
+      {% csrf_token %}
+      {% for field in form %}
+        <div>
+          <label for="{{ field.id_for_label }}" class="block text-gray-700 font-semibold mb-1">
+            {% if field.label == "Username" %}
+              <i class="fas fa-angle-right text-blue-600 mr-1"></i>Usuario
+            {% elif field.label == "First name" %}
+              <i class="fas fa-angle-right text-blue-600 mr-1"></i>Nombre
+            {% elif field.label == "Last name" %}
+              <i class="fas fa-angle-right text-blue-600 mr-1"></i>Apellido/s
+            {% elif field.label == "Password" %}
+              <i class="fas fa-angle-right text-blue-600 mr-1"></i>Contraseña
+            {% elif field.label == "Password confirmation" %}
+              <i class="fas fa-angle-right text-blue-600 mr-1"></i>Confirmar contraseña
+            {% else  %}
+              <i class="fas fa-angle-right text-blue-600 mr-1"></i>{{ field.label }}
+            {% endif %}
+          </label>
+          {{ field }}
+          {% if field.errors %}
+            <div class="text-red-600 text-sm mt-1">{{ field.errors }}</div>
           {% endif %}
-        </label>
-        {{ field }} {% if field.errors %}
-        <div class="text-red-600 text-sm mt-1">{{ field.errors }}</div>
-        {% endif %}
-      </div>
+        </div>
       {% endfor %}
 
       <!-- Reglas de contraseña -->
-      <div
-        id="passwordBox"
-        class="bg-gray-50 rounded-lg p-3 text-sm mt-3 border border-gray-200 shadow-inner"
-      >
+      <div id="passwordBox" class="bg-gray-50 rounded-lg p-3 text-sm mt-3 border border-gray-200 shadow-inner">
         <p class="font-semibold mb-2">Requisitos de la contraseña:</p>
         <ul id="password-rules" class="space-y-1 mb-3">
-          <li id="rule-length" class="text-red-600">
-            ❌ Al menos 8 caracteres
-          </li>
+          <li id="rule-length" class="text-red-600">❌ Al menos 8 caracteres</li>
           <li id="rule-numeric" class="text-red-600">❌ No ser solo números</li>
-          <li id="rule-match" class="text-red-600">
-            ❌ Las contraseñas coinciden
-          </li>
+          <li id="rule-match" class="text-red-600">❌ Las contraseñas coinciden</li>
         </ul>
         <div class="w-full bg-gray-200 rounded-full h-2">
-          <div
-            id="strength-bar"
-            class="h-2 rounded-full bg-red-500 w-0 transition-all"
-          ></div>
+          <div id="strength-bar" class="h-2 rounded-full bg-red-500 w-0 transition-all"></div>
         </div>
-        <p id="strength-label" class="mt-1 text-xs text-gray-600">
-          Fuerza: Muy débil
-        </p>
+        <p id="strength-label" class="mt-1 text-xs text-gray-600">Fuerza: Muy débil</p>
       </div>
 
       <!-- Submit -->
-      <button
-        type="submit"
-        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg shadow-md flex items-center justify-center gap-2 transition-all hover:scale-[1.02] hover:shadow-indigo-400/60"
-      >
+      <button type="submit" 
+              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg shadow-md flex items-center justify-center gap-2 transition-all hover:scale-[1.02] hover:shadow-indigo-400/60">
         <i class="fas fa-user-plus"></i> Registrarse
       </button>
 
       <!-- Link de iniciar sesión -->
       <p class="text-center text-gray-700 mt-3 text-sm">
         ¿Ya tienes una cuenta?
-        <a
-          href="{% url 'accounts:login' %}"
-          class="text-indigo-600 hover:text-indigo-700 font-semibold inline-flex items-center gap-1 transition-colors"
-        >
+        <a href="{% url 'accounts:login' %}" 
+           class="text-indigo-600 hover:text-indigo-700 font-semibold inline-flex items-center gap-1 transition-colors">
           <i class="fas fa-sign-in-alt"></i> Inicia sesión
         </a>
       </p>
     </form>
   </div>
 </div>
-{% endblock %} {% block extra_styles %}
+{% endblock %}
+
+{% block extra_styles %}
 <style>
   input[type="text"],
   input[type="email"],
@@ -155,96 +133,85 @@ title %}Algovision | Registrarse{% endblock %} {% block sidebar_links %}
     @apply bg-white;
   }
 </style>
-{% endblock %} {% block extra_scripts %}
+{% endblock %}
+
+{% block extra_scripts %}
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const passwordField = document.getElementById("id_password1");
-    const confirmField = document.getElementById("id_password2");
-    if (!passwordField || !confirmField) return;
+document.addEventListener('DOMContentLoaded', function () {
+  const passwordField = document.getElementById('id_password1');
+  const confirmField = document.getElementById('id_password2');
+  if (!passwordField || !confirmField) return;
 
-    const ruleLength = document.getElementById("rule-length");
-    const ruleNumeric = document.getElementById("rule-numeric");
-    const ruleMatch = document.getElementById("rule-match");
-    const strengthBar = document.getElementById("strength-bar");
-    const strengthLabel = document.getElementById("strength-label");
+  const ruleLength = document.getElementById('rule-length');
+  const ruleNumeric = document.getElementById('rule-numeric');
+  const ruleMatch = document.getElementById('rule-match');
+  const strengthBar = document.getElementById('strength-bar');
+  const strengthLabel = document.getElementById('strength-label');
 
-    function updateStrength(pwd) {
-      let strength = 0;
-      if (pwd.length >= 8) strength++;
-      if (/[A-Z]/.test(pwd)) strength++;
-      if (/[0-9]/.test(pwd)) strength++;
-      if (/[^A-Za-z0-9]/.test(pwd)) strength++;
-      if (pwd.length >= 16) strength++;
+  function updateStrength(pwd) {
+    let strength = 0;
+    if (pwd.length >= 8) strength++;
+    if (/[A-Z]/.test(pwd)) strength++;
+    if (/[0-9]/.test(pwd)) strength++;
+    if (/[^A-Za-z0-9]/.test(pwd)) strength++;
+    if (pwd.length >= 16) strength++;
 
-      // Fallback to 1 if no strength detected
-      if (strength === 0) strength = 1;
+    // Fallback to 1 if no strength detected
+    if (strength === 0) strength = 1;
 
-      const widths = ["w-1/5", "w-2/5", "w-3/5", "w-4/5", "w-full"];
-      const colors = [
-        "bg-red-500",
-        "bg-orange-500",
-        "bg-yellow-500",
-        "bg-blue-500",
-        "bg-green-500",
-      ];
-      const labels = [
-        "Muy débil",
-        "Débil",
-        "Aceptable",
-        "Fuerte",
-        "Muy fuerte",
-      ];
+    const widths = ["w-1/5", "w-2/5", "w-3/5", "w-4/5", "w-full"];
+    const colors = ["bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-blue-500", "bg-green-500"];
+    const labels = ["Muy débil", "Débil", "Aceptable", "Fuerte", "Muy fuerte"];
 
-      strengthBar.className = `h-2 rounded-full transition-all ${
-        widths[strength - 1]
-      } ${colors[strength - 1]}`;
-      strengthLabel.textContent = `Fuerza: ${labels[strength - 1]}`;
+    strengthBar.className = `h-2 rounded-full transition-all ${widths[strength-1]} ${colors[strength-1]}`;
+    strengthLabel.textContent = `Fuerza: ${labels[strength-1]}`;
+  }
+
+  function checkRules() {
+    const pwd = passwordField.value;
+
+    // Length rule
+    if (pwd.length >= 8) {
+      ruleLength.className = "text-green-600";
+      ruleLength.textContent = "✅ Al menos 8 caracteres";
+    } else {
+      ruleLength.className = "text-red-600";
+      ruleLength.textContent = "❌ Al menos 8 caracteres";
     }
 
-    function checkRules() {
-      const pwd = passwordField.value;
-
-      // Length rule
-      if (pwd.length >= 8) {
-        ruleLength.className = "text-green-600";
-        ruleLength.textContent = "✅ Al menos 8 caracteres";
-      } else {
-        ruleLength.className = "text-red-600";
-        ruleLength.textContent = "❌ Al menos 8 caracteres";
-      }
-
-      // Numeric rule
-      if (/^\d+$/.test(pwd) || pwd.length === 0) {
-        ruleNumeric.className = "text-red-600";
-        ruleNumeric.textContent = "❌ No ser solo números";
-      } else {
-        ruleNumeric.className = "text-green-600";
-        ruleNumeric.textContent = "✅ No ser solo números";
-      }
-
-      // Match rule
-      if (confirmField.value === "") {
-        ruleMatch.className = "text-red-600";
-        ruleMatch.textContent = "❌ Las contraseñas coinciden";
-      } else if (pwd === confirmField.value) {
-        ruleMatch.className = "text-green-600";
-        ruleMatch.textContent = "✅ Las contraseñas coinciden";
-      } else {
-        ruleMatch.className = "text-red-600";
-        ruleMatch.textContent = "❌ Las contraseñas coinciden";
-      }
+    // Numeric rule
+    if (/^\d+$/.test(pwd) || pwd.length === 0) {
+      ruleNumeric.className = "text-red-600";
+      ruleNumeric.textContent = "❌ No ser solo números";
+    } else {
+      ruleNumeric.className = "text-green-600";
+      ruleNumeric.textContent = "✅ No ser solo números";
     }
 
-    // Live updates
-    passwordField.addEventListener("input", function () {
-      updateStrength(passwordField.value);
-      checkRules();
-    });
-    confirmField.addEventListener("input", checkRules);
+    // Match rule
+    if (confirmField.value === "") {
+      ruleMatch.className = "text-red-600";
+      ruleMatch.textContent = "❌ Las contraseñas coinciden";
+    } else if (pwd === confirmField.value) {
+      ruleMatch.className = "text-green-600";
+      ruleMatch.textContent = "✅ Las contraseñas coinciden";
+    } else {
+      ruleMatch.className = "text-red-600";
+      ruleMatch.textContent = "❌ Las contraseñas coinciden";
+    }
+  }
 
-    // Initialize on load
+  // Live updates
+  passwordField.addEventListener('input', function() {
     updateStrength(passwordField.value);
     checkRules();
   });
+  confirmField.addEventListener('input', checkRules);
+
+  // Initialize on load
+  updateStrength(passwordField.value);
+  checkRules();
+});
 </script>
 {% endblock %}
+
