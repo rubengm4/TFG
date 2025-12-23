@@ -1,79 +1,74 @@
-{% extends "base.html" %}
-{% load static %}
-{% load dynamic_url %}
+{% extends "base.html" %} {% load static %} {% load dynamic_url %} {% block
+title %}Algovision | Iniciar sesión{% endblock %} {% block sidebar_links %}
+<ul class="flex flex-col gap-1 text-gray-300 font-medium">
+  <li>
+    <a
+      href="{% url 'accounts:login' %}"
+      class="block py-2.5 px-4 rounded-lg transition-all text-rose-500 hover:bg-gray-800 font-semibold"
+    >
+      <i class="fas fa-sign-in-alt text-rose-500"></i> Iniciar sesión
+    </a>
+  </li>
 
-{% block title %}Algovision | Iniciar sesión{% endblock %}
-
-{% block sidebar_links %}
-  <ul class="flex flex-col gap-1 text-gray-300 font-medium">
-    <li>
-      <a href="{% url 'accounts:login' %}"
-         class="block py-2.5 px-4 rounded-lg transition-all text-rose-500 hover:bg-gray-800 font-semibold">
-        <i class="fas fa-sign-in-alt text-rose-500"></i> Iniciar sesión
-      </a>
-    </li>
-
-    <li>
-      <a href="{% url 'accounts:register' %}"
-         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800">
-        <i class="fas fa-user-plus text-fuchsia-500"></i> Registrarse
-      </a>
-    </li>
-  </ul>
-{% endblock %}
-
-
-{% block content %}
-<div class="flex flex-col items-center justify-center min-h-screen px-4 py-8 space-y-6">
-
+  <li>
+    <a
+      href="{% url 'accounts:register' %}"
+      class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800"
+    >
+      <i class="fas fa-user-plus text-fuchsia-500"></i> Registrarse
+    </a>
+  </li>
+</ul>
+{% endblock %} {% block content %}
+<div
+  class="flex flex-col items-center justify-center min-h-screen px-4 py-8 space-y-6"
+>
   <!-- Botón de volver centrado -->
   <div class="w-full flex justify-center">
-    <a href="{% dynamic_url source|add:'_home' %}" 
-       class="inline-flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg shadow transition-all hover:scale-[1.02]">
-      <i class="fas fa-arrow-left transition-transform duration-300 ease-in-out group-hover:-translate-x-1"></i>
+    <a
+      href="{% dynamic_url source|add:'_home' %}"
+      class="inline-flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg shadow transition-all hover:scale-[1.02]"
+    >
+      <i
+        class="fas fa-arrow-left transition-transform duration-300 ease-in-out group-hover:-translate-x-1"
+      ></i>
       Volver al menú {{ source }}
     </a>
   </div>
 
   <!-- Login Card -->
-  <div class="bg-gradient-to-br from-blue-100 to-indigo-200 rounded-xl shadow-lg p-8 w-full max-w-md text-center transition-all hover:shadow-indigo-300/50 hover:scale-[1.01]">
-
+  <div
+    class="bg-gradient-to-br from-blue-100 to-indigo-200 rounded-xl shadow-lg p-8 w-full max-w-md text-center transition-all hover:shadow-indigo-300/50 hover:scale-[1.01]"
+  >
     <h2 class="text-3xl font-bold text-gray-800 mb-6">Iniciar sesión</h2>
 
     <!-- Bloques de errores y mensajes -->
     {% if form.non_field_errors %}
-      <div class="bg-red-100 text-red-700 p-2 rounded w-full text-center mb-2">
-        {% for error in form.non_field_errors %}
-          <p>{{ error }}</p>
-        {% endfor %}
-      </div>
-    {% endif %}
-
-    {% for field in form %}
-      {% for error in field.errors %}
-        <div class="bg-red-100 text-red-700 p-2 rounded w-full mb-2">
-          <strong>{{ field.label }}:</strong> {{ error }}
-        </div>
+    <div class="bg-red-100 text-red-700 p-2 rounded w-full text-center mb-2">
+      {% for error in form.non_field_errors %}
+      <p>{{ error }}</p>
       {% endfor %}
-    {% endfor %}
-
-    {% if messages %}
-      {% for message in messages %}
-        {% if "error" in message.tags %}
-          <div class="bg-red-100 text-red-700 p-2 rounded w-full text-center mb-2">
-            {{ message }}
-          </div>
-        {% elif "success" in message.tags %}
-          <div class="bg-green-100 text-green-700 p-2 rounded w-full text-center mb-2">
-            {{ message }}
-          </div>
-        {% else %}
-          <div class="bg-gray-100 text-gray-700 p-2 rounded w-full text-center mb-2">
-            {{ message }}
-          </div>
-        {% endif %}
-      {% endfor %}
-    {% endif %}
+    </div>
+    {% endif %} {% for field in form %} {% for error in field.errors %}
+    <div class="bg-red-100 text-red-700 p-2 rounded w-full mb-2">
+      <strong>{{ field.label }}:</strong> {{ error }}
+    </div>
+    {% endfor %} {% endfor %} {% if messages %} {% for message in messages %} {%
+    if "error" in message.tags %}
+    <div class="bg-red-100 text-red-700 p-2 rounded w-full text-center mb-2">
+      {{ message }}
+    </div>
+    {% elif "success" in message.tags %}
+    <div
+      class="bg-green-100 text-green-700 p-2 rounded w-full text-center mb-2"
+    >
+      {{ message }}
+    </div>
+    {% else %}
+    <div class="bg-gray-100 text-gray-700 p-2 rounded w-full text-center mb-2">
+      {{ message }}
+    </div>
+    {% endif %} {% endfor %} {% endif %}
 
     <!-- Form -->
     <form method="post" novalidate class="space-y-5 text-left">
@@ -81,21 +76,39 @@
 
       <!-- Nombre de usuario -->
       <div>
-        <label for="username" class="block text-gray-700 font-semibold mb-1"><i class="fas fa-angle-right text-blue-600 mr-1"></i>Nombre de usuario</label>
-        <input type="text" id="username" name="username" required
-               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <label for="username" class="block text-gray-700 font-semibold mb-1"
+          ><i class="fas fa-angle-right text-blue-600 mr-1"></i>Nombre de
+          usuario</label
+        >
+        <input
+          type="text"
+          id="username"
+          name="username"
+          required
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
       </div>
 
       <!-- Contraseña -->
       <div>
-        <label for="password" class="block text-gray-700 font-semibold mb-1"><i class="fas fa-angle-right text-blue-600 mr-1"></i>Contraseña</label>
-        <input type="password" id="password" name="password" required
-               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <label for="password" class="block text-gray-700 font-semibold mb-1"
+          ><i class="fas fa-angle-right text-blue-600 mr-1"></i
+          >Contraseña</label
+        >
+        <input
+          type="password"
+          id="password"
+          name="password"
+          required
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
       </div>
 
       <!-- Submit -->
-      <button type="submit" 
-              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg shadow-md flex items-center justify-center gap-2 transition-all hover:scale-[1.02] hover:shadow-indigo-400/60">
+      <button
+        type="submit"
+        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg shadow-md flex items-center justify-center gap-2 transition-all hover:scale-[1.02] hover:shadow-indigo-400/60"
+      >
         <i class="fas fa-sign-in-alt"></i>
         Iniciar sesión
       </button>
@@ -103,8 +116,10 @@
       <!-- Link de registro -->
       <p class="text-center text-gray-700 mt-4 text-sm">
         ¿No tienes una cuenta?
-        <a href="{% url 'accounts:register' %}" 
-           class="text-indigo-600 hover:text-indigo-700 font-semibold inline-flex items-center gap-1 transition-colors">
+        <a
+          href="{% url 'accounts:register' %}"
+          class="text-indigo-600 hover:text-indigo-700 font-semibold inline-flex items-center gap-1 transition-colors"
+        >
           <i class="fas fa-user-plus"></i> Regístrate
         </a>
       </p>

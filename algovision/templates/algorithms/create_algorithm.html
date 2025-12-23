@@ -1,130 +1,154 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {% block title %}Algovision | Crear algoritmo{%
+endblock %} {% block sidebar_links %}
+<ul class="flex flex-col gap-1 text-gray-300 font-medium">
+  <li>
+    <a
+      href="{% url 'file_manager' %}"
+      class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800"
+    >
+      <i class="fas fa-folder-open text-lime-500"></i> Mis archivos
+    </a>
+  </li>
+  
+  <li>
+    <a
+      href="{% url 'analysis' %}"
+      class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800"
+    >
+      <i class="fas fa-play text-yellow-500"></i> Realizar análisis
+    </a>
+  </li>
 
-{% block title %}Algovision | Crear algoritmo{% endblock %}
+  <li>
+    <a
+      href="{% url 'results' %}"
+      class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800"
+    >
+      <i class="fas fa-tasks text-blue-500"></i> Mis resultados
+    </a>
+  </li>
 
-{% block sidebar_links %}
-  <ul class="flex flex-col gap-1 text-gray-300 font-medium">
-    <li>
-      <a href="{% url 'file_manager' %}"
-         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800">
-        <i class="fas fa-folder-open text-lime-500"></i> Mis archivos
-      </a>
-    </li>
+  <li>
+    <a
+      href="{% url 'accounts:manage_user' %}"
+      class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800"
+    >
+      <i class="fas fa-user-cog text-purple-500"></i> Gestionar usuario
+    </a>
+  </li>
 
-    <li>
-      <a href="{% url 'analysis' %}"
-         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800">
-        <i class="fas fa-play text-yellow-500"></i> Realizar análisis
-      </a>
-    </li>
+  {% if user.is_superuser %}
+  <li>
+    <a
+      href="{% url 'manage_algorithms' %}"
+      class="block py-2.5 px-4 rounded-lg transition-all text-green-500 hover:bg-gray-800 font-semibold"
+    >
+      <i class="fas fa-tools text-green-500"></i> Gestionar algoritmos
+    </a>
+  </li>
 
-    <li>
-      <a href="{% url 'results' %}"
-         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800">
-        <i class="fas fa-tasks text-blue-500"></i> Mis resultados
-      </a>
-    </li>
+  <li>
+    <a
+      href="{% url 'manage_projects' %}"
+      class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800"
+    >
+      <i class="fas fa-diagram-project text-orange-500"></i> Gestionar proyectos
+    </a>
+  </li>
+  {% endif %}
 
-    <li>
-      <a href="{% url 'accounts:manage_user' %}"
-         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800">
-        <i class="fas fa-user-cog text-purple-500"></i> Gestionar usuario
-      </a>
-    </li>
-
-    {% if user.is_superuser %}
-    <li>
-      <a href="{% url 'manage_algorithms' %}"
-         class="block py-2.5 px-4 rounded-lg transition-all text-green-500 hover:bg-gray-800 font-semibold">
-        <i class="fas fa-tools text-green-500"></i> Gestionar algoritmos
-      </a>
-    </li>
-
-    <li>
-      <a href="{% url 'manage_projects' %}" class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800">
-        <i class="fas fa-diagram-project text-orange-500"></i> Gestionar proyectos
-      </a>
-    </li>
-    {% endif %}
-
-    <li>
-      <a href="{% url 'accounts:logout' %}"
-         class="block py-2.5 px-4 rounded-lg text-red-500 hover:bg-gray-800 transition-all font-semibold">
-        <i class="fas fa-sign-out-alt"></i> Cerrar sesión
-      </a>
-    </li> 
-  </ul>
-{% endblock %}
-
-{% block content %}
+  <li>
+    <a
+      href="{% url 'accounts:logout' %}"
+      class="block py-2.5 px-4 rounded-lg text-red-500 hover:bg-gray-800 transition-all font-semibold"
+    >
+      <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+    </a>
+  </li>
+</ul>
+{% endblock %} {% block content %}
 <div class="flex flex-col items-center min-h-screen px-4 py-8 space-y-6">
-
   <!-- Header -->
   <div class="w-full flex justify-between max-w-6xl">
-    <a href="{% url 'manage_algorithms' %}" 
-       class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-all shadow">
-       ← Volver a gestionar algoritmos
+    <a
+      href="{% url 'manage_algorithms' %}"
+      class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-all shadow"
+    >
+      ← Volver a gestionar algoritmos
     </a>
-    <a href="{% url 'accounts:logout' %}" 
-       class="inline-flex items-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow">
-       <i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión
+    <a
+      href="{% url 'accounts:logout' %}"
+      class="inline-flex items-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow"
+    >
+      <i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión
     </a>
   </div>
 
   <!-- Título -->
   <div class="text-center w-full max-w-6xl">
-    <h2 class="text-3xl font-bold text-gray-800 flex items-center justify-center gap-3">
-      <i class="fas fa-cogs text-green-500 drop-shadow-[0_0_8px_rgba(34,197,94,0.7)] animate-pulse-slow"></i>
+    <h2
+      class="text-3xl font-bold text-gray-800 flex items-center justify-center gap-3"
+    >
+      <i
+        class="fas fa-cogs text-green-500 drop-shadow-[0_0_8px_rgba(34,197,94,0.7)] animate-pulse-slow"
+      ></i>
       Crear Nuevo Algoritmo
     </h2>
   </div>
 
   <!-- Form -->
-  <div class="bg-gradient-to-br from-green-100 to-green-300 shadow-lg rounded-xl p-6 w-full max-w-6xl hover:shadow-green-400/50 hover:scale-[1.01] transition-all">
+  <div
+    class="bg-gradient-to-br from-green-100 to-green-300 shadow-lg rounded-xl p-6 w-full max-w-6xl hover:shadow-green-400/50 hover:scale-[1.01] transition-all"
+  >
     <form method="post" enctype="multipart/form-data" class="space-y-5">
-      {% csrf_token %}
-      
-      {% for field in form %}
-        <div>
-          <label for="{{ field.id_for_label }}" class="block text-gray-700 font-semibold mb-1">
-            {% if field.label == "Name" %}
-              <i class="fas fa-angle-right text-green-600 mr-1"></i>Nombre
-            {% elif field.label == "Project" %}
-              <i class="fas fa-angle-right text-green-600 mr-1"></i>Proyecto
-            {% elif field.label == "Version" %}
-              <i class="fas fa-angle-right text-green-600 mr-1"></i>Versión
-            {% elif field.label == "Description" %}
-              <i class="fas fa-angle-right text-green-600 mr-1"></i>Descripción
-            {% elif field.label == "Archive" %}
-              <i class="fas fa-angle-right text-green-600 mr-1"></i>Archivo
-            {% elif field.label == "Version" %}
-              <i class="fas fa-angle-right text-green-600 mr-1"></i>Versión
-            {% elif field.label == "Supported types" %}
-              <i class="fas fa-angle-right text-green-600 mr-1"></i>Tipos soportados
-            {% elif field.label == "Requires two files" %}
-              <i class="fas fa-angle-right text-green-600 mr-1"></i>¿Necesita dos archivos?
-            {% else  %}
-              <i class="fas fa-angle-right text-green-600 mr-1"></i>{{ field.label }}
-            {% endif %}
-          </label>
-          {{ field }}
-          {% if field.help_text %}
-            <div class="text-sm text-gray-600 mt-1">{{ field.help_text }}</div>
-          {% endif %}
-          {% if field.errors %}
-            <div class="text-sm text-red-700 mt-1">{{ field.errors|striptags }}</div>
-          {% endif %}
+      {% csrf_token %} {% for field in form %}
+      <div>
+        <label
+          for="{{ field.id_for_label }}"
+          class="block text-gray-700 font-semibold mb-1"
+        >
+          {% if field.label == "Name" %}
+          <i class="fas fa-angle-right text-green-600 mr-1"></i>Nombre {% elif
+          field.label == "Project" %}
+          <i class="fas fa-angle-right text-green-600 mr-1"></i>Proyecto {% elif
+          field.label == "Version" %}
+          <i class="fas fa-angle-right text-green-600 mr-1"></i>Versión {% elif
+          field.label == "Description" %}
+          <i class="fas fa-angle-right text-green-600 mr-1"></i>Descripción {%
+          elif field.label == "Archive" %}
+          <i class="fas fa-angle-right text-green-600 mr-1"></i>Archivo {% elif
+          field.label == "Version" %}
+          <i class="fas fa-angle-right text-green-600 mr-1"></i>Versión {% elif
+          field.label == "Supported types" %}
+          <i class="fas fa-angle-right text-green-600 mr-1"></i>Tipos soportados
+          {% elif field.label == "Requires two files" %}
+          <i class="fas fa-angle-right text-green-600 mr-1"></i>¿Necesita dos
+          archivos? {% else %}
+          <i class="fas fa-angle-right text-green-600 mr-1"></i>{{ field.label
+          }} {% endif %}
+        </label>
+        {{ field }} {% if field.help_text %}
+        <div class="text-sm text-gray-600 mt-1">{{ field.help_text }}</div>
+        {% endif %} {% if field.errors %}
+        <div class="text-sm text-red-700 mt-1">
+          {{ field.errors|striptags }}
         </div>
+        {% endif %}
+      </div>
       {% endfor %}
 
       <!-- Submit -->
       <div class="flex items-center gap-4 pt-2">
-        <button type="submit"
-                class="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-2.5 px-6 rounded-lg font-bold shadow-lg shadow-green-400/50 transition-all hover:shadow-green-500/70 hover:scale-[1.02] animate-pulse-slow">
+        <button
+          type="submit"
+          class="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-2.5 px-6 rounded-lg font-bold shadow-lg shadow-green-400/50 transition-all hover:shadow-green-500/70 hover:scale-[1.02] animate-pulse-slow"
+        >
           <i class="fas fa-check animate-pulse-slow"></i> Crear Algoritmo
         </button>
-        <a href="{% url 'manage_algorithms' %}"
-           class="flex items-center justify-center gap-2 border border-gray-300 hover:bg-gray-100 text-gray-700 py-2.5 px-6 rounded-lg font-medium shadow transition-all hover:scale-[1.02]">
+        <a
+          href="{% url 'manage_algorithms' %}"
+          class="flex items-center justify-center gap-2 border border-gray-300 hover:bg-gray-100 text-gray-700 py-2.5 px-6 rounded-lg font-medium shadow transition-all hover:scale-[1.02]"
+        >
           <i class="fas fa-times"></i> Cancelar
         </a>
       </div>
@@ -133,33 +157,32 @@
 
   <!-- Mensajes -->
   {% if messages %}
-    <div class="w-full max-w-6xl">
-      {% for message in messages %}
-        <div class="px-4 py-3 rounded-lg mb-4 shadow-md
-                    {% if message.tags == 'success' %}
-                      bg-green-100 text-green-800 border border-green-400
-                    {% elif message.tags == 'error' %}
-                      bg-red-100 text-red-800 border border-red-400
-                    {% else %}
-                      bg-yellow-100 text-yellow-800 border border-yellow-400
-                    {% endif %}">
-          {{ message }}
-        </div>
-      {% endfor %}
+  <div class="w-full max-w-6xl">
+    {% for message in messages %}
+    <div
+      class="px-4 py-3 rounded-lg mb-4 shadow-md {% if message.tags == 'success' %} bg-green-100 text-green-800 border border-green-400 {% elif message.tags == 'error' %} bg-red-100 text-red-800 border border-red-400 {% else %} bg-yellow-100 text-yellow-800 border border-yellow-400 {% endif %}"
+    >
+      {{ message }}
     </div>
+    {% endfor %}
+  </div>
   {% endif %}
-
 </div>
-{% endblock %}
-
-{% block extra_scripts %}
+{% endblock %} {% block extra_scripts %}
 <style>
-@keyframes pulse-slow {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.85; transform: scale(1.05); }
-}
-.animate-pulse-slow {
-  animation: pulse-slow 2.5s ease-in-out infinite;
-}
+  @keyframes pulse-slow {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.85;
+      transform: scale(1.05);
+    }
+  }
+  .animate-pulse-slow {
+    animation: pulse-slow 2.5s ease-in-out infinite;
+  }
 </style>
 {% endblock %}

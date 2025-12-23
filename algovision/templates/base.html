@@ -1,106 +1,110 @@
 <!DOCTYPE html>
 {% load static %}
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>{% block title %}Algovision{% endblock %}</title>
 
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
+      body {
+        font-family: "Inter", sans-serif;
+      }
     </style>
 
     {% block extra_head %}{% endblock %}
-</head>
-<body class="flex h-screen bg-gray-100 overflow-hidden">
-
-<!-- Sidebar -->
-<nav id="sidebar" class="bg-gray-700 text-gray-100 w-64 flex-shrink-0 h-full fixed z-20 transform transition-transform duration-300">
-    <div class="px-6 py-4 flex items-center">
+  </head>
+  <body class="flex h-screen bg-gray-100 overflow-hidden">
+    <!-- Sidebar -->
+    <nav
+      id="sidebar"
+      class="bg-gray-700 text-gray-100 w-64 flex-shrink-0 h-full fixed z-20 transform transition-transform duration-300"
+    >
+      <div class="px-6 py-4 flex items-center">
         <a href="/dashboard">
-            <img src="{% static 'images/hctlab.png' %}" alt="Algovision Logo" class="h-8 w-auto hover:opacity-80 transition-opacity">
+          <img
+            src="{% static 'images/hctlab.png' %}"
+            alt="Algovision Logo"
+            class="h-8 w-auto hover:opacity-80 transition-opacity"
+          />
         </a>
-    </div>
-    <hr class="border-gray-400 my-2">
-    <ul class="flex flex-col gap-1 px-4">
+      </div>
+      <hr class="border-gray-400 my-2" />
+      <ul class="flex flex-col gap-1 px-4">
         {% block sidebar_links %}{% endblock %}
-    </ul>
-</nav>
+      </ul>
+    </nav>
 
-<!-- Main content -->
-<div id="mainContent" class="relative flex-1 ml-64 transition-all p-6 overflow-auto">
-
-    <!-- Sidebar Toggle Button -->
-    <button id="sidebarToggle"
-            class="fixed top-6 z-30
-                bg-gradient-to-br from-gray-700 via-gray-800 to-black
-                text-white px-4 py-2 rounded-xl
-                shadow-md hover:shadow-green-400/30
-                hover:scale-105 hover:brightness-110
-                transition-all backdrop-blur-sm
-                focus:outline-none">
+    <!-- Main content -->
+    <div
+      id="mainContent"
+      class="relative flex-1 ml-64 transition-all p-6 overflow-auto"
+    >
+      <!-- Sidebar Toggle Button -->
+      <button
+        id="sidebarToggle"
+        class="fixed top-6 z-30 bg-gradient-to-br from-gray-700 via-gray-800 to-black text-white px-4 py-2 rounded-xl shadow-md hover:shadow-green-400/30 hover:scale-105 hover:brightness-110 transition-all backdrop-blur-sm focus:outline-none"
+      >
         <i id="toggleIcon" class="fas fa-bars"></i>
-    </button>
+      </button>
 
+      <!-- Header -->
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-semibold text-gray-800">
+          {% block page_title %}{% endblock %}
+        </h1>
+        <div>{% block page_actions %}{% endblock %}</div>
+      </div>
 
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-semibold text-gray-800">{% block page_title %}{% endblock %}</h1>
-        <div>
-            {% block page_actions %}{% endblock %}
-        </div>
+      <!-- Page content -->
+      <div class="space-y-6">{% block content %}{% endblock %}</div>
     </div>
 
-    <!-- Page content -->
-    <div class="space-y-6">
-        {% block content %}{% endblock %}
-    </div>
-</div>
+    <!-- Font Awesome -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js"></script>
 
-<!-- Font Awesome -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js"></script>
+    <script>
+      const toggleBtn = document.getElementById("sidebarToggle");
+      const sidebar = document.getElementById("sidebar");
+      const mainContent = document.getElementById("mainContent");
 
-<script>
-    const toggleBtn = document.getElementById('sidebarToggle');
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.getElementById('mainContent');
+      const sidebarWidth = 16; // Tailwind rem units for 64 width (16rem)
+      const extraGap = 1; // 1rem gap for separation
+      const collapsedLeft = 1; // left position when collapsed (rem)
 
-    const sidebarWidth = 16; // Tailwind rem units for 64 width (16rem)
-    const extraGap = 1;      // 1rem gap for separation
-    const collapsedLeft = 1; // left position when collapsed (rem)
+      const isCollapsed = localStorage.getItem("sidebarCollapsed") === "true";
 
-    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-
-    function applySidebarState(collapsed) {
+      function applySidebarState(collapsed) {
         if (collapsed) {
-            sidebar.classList.add('-translate-x-full');
-            mainContent.classList.remove('ml-64');
-            mainContent.classList.add('ml-0');
-            toggleBtn.style.left = `${collapsedLeft}rem`;
+          sidebar.classList.add("-translate-x-full");
+          mainContent.classList.remove("ml-64");
+          mainContent.classList.add("ml-0");
+          toggleBtn.style.left = `${collapsedLeft}rem`;
         } else {
-            sidebar.classList.remove('-translate-x-full');
-            mainContent.classList.add('ml-64');
-            mainContent.classList.remove('ml-0');
-            toggleBtn.style.left = `${sidebarWidth + extraGap}rem`;
+          sidebar.classList.remove("-translate-x-full");
+          mainContent.classList.add("ml-64");
+          mainContent.classList.remove("ml-0");
+          toggleBtn.style.left = `${sidebarWidth + extraGap}rem`;
         }
-    }
+      }
 
-    applySidebarState(isCollapsed);
+      applySidebarState(isCollapsed);
 
-    toggleBtn.addEventListener('click', () => {
-        const collapsed = sidebar.classList.toggle('-translate-x-full');
-        localStorage.setItem('sidebarCollapsed', collapsed);
+      toggleBtn.addEventListener("click", () => {
+        const collapsed = sidebar.classList.toggle("-translate-x-full");
+        localStorage.setItem("sidebarCollapsed", collapsed);
         applySidebarState(collapsed);
-    });
-</script>
+      });
+    </script>
 
-{% block extra_scripts %}{% endblock %}
-</body>
+    {% block extra_scripts %}{% endblock %}
+  </body>
 </html>

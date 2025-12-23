@@ -1,104 +1,132 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {% block title %}Algovision | Mis archivos{% endblock
+%} {% block sidebar_links %}
+<ul class="flex flex-col gap-1 text-gray-300 font-medium">
+  <li>
+    <a
+      href="{% url 'file_manager' %}"
+      class="block py-2.5 px-4 rounded-lg transition-all text-lime-500 hover:bg-gray-800 font-semibold"
+    >
+      <i class="fas fa-folder-open text-lime-500"></i> Mis archivos
+    </a>
+  </li>
 
-{% block title %}Algovision | Mis archivos{% endblock %}
+  <li>
+    <a
+      href="{% url 'analysis' %}"
+      class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800"
+    >
+      <i class="fas fa-play text-yellow-500"></i> Realizar análisis
+    </a>
+  </li>
 
-{% block sidebar_links %}
-  <ul class="flex flex-col gap-1 text-gray-300 font-medium">
-    <li>
-      <a href="{% url 'file_manager' %}"
-         class="block py-2.5 px-4 rounded-lg transition-all text-lime-500 hover:bg-gray-800 font-semibold">
-        <i class="fas fa-folder-open text-lime-500"></i> Mis archivos
-      </a>
-    </li>
+  <li>
+    <a
+      href="{% url 'results' %}"
+      class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800"
+    >
+      <i class="fas fa-tasks text-blue-500"></i> Mis resultados
+    </a>
+  </li>
 
-    <li>
-      <a href="{% url 'analysis' %}"
-         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800">
-        <i class="fas fa-play text-yellow-500"></i> Realizar análisis
-      </a>
-    </li>
+  <li>
+    <a
+      href="{% url 'accounts:manage_user' %}"
+      class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800"
+    >
+      <i class="fas fa-user-cog text-purple-500"></i> Gestionar usuario
+    </a>
+  </li>
 
-    <li>
-      <a href="{% url 'results' %}"
-         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800">
-        <i class="fas fa-tasks text-blue-500"></i> Mis resultados
-      </a>
-    </li>
+  {% if user.is_superuser %}
+  <li>
+    <a
+      href="{% url 'manage_algorithms' %}"
+      class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800"
+    >
+      <i class="fas fa-tools text-green-500"></i> Gestionar algoritmos
+    </a>
+  </li>
 
-    <li>
-      <a href="{% url 'accounts:manage_user' %}"
-         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800">
-        <i class="fas fa-user-cog text-purple-500"></i> Gestionar usuario
-      </a>
-    </li>
-
-    {% if user.is_superuser %}
-    <li>
-      <a href="{% url 'manage_algorithms' %}"
-         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800">
-        <i class="fas fa-tools text-green-500"></i> Gestionar algoritmos
-      </a>
-    </li>
-
-    <li>
-      <a href="{% url 'manage_projects' %}" class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800">
+  <li>
+    <a
+      href="{% url 'manage_projects' %}"
+      class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800"
+    >
       <i class="fas fa-diagram-project text-orange-500"></i> Gestionar proyectos
-      </a>
-    </li>
-    {% endif %}
+    </a>
+  </li>
+  {% endif %}
 
-    <li>
-      <a href="{% url 'accounts:logout' %}"
-         class="block py-2.5 px-4 rounded-lg text-red-500 hover:bg-gray-800 transition-all font-semibold">
-        <i class="fas fa-sign-out-alt"></i> Cerrar sesión
-      </a>
-    </li>
-  </ul>
-{% endblock %}
-
-{% block content %}
+  <li>
+    <a
+      href="{% url 'accounts:logout' %}"
+      class="block py-2.5 px-4 rounded-lg text-red-500 hover:bg-gray-800 transition-all font-semibold"
+    >
+      <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+    </a>
+  </li>
+</ul>
+{% endblock %} {% block content %}
 <div class="flex flex-col items-center min-h-screen px-4 py-8 space-y-6">
   <!-- Header -->
   <div class="w-full flex justify-between max-w-6xl">
-    <a href="{% url 'dashboard' %}" 
-       class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-all shadow">
-       ← Volver al dashboard
+    <a
+      href="{% url 'dashboard' %}"
+      class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-all shadow"
+    >
+      ← Volver al dashboard
     </a>
-    <a href="{% url 'accounts:logout' %}" 
-       class="inline-flex items-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow">
-       <i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión
+    <a
+      href="{% url 'accounts:logout' %}"
+      class="inline-flex items-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow"
+    >
+      <i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión
     </a>
   </div>
 
   <!-- Título -->
   <div class="text-center">
     <h2 class="text-3xl font-bold text-gray-800">
-    <i class="fas fa-file-upload text-lime-600
-              drop-shadow-[0_0_8px_rgba(101,163,13,0.7)]
-              animate-pulse-slow"></i>
-    Gestor de Archivos
+      <i
+        class="fas fa-file-upload text-lime-600 drop-shadow-[0_0_8px_rgba(101,163,13,0.7)] animate-pulse-slow"
+      ></i>
+      Gestor de Archivos
     </h2>
   </div>
 
   <!-- Form subida de archivo -->
-  <div class="bg-gradient-to-br from-lime-100 to-lime-300 shadow-lg rounded-xl p-6 w-full max-w-6xl hover:shadow-lime-400/50 hover:scale-[1.01] transition-all">
+  <div
+    class="bg-gradient-to-br from-lime-100 to-lime-300 shadow-lg rounded-xl p-6 w-full max-w-6xl hover:shadow-lime-400/50 hover:scale-[1.01] transition-all"
+  >
     <form method="post" enctype="multipart/form-data" class="space-y-4">
       {% csrf_token %}
       <div class="w-full">
         <div class="relative w-full">
-          <input type="file" name="files" id="fileInput" multiple
-                 accept=".csv,image/*,video/*"
-                 class="peer absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-          <div id="fileInputLabel" 
-               class="w-full border border-lime-400 rounded-lg p-2 bg-white/90 flex items-center justify-between gap-2 focus-within:ring-2 focus-within:ring-lime-500 transition-all">
-            <span class="text-gray-700">Selecciona un archivo (Límite: 10MB por archivo)</span>
+          <input
+            type="file"
+            name="files"
+            id="fileInput"
+            multiple
+            accept=".csv,image/*,video/*"
+            class="peer absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          />
+          <div
+            id="fileInputLabel"
+            class="w-full border border-lime-400 rounded-lg p-2 bg-white/90 flex items-center justify-between gap-2 focus-within:ring-2 focus-within:ring-lime-500 transition-all"
+          >
+            <span class="text-gray-700"
+              >Selecciona un archivo (Límite: 10MB por archivo)</span
+            >
             <i class="fas fa-upload text-lime-600"></i>
           </div>
         </div>
-      
-        <button type="submit" 
-                class="mt-2 bg-lime-600 hover:bg-lime-700 text-white py-2 px-4 rounded-lg font-bold flex items-center justify-center gap-2 shadow hover:shadow-lime-500/70 transition hover:scale-[1.02]">
-            <i class="fas fa-cloud-upload-alt animate-pulse-slow"></i> Subir Archivo
+
+        <button
+          type="submit"
+          class="mt-2 bg-lime-600 hover:bg-lime-700 text-white py-2 px-4 rounded-lg font-bold flex items-center justify-center gap-2 shadow hover:shadow-lime-500/70 transition hover:scale-[1.02]"
+        >
+          <i class="fas fa-cloud-upload-alt animate-pulse-slow"></i> Subir
+          Archivo
         </button>
       </div>
     </form>
@@ -107,22 +135,19 @@
   {% if messages %}
   <div class="w-full max-w-6xl">
     {% for message in messages %}
-      <div class="px-4 py-3 rounded-lg mb-4 shadow-md 
-                  {% if message.tags == 'success' %}
-                    bg-green-100 text-green-800 border border-green-400
-                  {% elif message.tags == 'error' %}
-                    bg-lime-100 text-lime-800 border border-lime-400
-                  {% else %}
-                    bg-gray-100 text-gray-800 border border-gray-300
-                  {% endif %}">
-        {{ message }}
-      </div>
+    <div
+      class="px-4 py-3 rounded-lg mb-4 shadow-md {% if message.tags == 'success' %} bg-green-100 text-green-800 border border-green-400 {% elif message.tags == 'error' %} bg-lime-100 text-lime-800 border border-lime-400 {% else %} bg-gray-100 text-gray-800 border border-gray-300 {% endif %}"
+    >
+      {{ message }}
+    </div>
     {% endfor %}
   </div>
   {% endif %}
 
   <!-- Lista de archivos -->
-  <div class="bg-gradient-to-br from-lime-100 to-lime-300 shadow-lg rounded-xl p-6 w-full max-w-6xl hover:shadow-lime-400/50 hover:scale-[1.01] transition-all">
+  <div
+    class="bg-gradient-to-br from-lime-100 to-lime-300 shadow-lg rounded-xl p-6 w-full max-w-6xl hover:shadow-lime-400/50 hover:scale-[1.01] transition-all"
+  >
     {% if files %}
     <div class="overflow-x-auto rounded-xl border border-lime-200 shadow-inner">
       <table class="min-w-full text-sm text-left">
@@ -143,17 +168,19 @@
         <tbody class="divide-y divide-gray-100">
           {% for file in files %}
           <tr class="bg-white hover:bg-lime-50 transition">
-            <td class="px-6 py-4 font-semibold text-gray-800 flex items-center gap-2 file-name" data-extension=".{{ file.type|slice:'1:' }}">
+            <td
+              class="px-6 py-4 font-semibold text-gray-800 flex items-center gap-2 file-name"
+              data-extension=".{{ file.type|slice:'1:' }}"
+            >
               {% if "image" in file.type|lower %}
-                <i class="fas fa-file-image text-lime-500"></i>
+              <i class="fas fa-file-image text-lime-500"></i>
               {% elif "video" in file.type|lower %}
-                <i class="fas fa-file-video text-lime-500"></i>
+              <i class="fas fa-file-video text-lime-500"></i>
               {% elif "csv" in file.type|lower %}
-                <i class="fas fa-file-csv text-lime-500"></i>
+              <i class="fas fa-file-csv text-lime-500"></i>
               {% else %}
-                <i class="fas fa-file-alt text-lime-500"></i>
-              {% endif %}
-              {{ file.filename|cut:"media" }}
+              <i class="fas fa-file-alt text-lime-500"></i>
+              {% endif %} {{ file.filename|cut:"media" }}
             </td>
             <td class="px-6 py-4">{{ file.type }}</td>
             <td class="px-6 py-4">{{ file.upload_date|date:"d/m/Y H:i" }}</td>
@@ -161,25 +188,34 @@
               <!-- Analizar -->
               <form method="post" action="{% url 'analysis' %}" class="inline">
                 {% csrf_token %}
-                <input type="hidden" name="file_id" value="{{ file.id }}">
-                <button type="submit" 
-                        class="text-lime-600 hover:text-lime-800 font-semibold transition flex items-center gap-1">
+                <input type="hidden" name="file_id" value="{{ file.id }}" />
+                <button
+                  type="submit"
+                  class="text-lime-600 hover:text-lime-800 font-semibold transition flex items-center gap-1"
+                >
                   <i class="fas fa-chart-line"></i> Analizar
                 </button>
               </form>
               <!-- Editar -->
-              <a href="javascript:void(0);" 
+              <a
+                href="javascript:void(0);"
                 onclick="makeEditable(this.closest('tr').querySelector('td:first-child'), {{ file.id }})"
-                class="text-lime-600 hover:text-lime-800 font-semibold transition flex items-center gap-1">
+                class="text-lime-600 hover:text-lime-800 font-semibold transition flex items-center gap-1"
+              >
                 <i class="fa fa-pencil-alt"></i> Editar
               </a>
               <!-- Borrar -->
-              <form method="post" class="inline"
-                    onsubmit="return confirm('¿Estás seguro de que quieres eliminar este archivo?');">
+              <form
+                method="post"
+                class="inline"
+                onsubmit="return confirm('¿Estás seguro de que quieres eliminar este archivo?');"
+              >
                 {% csrf_token %}
-                <input type="hidden" name="delete_file" value="{{ file.id }}">
-                <button type="submit" 
-                        class="text-lime-700 hover:text-lime-900 font-bold transition flex items-center gap-1">
+                <input type="hidden" name="delete_file" value="{{ file.id }}" />
+                <button
+                  type="submit"
+                  class="text-lime-700 hover:text-lime-900 font-bold transition flex items-center gap-1"
+                >
                   <i class="fa fa-trash"></i> Borrar
                 </button>
               </form>
@@ -197,241 +233,300 @@
   </div>
 
   <!-- Alertas -->
-  <div id="alerts-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 w-80 z-50"></div>
+  <div
+    id="alerts-container"
+    class="fixed top-4 left-1/2 transform -translate-x-1/2 w-80 z-50"
+  ></div>
 </div>
-{% endblock %}
-
-{% block extra_scripts %}
+{% endblock %} {% block extra_scripts %}
 <style>
-.sort-arrow {
-  display: inline-block;
-  margin-left: 4px;
-  color: #ffffffff;
-  font-weight: bold;
-}
+  .sort-arrow {
+    display: inline-block;
+    margin-left: 4px;
+    color: #ffffffff;
+    font-weight: bold;
+  }
 </style>
 <script>
   // ---------- Table Sorting ----------
   let currentSort = { column: 2, ascending: true };
   function sortTableByColumn(colIndex, forceAscending = null) {
-      const tbody = document.querySelector("table tbody");
-      const rows = Array.from(tbody.querySelectorAll("tr")).filter(r => !r.querySelector("td[colspan]"));
-      const isSameColumn = currentSort.column === colIndex;
-      const ascending = forceAscending !== null ? forceAscending : (isSameColumn ? !currentSort.ascending : true);
+    const tbody = document.querySelector("table tbody");
+    const rows = Array.from(tbody.querySelectorAll("tr")).filter(
+      (r) => !r.querySelector("td[colspan]")
+    );
+    const isSameColumn = currentSort.column === colIndex;
+    const ascending =
+      forceAscending !== null
+        ? forceAscending
+        : isSameColumn
+        ? !currentSort.ascending
+        : true;
 
-      rows.sort((a, b) => {
-          let aText = a.children[colIndex]?.textContent.trim().toLowerCase() || "";
-          let bText = b.children[colIndex]?.textContent.trim().toLowerCase() || "";
+    rows.sort((a, b) => {
+      let aText = a.children[colIndex]?.textContent.trim().toLowerCase() || "";
+      let bText = b.children[colIndex]?.textContent.trim().toLowerCase() || "";
 
-          if (colIndex === 2) { // fecha
-              const parseDate = str => {
-                  const [date, time] = str.split(" ");
-                  if (!date || !time) return new Date(0);
-                  const [day, month, year] = date.split("/");
-                  return new Date(`${year}-${month}-${day}T${time}`);
-              };
-              aText = parseDate(aText);
-              bText = parseDate(bText);
-          }
+      if (colIndex === 2) {
+        // fecha
+        const parseDate = (str) => {
+          const [date, time] = str.split(" ");
+          if (!date || !time) return new Date(0);
+          const [day, month, year] = date.split("/");
+          return new Date(`${year}-${month}-${day}T${time}`);
+        };
+        aText = parseDate(aText);
+        bText = parseDate(bText);
+      }
 
-          if (aText < bText) return ascending ? -1 : 1;
-          if (aText > bText) return ascending ? 1 : -1;
-          return 0;
-      });
+      if (aText < bText) return ascending ? -1 : 1;
+      if (aText > bText) return ascending ? 1 : -1;
+      return 0;
+    });
 
-      rows.forEach(row => tbody.appendChild(row));
-      currentSort = { column: colIndex, ascending };
-      updateSortArrows();
+    rows.forEach((row) => tbody.appendChild(row));
+    currentSort = { column: colIndex, ascending };
+    updateSortArrows();
   }
 
   function updateSortArrows() {
-      const arrows = document.querySelectorAll(".sort-arrow");
-      arrows.forEach(arrow => {
-          const index = parseInt(arrow.dataset.index);
-          arrow.textContent = (index === currentSort.column)
-              ? (currentSort.ascending ? "↑" : "↓")
-              : "";
-      });
+    const arrows = document.querySelectorAll(".sort-arrow");
+    arrows.forEach((arrow) => {
+      const index = parseInt(arrow.dataset.index);
+      arrow.textContent =
+        index === currentSort.column ? (currentSort.ascending ? "↑" : "↓") : "";
+    });
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-      currentSort = { column: 2, ascending: false };
-      sortTableByColumn(2, false);
+    currentSort = { column: 2, ascending: false };
+    sortTableByColumn(2, false);
   });
 
   // ---------- Helpers ----------
-  function showAlert(text, type='error') {
-    const container = document.getElementById('alerts-container');
+  function showAlert(text, type = "error") {
+    const container = document.getElementById("alerts-container");
     if (!container) return;
     const id = `alert-${Date.now()}`;
-    const alert = document.createElement('div');
+    const alert = document.createElement("div");
     alert.id = id;
-    alert.className = type==='success'
-      ? 'bg-green-600 text-white px-4 py-2 rounded shadow-lg mb-2'
-      : 'bg-red-600 text-white px-4 py-2 rounded shadow-lg mb-2';
+    alert.className =
+      type === "success"
+        ? "bg-green-600 text-white px-4 py-2 rounded shadow-lg mb-2"
+        : "bg-red-600 text-white px-4 py-2 rounded shadow-lg mb-2";
     alert.textContent = text;
     container.appendChild(alert);
-    setTimeout(()=>{document.getElementById(id)?.remove();},5000);
+    setTimeout(() => {
+      document.getElementById(id)?.remove();
+    }, 5000);
   }
 
-  function getCookie(name){
+  function getCookie(name) {
     let cookieValue = null;
-    if(document.cookie && document.cookie!==''){
-      document.cookie.split(';').forEach(c=>{
-        c=c.trim();
-        if(c.startsWith(name+'=')) cookieValue=decodeURIComponent(c.substring(name.length+1));
+    if (document.cookie && document.cookie !== "") {
+      document.cookie.split(";").forEach((c) => {
+        c = c.trim();
+        if (c.startsWith(name + "="))
+          cookieValue = decodeURIComponent(c.substring(name.length + 1));
       });
     }
     return cookieValue;
   }
 
-  function escapeHtml(unsafe){
-    return unsafe.replaceAll('&','&amp;')
-                 .replaceAll('<','&lt;')
-                 .replaceAll('>','&gt;')
-                 .replaceAll('"','&quot;')
-                 .replaceAll("'","&#039;");
+  function escapeHtml(unsafe) {
+    return unsafe
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
   }
 
-  function getAllActionButtons(){
-    const rows = Array.from(document.querySelectorAll('table tbody tr'));
+  function getAllActionButtons() {
+    const rows = Array.from(document.querySelectorAll("table tbody tr"));
     const buttons = [];
-    rows.forEach(row=>{
-      const lastTd = row.querySelectorAll('td')[row.querySelectorAll('td').length-1];
-      if(!lastTd) return;
-      lastTd.querySelectorAll('button, input[type="submit"], input[type="button"], a').forEach(btn=>buttons.push(btn));
+    rows.forEach((row) => {
+      const lastTd =
+        row.querySelectorAll("td")[row.querySelectorAll("td").length - 1];
+      if (!lastTd) return;
+      lastTd
+        .querySelectorAll(
+          'button, input[type="submit"], input[type="button"], a'
+        )
+        .forEach((btn) => buttons.push(btn));
     });
     return buttons;
   }
-  function hideAllActionButtons(){ 
-    getAllActionButtons().forEach(btn=>{
-      if(btn.dataset._origDisplay===undefined) btn.dataset._origDisplay=btn.style.display||''; 
-      btn.style.display='none';
-    }); 
+  function hideAllActionButtons() {
+    getAllActionButtons().forEach((btn) => {
+      if (btn.dataset._origDisplay === undefined)
+        btn.dataset._origDisplay = btn.style.display || "";
+      btn.style.display = "none";
+    });
   }
-  function restoreAllActionButtons(){ 
-    getAllActionButtons().forEach(btn=>{
-      btn.style.display=btn.dataset._origDisplay||''; 
-      delete btn.dataset._origDisplay; 
-    }); 
+  function restoreAllActionButtons() {
+    getAllActionButtons().forEach((btn) => {
+      btn.style.display = btn.dataset._origDisplay || "";
+      delete btn.dataset._origDisplay;
+    });
   }
 
   // ---------- makeEditable ----------
-  function makeEditable(td, fileId){
-    if(!td) return;
+  function makeEditable(td, fileId) {
+    if (!td) return;
 
     // Restaurar otras filas
-    document.querySelectorAll('table tbody tr').forEach(row=>{
-      if(row!==td.closest('tr')){
-        const actionsCell = row.querySelectorAll('td')[row.querySelectorAll('td').length-1];
-        if(actionsCell){
-          actionsCell.querySelectorAll('.confirm-edit-btn, .cancel-edit-btn').forEach(btn=>btn.remove());
-          actionsCell.querySelectorAll('button, a').forEach(btn=>btn.style.display='');
+    document.querySelectorAll("table tbody tr").forEach((row) => {
+      if (row !== td.closest("tr")) {
+        const actionsCell =
+          row.querySelectorAll("td")[row.querySelectorAll("td").length - 1];
+        if (actionsCell) {
+          actionsCell
+            .querySelectorAll(".confirm-edit-btn, .cancel-edit-btn")
+            .forEach((btn) => btn.remove());
+          actionsCell
+            .querySelectorAll("button, a")
+            .forEach((btn) => (btn.style.display = ""));
         }
       }
     });
 
-    const span = td.querySelector('.file-name')||td;
+    const span = td.querySelector(".file-name") || td;
     td.dataset._origHtml = td.innerHTML;
 
     const fullName = span.textContent.trim();
-    const lastDotIndex = fullName.lastIndexOf('.');
-    const baseName = lastDotIndex > 0 ? fullName.substring(0, lastDotIndex) : fullName;
-    const extension = lastDotIndex > 0 ? fullName.substring(lastDotIndex) : '';
+    const lastDotIndex = fullName.lastIndexOf(".");
+    const baseName =
+      lastDotIndex > 0 ? fullName.substring(0, lastDotIndex) : fullName;
+    const extension = lastDotIndex > 0 ? fullName.substring(lastDotIndex) : "";
 
     // Input editable solo para el nombre
-    const input = document.createElement('input');
-    input.type='text'; input.value=baseName;
-    input.className='border rounded px-2 py-1 text-sm w-full focus:ring-2 focus:ring-lime-500 outline-none';
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = baseName;
+    input.className =
+      "border rounded px-2 py-1 text-sm w-full focus:ring-2 focus:ring-lime-500 outline-none";
 
     // Span para extensión (no editable)
-    const extSpan = document.createElement('span');
+    const extSpan = document.createElement("span");
     extSpan.textContent = extension;
-    extSpan.className='ml-2 text-gray-700 font-semibold select-none';
+    extSpan.className = "ml-2 text-gray-700 font-semibold select-none";
 
-    const wrapper = document.createElement('div');
-    wrapper.className='flex items-center gap-1';
+    const wrapper = document.createElement("div");
+    wrapper.className = "flex items-center gap-1";
     wrapper.appendChild(input);
     wrapper.appendChild(extSpan);
 
-    td.innerHTML='';
+    td.innerHTML = "";
     td.appendChild(wrapper);
     input.focus();
     input.select();
 
     hideAllActionButtons();
-    const row = td.closest('tr');
-    const actionsCell = row.querySelectorAll('td')[row.querySelectorAll('td').length-1];
+    const row = td.closest("tr");
+    const actionsCell =
+      row.querySelectorAll("td")[row.querySelectorAll("td").length - 1];
 
     // Confirmar
-    const confirmBtn = document.createElement('button');
-    confirmBtn.type='button';
-    confirmBtn.className='confirm-edit-btn text-lime-600 hover:text-lime-800 font-semibold px-2 py-1 rounded text-sm flex items-center gap-1 transition';
+    const confirmBtn = document.createElement("button");
+    confirmBtn.type = "button";
+    confirmBtn.className =
+      "confirm-edit-btn text-lime-600 hover:text-lime-800 font-semibold px-2 py-1 rounded text-sm flex items-center gap-1 transition";
     confirmBtn.innerHTML = '<i class="fas fa-check"></i> Confirmar';
 
     // Cancelar
-    const cancelBtn = document.createElement('button');
-    cancelBtn.type='button';
-    cancelBtn.className='cancel-edit-btn text-lime-600 hover:text-lime-800 font-semibold px-2 py-1 rounded text-sm flex items-center gap-1 transition';
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className =
+      "cancel-edit-btn text-lime-600 hover:text-lime-800 font-semibold px-2 py-1 rounded text-sm flex items-center gap-1 transition";
     cancelBtn.innerHTML = '<i class="fas fa-times"></i> Cancelar';
 
     actionsCell.appendChild(confirmBtn);
     actionsCell.appendChild(cancelBtn);
 
-    input.addEventListener('keydown', e=>{
-      if(e.key==='Enter'){ e.preventDefault(); confirmBtn.click(); }
-      if(e.key==='Escape'){ e.preventDefault(); cancelEdit(td); }
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        confirmBtn.click();
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        cancelEdit(td);
+      }
     });
 
-    confirmBtn.addEventListener('click', ()=>saveNewName(fileId, input.value.trim(), extension, td));
-    cancelBtn.addEventListener('click', ()=>cancelEdit(td));
+    confirmBtn.addEventListener("click", () =>
+      saveNewName(fileId, input.value.trim(), extension, td)
+    );
+    cancelBtn.addEventListener("click", () => cancelEdit(td));
   }
 
-  function cancelEdit(td){
-    if(!td) return;
-    if(td.dataset._origHtml!==undefined){ td.innerHTML=td.dataset._origHtml; delete td.dataset._origHtml; }
-    const row = td.closest('tr');
-    if(row){
-      const actionsCell = row.querySelectorAll('td')[row.querySelectorAll('td').length-1];
-      if(actionsCell) actionsCell.querySelectorAll('.confirm-edit-btn, .cancel-edit-btn').forEach(btn=>btn.remove());
+  function cancelEdit(td) {
+    if (!td) return;
+    if (td.dataset._origHtml !== undefined) {
+      td.innerHTML = td.dataset._origHtml;
+      delete td.dataset._origHtml;
+    }
+    const row = td.closest("tr");
+    if (row) {
+      const actionsCell =
+        row.querySelectorAll("td")[row.querySelectorAll("td").length - 1];
+      if (actionsCell)
+        actionsCell
+          .querySelectorAll(".confirm-edit-btn, .cancel-edit-btn")
+          .forEach((btn) => btn.remove());
     }
     restoreAllActionButtons();
   }
 
-  async function saveNewName(fileId, baseName, extension, td){
-    if(!td||!baseName){ showAlert('El nombre no puede estar vacío.'); return; }
+  async function saveNewName(fileId, baseName, extension, td) {
+    if (!td || !baseName) {
+      showAlert("El nombre no puede estar vacío.");
+      return;
+    }
     const newName = baseName + extension;
 
-    try{
+    try {
       const res = await fetch(`/files/rename/${fileId}/`, {
-        method:'POST',
-        headers:{ 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type':'application/json' },
-        body: JSON.stringify({ new_name:newName })
+        method: "POST",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ new_name: newName }),
       });
-      if(!res.ok){ 
-        let msg='Error al renombrar el archivo.'; 
-        try{ const data=await res.json(); msg=data.error||msg; }catch(e){} 
-        throw new Error(msg); 
+      if (!res.ok) {
+        let msg = "Error al renombrar el archivo.";
+        try {
+          const data = await res.json();
+          msg = data.error || msg;
+        } catch (e) {}
+        throw new Error(msg);
       }
-      showAlert('Nombre actualizado correctamente.','success');
+      showAlert("Nombre actualizado correctamente.", "success");
       window.location.reload(); // recarga completa de /files para reflejar cambios
-    }catch(err){ 
-      showAlert(err.message||'Error desconocido.'); 
-      cancelEdit(td); 
+    } catch (err) {
+      showAlert(err.message || "Error desconocido.");
+      cancelEdit(td);
     }
   }
 
   window.makeEditable = makeEditable;
 
   // ---------- File Input ----------
-  const fileInput = document.getElementById('fileInput');
-  const fileInputLabel = document.getElementById('fileInputLabel')?.querySelector('span');
-  if(fileInput){
-    fileInput.addEventListener('change',()=>{
-      const files = Array.from(fileInput.files).map(f=>f.name).join(', ');
-      if(fileInputLabel) fileInputLabel.textContent = files || 'Selecciona archivo/s (Límite: 10 MB por archivo)';
+  const fileInput = document.getElementById("fileInput");
+  const fileInputLabel = document
+    .getElementById("fileInputLabel")
+    ?.querySelector("span");
+  if (fileInput) {
+    fileInput.addEventListener("change", () => {
+      const files = Array.from(fileInput.files)
+        .map((f) => f.name)
+        .join(", ");
+      if (fileInputLabel)
+        fileInputLabel.textContent =
+          files || "Selecciona archivo/s (Límite: 10 MB por archivo)";
     });
   }
 </script>
 {% endblock %}
-

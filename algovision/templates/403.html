@@ -1,13 +1,13 @@
-{% extends 'base.html' %}
-
-{% block title %}Algovision | Acceso denegado{% endblock %}
-
-{% block content %}
-<div class="flex flex-col items-center justify-center min-h-screen px-4 py-12 bg-gradient-to-br from-red-100 to-red-300 text-gray-800">
-
+{% extends 'base.html' %} {% block title %}Algovision | Acceso denegado{%
+endblock %} {% block content %}
+<div
+  class="flex flex-col items-center justify-center min-h-screen px-4 py-12 bg-gradient-to-br from-red-100 to-red-300 text-gray-800"
+>
   <!-- Título e icono -->
   <div class="text-center">
-    <i class="fas fa-ban text-red-600 text-6xl drop-shadow-[0_0_8px_rgba(239,68,68,0.7)] animate-pulse-slow mb-4"></i>
+    <i
+      class="fas fa-ban text-red-600 text-6xl drop-shadow-[0_0_8px_rgba(239,68,68,0.7)] animate-pulse-slow mb-4"
+    ></i>
     <h1 class="text-5xl font-bold mb-2">403 - Acceso denegado</h1>
     <p class="text-lg text-gray-700 mb-6">
       No tienes permiso para ver esta página.
@@ -15,20 +15,28 @@
   </div>
 
   <!-- Botón -->
-  <a href="{% url 'dashboard' %}" 
-     class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg shadow-red-400/50 transition-all hover:scale-[1.02] hover:shadow-red-500/70">
+  <a
+    href="{% url 'dashboard' %}"
+    class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg shadow-red-400/50 transition-all hover:scale-[1.02] hover:shadow-red-500/70"
+  >
     <i class="fas fa-home"></i> Volver al inicio
   </a>
-
 </div>
 
 <style>
-@keyframes pulse-slow {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.85; transform: scale(1.05); }
-}
-.animate-pulse-slow {
-  animation: pulse-slow 2.5s ease-in-out infinite;
-}
+  @keyframes pulse-slow {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.85;
+      transform: scale(1.05);
+    }
+  }
+  .animate-pulse-slow {
+    animation: pulse-slow 2.5s ease-in-out infinite;
+  }
 </style>
 {% endblock %}
