@@ -14,6 +14,7 @@ from django.http import JsonResponse, HttpRequest, Http404, FileResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
+from django.utils.html import format_html
 from django.utils.decorators import method_decorator
 from django.utils.safestring import mark_safe
 from django.views import View
@@ -601,9 +602,19 @@ class CreateProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, CreateVie
         messages.success(self.request, "Proyecto creado correctamente.")
         return super().form_valid(form)
 
-    def form_invalid(self, form: Any):
-        messages.error(
-            self.request, "Por favor, corrige los errores del formulario.")
+    def form_invalid(self, form):
+        error_messages = []
+        for field, errors in form.errors.items():
+            # Join multiple errors for the same field
+            error_list = ", ".join(errors)
+            error_messages.append(f"<strong>{field}:</strong> {error_list}")
+
+        # Join all fields' errors
+        full_message = format_html("<br>".join(error_messages))
+
+        # Display as a Django message (with HTML allowed)
+        messages.error(self.request, full_message)
+
         return super().form_invalid(form)
 
 
@@ -632,9 +643,19 @@ class UpdateProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, UpdateVie
         messages.success(self.request, "Proyecto actualizado correctamente.")
         return super().form_valid(form)
 
-    def form_invalid(self, form: Any):
-        messages.error(
-            self.request, "Por favor, corrige los errores del formulario.")
+    def form_invalid(self, form):
+        error_messages = []
+        for field, errors in form.errors.items():
+            # Join multiple errors for the same field
+            error_list = ", ".join(errors)
+            error_messages.append(f"<strong>{field}:</strong> {error_list}")
+
+        # Join all fields' errors
+        full_message = format_html("<br>".join(error_messages))
+
+        # Display as a Django message (with HTML allowed)
+        messages.error(self.request, full_message)
+
         return super().form_invalid(form)
 
 
