@@ -38,13 +38,13 @@
 
 
 <!-- Contenido principal -->
-<div id="mainContent" class="flex-1 ml-64 transition-all p-6 overflow-auto">
+<div id="mainContent" class="relative flex-1 ml-64 transition-all p-6 overflow-auto">
     <!-- Sidebar Toggle Button (fuera del sidebar, siempre visible) -->
     <button id="sidebarToggle"
-            class="fixed top-5 left-72 z-30 
+            class="absolute transition-[left] duration-300 top-6 -left-5 z-30
                 bg-gradient-to-br from-gray-700 via-gray-800 to-black
-                text-white px-4 py-2 rounded-xl 
-                shadow-md hover:shadow-green-400/30 
+                text-white px-4 py-2 rounded-xl
+                shadow-md hover:shadow-green-400/30
                 hover:scale-105 hover:brightness-110
                 transition-all backdrop-blur-sm
                 focus:outline-none">
@@ -85,17 +85,8 @@
     toggleBtn.addEventListener('click', () => {
         const collapsed = sidebar.classList.toggle('-translate-x-full');
 
-        if (collapsed) {
-            mainContent.classList.remove('ml-64');
-            mainContent.classList.add('ml-0');
-            toggleBtn.classList.add('left-4'); // Mover el toggle button a la izquierda cuando el sidebar esté oculto
-            toggleBtn.classList.remove('left-72');
-        } else {
-            mainContent.classList.remove('ml-0');
-            mainContent.classList.add('ml-64');
-            toggleBtn.classList.remove('left-4'); // Mover el botón al lado del sidebar
-            toggleBtn.classList.add('left-72');
-        }
+        mainContent.classList.toggle('ml-64', !collapsed);
+        mainContent.classList.toggle('ml-0', collapsed);
 
         localStorage.setItem('sidebarCollapsed', collapsed);
     });
