@@ -58,13 +58,13 @@
 
 {% block page_actions %}
   <a href="{% url 'accounts:manage_user' %}" 
-    class="inline-flex items-center bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow">
+    class="inline-flex items-center bg-gradient-to-br from-violet-300 to-violet-400 hover:to-violet-800 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow">
     <i class="fas fa-user-cog mr-2"></i> Gestionar usuario
   </a>
 
   {% if user.is_superuser %}
   <a href="{% url 'manage_projects' %}" 
-    class="inline-flex items-center bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow">
+    class="inline-flex items-center bg-gradient-to-br from-orange-300 to-orange-400 hover:to-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow">
     <i class="fas fa-diagram-project mr-2"></i> Gestionar proyectos
   </a>
   {% endif %}
@@ -75,20 +75,21 @@
   </a>
 {% endblock %}
 
-<!-- Mensajes -->
-{% if messages %}
-  {% for message in messages %}
-    {% if "error" in message.tags %}
-      <div class="bg-red-100 text-red-700 p-2 rounded w-full text-center mb-2">{{ message }}</div>
-    {% elif "success" in message.tags %}
-      <div class="bg-green-100 text-green-700 p-2 rounded w-full text-center mb-2">{{ message }}</div>
-    {% else %}
-      <div class="bg-gray-100 text-gray-700 p-2 rounded w-full text-center mb-2">{{ message }}</div>
-    {% endif %}
-  {% endfor %}
-{% endif %}
-
 {% block content %}
+
+  <!-- Mensajes -->
+  {% if messages %}
+    {% for message in messages %}
+      {% if "error" in message.tags %}
+        <div class="bg-red-100 text-red-700 p-2 rounded w-full text-center mb-2">{{ message }}</div>
+      {% elif "success" in message.tags %}
+        <div class="bg-green-100 text-green-700 p-2 rounded w-full text-center mb-2">{{ message }}</div>
+      {% else %}
+        <div class="bg-gray-100 text-gray-700 p-2 rounded w-full text-center mb-2">{{ message }}</div>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
   <!-- Información de bienvenida-->
   <div class="text-center">
     <h2 class="text-3xl font-bold text-gray-800"> <i class="fa-solid fa-door-open"></i> Bienvenido, {{ user.username }}</h2>
@@ -180,6 +181,4 @@
       {% endif %}
     </div>
   </div>
-
-</div>
 {% endblock %}
