@@ -148,18 +148,21 @@
                 <span class="text-gray-400 italic">No subido</span>
               {% endif %}
             </td>
-            <td class="px-6 py-4 flex items-center gap-2">
-              <a href="{% url 'edit_algorithm' algo.id %}"
-                class="flex items-center gap-1 text-sm text-green-600 hover:text-green-700 font-semibold transition">
-                <i class="fa fa-pencil-alt"></i> Editar
-              </a>
-              <form method="post" action="{% url 'delete_algorithm' algo.id %}" class="inline delete-form">
-                {% csrf_token %}
-                <button type="submit"
-                        class="flex items-center gap-1 text-sm text-red-600 hover:text-red-700 font-semibold transition">
-                  <i class="fa fa-trash"></i> Borrar
-                </button>
-              </form>
+            <td class="px-6 py-4">
+              <div class="flex items-center justify-center gap-3">
+                <a href="{% url 'edit_algorithm' algo.id %}"
+                  class="flex items-center gap-1 text-sm text-green-600 hover:text-green-700 font-semibold transition">
+                  <i class="fa fa-pencil-alt"></i> Editar
+                </a>
+
+                <form method="post" action="{% url 'delete_algorithm' algo.id %}" class="delete-form">
+                  {% csrf_token %}
+                  <button type="submit"
+                          class="flex items-center gap-1 text-sm text-red-600 hover:text-red-700 font-semibold transition">
+                    <i class="fa fa-trash"></i> Borrar
+                  </button>
+                </form>
+              </div>
             </td>
           </tr>
           {% endfor %}
