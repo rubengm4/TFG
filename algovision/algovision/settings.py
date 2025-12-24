@@ -131,6 +131,12 @@ LANGUAGE_CODE = 'es'
 TIME_ZONE = 'UTC'
 
 USE_I18N = True
+USE_L10N = True
+
+DATE_INPUT_FORMATS = [
+    "%Y-%m-%d",  # HTML5 date input
+    "%d/%m/%Y",  # Spanish manual input
+]
 
 USE_TZ = True
 

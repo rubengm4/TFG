@@ -62,7 +62,9 @@ class ProjectForm(forms.ModelForm):
             "start_date": forms.DateInput(attrs={
                 "class": "w-full border border-gray-300 rounded-lg p-2",
                 "type": "date"
-            }),
+            },
+                format="%Y-%m-%d",
+            ),
         }
 
 
@@ -71,5 +73,5 @@ class UserProjectForm(forms.ModelForm):
         model = UserProject
         fields = ['user', 'project', 'joined_at']
         widgets = {
-            'joined_at': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'joined_at': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format="%Y-%m-%d"),
         }
