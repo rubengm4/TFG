@@ -1,5 +1,10 @@
-{% extends "base.html" %} {% load static %} {% block title %}Algovision{%
-endblock %} {% block sidebar_links %}
+{% extends "base.html" %} 
+
+{% load static %} 
+
+{% block title %}Algovision{% endblock %} 
+
+{% block sidebar_links %}
 <ul class="flex flex-col gap-1 text-gray-300 font-medium">
   <li>
     <form method="post" action="{% url 'accounts:set_source' %}">

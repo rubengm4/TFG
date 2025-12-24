@@ -645,10 +645,10 @@ class UpdateProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, UpdateVie
 
     def form_invalid(self, form):
         error_messages = []
-        for field, errors in form.errors.items():
+        for _, errors in form.errors.items():
             # Join multiple errors for the same field
             error_list = ", ".join(errors)
-            error_messages.append(f"<strong>{field}:</strong> {error_list}")
+            error_messages.append(f"{error_list}")
 
         # Join all fields' errors
         full_message = format_html("<br>".join(error_messages))
@@ -688,8 +688,18 @@ class CreateUserProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, Creat
         return super().form_valid(form)
 
     def form_invalid(self, form):
-        messages.error(
-            self.request, "Por favor, corrige los errores del formulario.")
+        error_messages = []
+        for _, errors in form.errors.items():
+            # Join multiple errors for the same field
+            error_list = ", ".join(errors)
+            error_messages.append(f"{error_list}")
+
+        # Join all fields' errors
+        full_message = format_html("<br>".join(error_messages))
+
+        # Display as a Django message (with HTML allowed)
+        messages.error(self.request, full_message)
+
         return super().form_invalid(form)
 
 
@@ -720,8 +730,18 @@ class UpdateUserProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, Updat
         return super().form_valid(form)
 
     def form_invalid(self, form):
-        messages.error(
-            self.request, "Por favor, corrige los errores del formulario.")
+        error_messages = []
+        for _, errors in form.errors.items():
+            # Join multiple errors for the same field
+            error_list = ", ".join(errors)
+            error_messages.append(f"{error_list}")
+
+        # Join all fields' errors
+        full_message = format_html("<br>".join(error_messages))
+
+        # Display as a Django message (with HTML allowed)
+        messages.error(self.request, full_message)
+
         return super().form_invalid(form)
 
 
