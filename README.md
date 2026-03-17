@@ -2,9 +2,9 @@
 
 Trabajo de Fin de Grado
 
-## Autor: Rubén Argenta García
+## Author: Rubén Argenta García
 
-## ¿Cómo añadir un nuevo proyecto?
+## ¿How to add a new project?
 
 1. Make sure to have a administrator account created in a project, with created permissions for every project (TODO: Make script)
 2. Log in with this administrator account in a project (obviously, one with permissions)
@@ -50,7 +50,7 @@ Trabajo de Fin de Grado
    </form>
    ```
 
-10. (Opcional pero recomendable) Añadir el proyecto a la sidebar en _analysis/templates/index.html_. El icono se modifica editando la clase del elemento _<i>_, y habría que modificar el _value_ poniendo el nombre del proyecto en vez de _example_analysis_ y cambiando Example también (aunque ese cambio es visual)
+10. (Optional but recommended) Add the project to the sidebar in _analysis/templates/index.html_. The icon is modified by editing th class of element _<i>_, and it would be needed to modify the _value_ attribute, by putting the project name instead of _example_analysis_, and changing Example also (this last one is a visual change)
 
     ```html
     <li>
@@ -71,14 +71,13 @@ Trabajo de Fin de Grado
 
 ---
 
-## ¿Cómo crear scripts y subir algoritmos?
+## ¿How to create scripts and upload algorithms?
 
-1. Deberíamos de tener un script con el algoritmo o a ejecutar, o varios en caso de que haya más de uno. Uno por cada algoritmo.
+1. We should be having a script containing the algorith to be executed, or several, in case there is more than one. We should be having one per algorithm
+   - In case we have only one script is very simple, as we could upload a compressed file (.zip) that contains only that file , and while creating the algorithm, in the _entrypoint_ attribute, set the script name, which could be something like _ejemplo_algoritmo.py_, and that would be executed. Also, we could be creating a _main.py_ in which the algorithm (in another file) is being executed. Below, it is explained the format this file should have in order to be working correctly.
+   - In case we have several files (for example, combining two algorithms which are in separate scripts), we must create a _main.py_ central script, to manage the running order of the algorithms.
 
-   - En caso de tener solo un script es sencillo, puesto que podríamos subir un archivo comprimido (.zip) que contenga solo ese archivo, y al crear el algoritmo, en _entrypoint_ poner el nombre del script, que podría ser por ejemplo: _ejemplo_algoritmo.py_. También podríamos crear un archivo _main.py_ en el que se ejecute el algoritmo. Más abajo se explica el formato que debería tener este archivo para que funcione correctamente
-   - En caso de tener varios archivos, (porque queramos combinar dos algoritmos que están en scripts separados, por ejemplo), deberemos de crear un _main.py_ obligatoriamente, para gestionar el orden en el que ejecutarlos.
-
-2. Para la creación de este archivo _main.py_, se sugiere que se modifique el siguiente template:
+2. For the creation of this _main.py_, it is suggested to modify this template file:
 
    ```python
 
@@ -91,7 +90,7 @@ Trabajo de Fin de Grado
 
 
    def zip_directory(folder_path: Path, zip_path: Path):
-      """Comprime recursivamente el contenido de una carpeta en un archivo ZIP."""
+      """Compresses recursively the content of a folder in a ZIP file"""
       with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
          for file in folder_path.rglob('*'):
                if file.is_file():
@@ -99,21 +98,21 @@ Trabajo de Fin de Grado
 
 
    def run_script(script_path: Path, args: list[str], cwd: Path = None):
-      """Ejecuta un script de Python con los argumentos dados, y lanza error si falla."""
+      """Runs a Python script with the iven arguments, and throws error if it fails"""
       subprocess.run([sys.executable, str(script_path)] + args, check=True, cwd=cwd)
 
 
    def main():
-      # === CONFIGURACIÓN DEL USUARIO (personalizable por cada ejecución) ===
-      expected_args = 4  # Cambiar este valor según los inputs esperados
-      usage_message = "Uso: python main.py <thermal_video> <normal_video> <output_zip>" # Cambiar según el uso esperado
+      # === USER CONFIG (customizable per execution) ===
+      expected_args = 4  # Change this value depending on expected number of input arguments
+      usage_message = "Uso: python main.py <thermal_video> <normal_video> <output_zip>" # Change this value depending on expected usage
 
       if len(sys.argv) != expected_args:
          print(usage_message)
          sys.exit(1)
 
 
-      # EJEMPLO: PERSONALIZAR EN FUNCIÓN DEL ALGORITMO/S A EJECUTAR
+      # EXAMPLE: CHANGE DEPENDING ON ALGORITHMS TO BE RAN
       thermal_video = Path(sys.argv[1])
       normal_video = Path(sys.argv[2])
       output_zip = Path(sys.argv[3])
@@ -122,22 +121,22 @@ Trabajo de Fin de Grado
       with tempfile.TemporaryDirectory() as temp_dir:
          temp_dir_path = Path(temp_dir)
 
-         # ===== PASOS PERSONALIZABLES =====
+         # ===== CUSTOMIZABLE STEPS =====
 
-         # 1. Ejecutar thermal_detection_from_video.py
+         # 1. Run thermal_detection_from_video.py
          run_script(
                base_path / "thermal_detection_from_video.py",
                [str(thermal_video), str(temp_dir_path)]
          )
 
-         # 2. Ejecutar tracking_from_video.py
+         # 2. Run tracking_from_video.py
          run_script(
                base_path / "tracking_from_video.py",
                [str(normal_video), str(temp_dir_path)]
          )
 
-         # 3. Ejecutar compare_cvs.py (requiere 4 argumentos: csv, csv, video, video)
-         shutil.copy(base_path / "compare_cvs.py", temp_dir_path)  # Copiar al entorno temporal
+         # 3. Run compare_cvs.py (4 arguments required: csv, csv, video, video)
+         shutil.copy(base_path / "compare_cvs.py", temp_dir_path)  # Copy to temp directory
 
          run_script(
                temp_dir_path / "compare_cvs.py",
@@ -150,66 +149,73 @@ Trabajo de Fin de Grado
                cwd=temp_dir_path
          )
 
-         # 4. En este caso, comprime solo la carpeta 'incident_frames'
+         # 4. In this case, it only compresses the 'incident_frames' folder
          incident_frames_dir = temp_dir_path / "incident_frames"
          incident_zip_path = temp_dir_path / "incident_frames.zip"
 
          if not incident_frames_dir.exists() or not incident_frames_dir.is_dir():
-               print("No se encontró la carpeta 'incident_frames'. Nada que empaquetar.")
+               print("'incident_frames/' folder has not been found. Nothing to compress.")
                sys.exit(0)
 
          zip_directory(incident_frames_dir, incident_zip_path)
-         print(f"Carpeta 'incident_frames/' comprimida en: {incident_zip_path}")
+         print(f"'incident_frames/' folder compressed in {incident_zip_path}")
 
-         # 5. Crear el archivo ZIP final
+         # 5. Create the final ZIP file
          with zipfile.ZipFile(output_zip, 'w') as zipf:
                zipf.write(incident_zip_path, arcname="incident_frames.zip")
+         print(f"Final ZIP file created in: {output_zip}")
 
-         print(f"Archivo ZIP final creado en: {output_zip}")
 
-
-         # Esto es imprescindible si queremos que se ejecute al poner python main.py <args>
+         # This is a must if we want it to be executed by putting python main.py <args>
          if __name__ == "__main__":
             main()
    ```
 
-   En este _main.py_ de ejemplo:
+   In this _main.py_ template:
+   - Firstly, the _thermal_detection.py_ script is ran with a video (picked up from the input arguments) and a folder name (temporary folder in this case) which is where to save the results, as arguments of the algorithm script.
+   - Later, _tracking_from_video.py_ script is ran, with another video (picked up from the input arguments) and another folder name (the same temporary folder), which is where to save the results, as arguments of the algorithm script.
+   - Then, it runs the _compare_cvs.py_ script, which picks up the outputs of the previous algorithms as input arguments. As they have been saved in the temporary folder (because we won't use the halfway arguments), it is very easy to have access to them, although we have made a copy of this algorithm in the temporary folder. Once it has been run, the folder '_/incident_frames_' in the temporary folder.
+   - On the next lines, a ZIP file is created from the folder, which will contain all the incident frames, and a function is created for this ZIP to be made.
+   - Finally, the final ZIP file is created, which will contain, in this case, just the compressed folder with the
 
-   - Se ejecuta primero el algoritmo _thermal_detection.py_, con un video (recogido de los argumentos del main) y una carpeta donde guardar el resultado (en este caso una carpeta temporal) como argumentos.
-   - Más tarde, se ejecuta _tracking_from_video.py_, con otro video (recogido de los argumentos del main) y la carpeta donde guardar el resultado (en este caso, la misma carpeta temporal) como argumentos
-   - Ejecuta el algoritmo _compare_cvs.py_ con las salidas de los algoritmos anteriores como argumentos. Al haberse guardado en el directorio temporal, porque no nos interesan esos archivos intermedios, es muy fácil acceder a ellos, aunque hemos realizado al principio una copia de este algoritmo en el directorio temporal. Una vez ejecutado esto, se genera la carpeta _/incident_frames_ en el directorio temporal
    - Se crea un zip que contendrá todos los incident frames, y se usa una función para crear esta carpeta comprimida.
-   - Se crea el archivo final zip que contendrá, en este caso, solo esta carpeta comprimida con los incident_frames
+   - Se crea el archivo final zip que contendrá, en este caso, solo esta carpeta comprimida con los '_/incident_frames_'
 
-   Por supuesto, todos los scripts se encuentran en la misma carpeta que el script _main.py_, que se ha subido como archivo del algoritmo. De lo contrario, sería imposible su ejecución, como es lógico.
+   Of course, it is assumed that every script is located on the same folder than the _main.py_ script, which it has been uploaded as an algorithm file. On the contrary, running it would be impossible, logically.
 
-3. Para subir el algoritmo deberemos comprimir, como ya se ha indicado, todos los scripts en una carpeta junto al script que será el entrypoint. Deberemos estar logueados en la aplicación como administradores y entrar al proyecto en cuestión. Ahí, le tendremos que dar al botón de gestionar algoritmos, donde se nos aparecerá la lista de algoritmos disponibles para ese proyecto.
+3. To upload te algorithm we should compress, as indicated, every algortihm script in a folder together with the entrypoint script. We should be logged in the application as administrators in the desired project. There, we need to click the Manage Algorithms button, where the list of available algorithms for that project will appear.
 
-4. Ahí encontraremos también un botón de **Crear nuevo algoritmo**. Le daremos y deberemos de rellenar información sobre el algoritmo, añadiendo el zip que hemos creado y marcando cuál será el entrypoint (o archivo principal a ejecutar por el ordenador). Como opciones más importantes, deberemos asegurarnos de qué tipos de archivo admite y de si este algoritmo debe recibir uno o dos archivos.
+4. In that tab we will also find the **Create new algorithm** button. We will click in it, and we need to fill it with information about the algorithm, adding the ZIP file we have created and indicating which will be the entrypoint (or main file to be executed by the computer). There are several available configurable options, but as the most important ones, we should check which file types does it admit and if this algorithm should receive one or two algorithms
 
-## ¿Cómo hacer que funcione la aplicación?
+## How to run the full app
 
-- Lanzar aplicación
+- Run the main app
 
+```bash
 python manage.py runserver
+```
 
-- Lanzar celery
+- Run celery (Task manager)
 
+```bash
 celery -A algovision worker --loglevel=info
+```
 
-- Lanzar redis
+- Run redis
 
+```bash
 redis-server
+```
 
-- Lanzar monitoreo web Celery
+- Run Celery web monitoring
 
+```bash
 celery -A algovision flower --port=5555
+```
 
 ## How to test if my script is executable with the virtual environment I've created?
 
 This guide walks you through **how to check if your Python script can execute**, even on a brand-new system, by creating a virtual environment, installing dependencies, and verifying imports.
-
----
 
 ## 🧩 1. Create a project folder and save files
 
