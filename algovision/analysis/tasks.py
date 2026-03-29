@@ -5,6 +5,7 @@ import os
 import zipfile
 import platform
 import subprocess
+import time
 
 from .models import File, Algorithm, Execution, Output
 
@@ -65,7 +66,13 @@ def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, secon
 
         command.append(output_zip)
 
+        start_time = time.time()
         subprocess.run(command, check=True)
+        end_time = time.time()
+        duration = end_time - start_time
+
+        with open("times.txt", "a") as f:
+            f.write(f"{duration:.4f}s\n")
 
         exec.status = "FINISHED"
         exec.save(update_fields=['status'])
