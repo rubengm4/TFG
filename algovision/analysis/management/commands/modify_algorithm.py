@@ -30,7 +30,7 @@ class Command(BaseCommand):
         file_path = input(
             f"Nuevo archivo (relativa a MEDIA_ROOT/algorithms) [{algo.file.name if algo.file else 'sin archivo'}]: ").strip()
 
-        # Mostrar proyectos
+        # Show projects
         proyectos = Project.objects.all()
         self.stdout.write("\nProyectos disponibles:")
         for proyecto in proyectos:

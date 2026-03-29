@@ -22,7 +22,8 @@ class AlgorithmForm(forms.ModelForm):
             'version': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
             'entrypoint': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'main.py'}),
-            'supported_types': forms.CheckboxSelectMultiple(),  # Este no usa form-control
+            # This doesn't need a 'form-control' class, as it's a different widget
+            'supported_types': forms.CheckboxSelectMultiple(),
             'requires_two_files': forms.CheckboxInput(),
             'archive': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.zip'})
         }
@@ -33,7 +34,7 @@ class AlgorithmForm(forms.ModelForm):
             if not archive.name.endswith('.zip'):
                 raise forms.ValidationError(
                     "Solo se permiten archivos con extensión .zip")
-            # Opcional: validar tamaño máximo, tipo MIME, etc.
+            # Optional: check max size, MIME type, etc.
         return archive
 
     def clean_supported_types(self):

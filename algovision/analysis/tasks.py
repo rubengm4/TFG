@@ -6,7 +6,7 @@ import zipfile
 import platform
 import subprocess
 
-from .models import File, Algorithm, Execution, Output  # ajusta según tu estructura
+from .models import File, Algorithm, Execution, Output
 
 from django.conf import settings
 from django.utils import timezone
@@ -41,7 +41,7 @@ def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, secon
         output_filename = f"{filename}_{algorithm.name}_{timestamp}_out.zip"
         output_zip = os.path.join(output_dir, output_filename)
 
-        # Descomprimir ZIP del algoritmo si no está ya
+        # Decompress algorithm ZIP if not already done
         algorithm_zip = algorithm.archive.path
         algorithm_stem = Path(algorithm_zip).stem
         extract_path = os.path.join(
@@ -130,7 +130,6 @@ def actualizar_requirements_global():
     log_debug(f"Python ejecutable (freeze): {python_exec}")
 
     try:
-        # Ejecuta pip freeze
         cmd = [str(python_exec), "-m", "pip", "freeze"]
         log_debug(f"Ejecutando: {' '.join(cmd)}")
 
@@ -138,18 +137,18 @@ def actualizar_requirements_global():
         freeze_lines = result.stdout.splitlines()
         log_debug("STDOUT pip freeze:\n" + result.stdout)
 
-        # Leer requisitos previos
+        # Reads previous requirements to preserve Git packages
         existing_text = ""
         if REQUIREMENTS_PATH.exists():
             existing_text = REQUIREMENTS_PATH.read_text()
 
-        # Mantener Git packages
+        # Keeps Git packages by filtering lines that start with "git+" from the existing requirements_global.txt
         git_lines = []
         for line in existing_text.splitlines():
             if line.startswith("git+"):
                 git_lines.append(line)
 
-        # Sobrescribir requirements_global.txt con pip freeze + Git packages
+        # Overwrites requirements_global.txt with pip freeze + Git packages
         REQUIREMENTS_PATH.parent.mkdir(parents=True, exist_ok=True)
         with open(REQUIREMENTS_PATH, "w", encoding="utf-8") as f:
             f.write("\n".join(freeze_lines) + "\n")
@@ -165,7 +164,7 @@ def actualizar_requirements_global():
 
 @shared_task
 def install_requirements_task():
-    # Reinicia el log cada vez
+    # Resets the debug log at the start of each run to avoid confusion with old logs
     with open(DEBUG_LOG_PATH, 'w', encoding='utf-8') as logf:
         logf.write("=== NUEVA EJECUCIÓN install_requirements_task ===\n")
 
@@ -181,7 +180,7 @@ def install_requirements_task():
         log_debug(f"ERROR: No se encontró Python en {python_exec}")
         return
 
-    # Leer requirements_global.txt y separar object-detection
+    # Read requirements_global.txt and separate object-detection
     normal_requirements = []
     special_packages = {}
     if REQUIREMENTS_PATH.exists():
@@ -194,11 +193,11 @@ def install_requirements_task():
             else:
                 normal_requirements.append(line)
 
-    # Sobrescribir temporal requirements
+    # Overwrite temporary requirements file with normal packages (excluding object-detection) to ensure pip doesn't try to install it from PyPI
     tmp_requirements_path = REQUIREMENTS_PATH.parent / "tmp_requirements.txt"
     tmp_requirements_path.write_text("\n".join(normal_requirements))
 
-    # Instalar paquetes normales y escribir log siempre
+    # Installs normal packages and always writes to log (even if it fails) to ensure we have a record of what happened during installation, especially since Object Detection API installation can be tricky and we want to capture any issues that arise.
     try:
         log_debug(
             f"Instalando paquetes normales: {python_exec} -m pip install -r {tmp_requirements_path}")
@@ -211,10 +210,11 @@ def install_requirements_task():
     except Exception as e:
         log_debug(f"ERROR al instalar paquetes normales: {str(e)}")
 
-    # Instalar Object Detection API
+    # Installs Object Detection API separately due to its complexity and the fact that it needs to be installed in editable mode from a local path after cloning, which is different from normal pip installations. This also allows us to handle any specific issues that arise during its installation and log them properly.
     try:
         if "object-detection" in special_packages:
-            # Asegurarse de que gitpython esté instalado
+            # Make sure gitpython is installed, as it's required for cloning repositories in Python
+            log_debug("Instalando gitpython...")
             subprocess.run([str(python_exec), "-m", "pip",
                            "install", "gitpython"], text=True)
 
@@ -239,10 +239,10 @@ def install_requirements_task():
     except Exception as e:
         log_debug(f"EXCEPCIÓN al instalar Object Detection API: {str(e)}")
 
-    # Actualizar requirements_global.txt
+    # Update requirements_global.txt after installation to reflect the actual installed packages, which is especially important for the Object Detection API since it has many dependencies that may not be captured correctly if we just rely on pip freeze before installation. This also ensures that any manual edits to requirements_global.txt (like adding Git packages) are preserved while still keeping an accurate list of installed packages.
     actualizar_requirements_global.delay()
 
-    # **Asegurar que los paquetes Git estén presentes manualmente**
+    # Make sure Git packages are present in requirements_global.txt after installation, as they are crucial for the functionality of the algorithms and may not be automatically added by pip freeze if they were installed in editable mode or from a local path. This is a safeguard to ensure that even if something goes wrong during installation, we still have a record of the required Git packages in our requirements file.
     append_git_requirements()
     log_debug("Git packages asegurados en requirements_global.txt")
     log_debug("Instalación completada correctamente.")

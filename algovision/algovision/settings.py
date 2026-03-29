@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 MEDIA_URL = '/media/'
 # MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-# Se guardan archivos ahora en mi carpeta de OneDrive en mi ordenador
+# Files are now saved in my OneDrive folder on my computer
 MEDIA_ROOT = os.path.expanduser(config('DJANGO_MEDIA_ROOT'))
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
@@ -69,7 +69,8 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            BASE_DIR / 'templates',  # Asegúrate de que esto esté en el directorio raíz
+            # Check that this is in your root directory and contains your templates
+            BASE_DIR / 'templates',
         ],
         'APP_DIRS': True,
         'OPTIONS': {

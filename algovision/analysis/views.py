@@ -39,12 +39,12 @@ class HomepageView(NoCacheMixin, TemplateView):
     template_name = 'index.html'
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any):
-        # Solo limpiar si NO hay usuario
+        # Only clean if there is NO user logged in, to avoid losing session data for authenticated users when they refresh the homepage
         if not request.user.is_authenticated:
             for key in ['login_source', 'project_id', 'source']:
                 request.session.pop(key, None)
         else:
-            # usuario autenticado → ir a dashboard directamente
+            # Auth user? Go to dashboard directly
             return redirect('dashboard')
 
         return super().dispatch(request, *args, **kwargs)
@@ -81,7 +81,7 @@ class FileManagerView(CustomLoginRedirectMixin, View):
 
         uploaded_files = request.FILES.getlist('files')
 
-        # Tamaño máximo de archivo admitido (en MB)
+        # Maximum file size allowed (in MB)
         MAX_FILE_SIZE_MB = 10
         MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
@@ -141,7 +141,7 @@ class AnalysisView(View):
         files = File.objects.filter(user=request.user)
         algorithms = Algorithm.objects.filter(project_id=project.pk)
 
-        # Leer file_id guardado en sesión para preseleccionar
+        # Read file_id saved in session for pre-selection
         selected_file_id = request.session.pop('selected_file_id', None)
         selected_algorithm_id = request.session.pop(
             'selected_algorithm_id', None)
@@ -158,11 +158,11 @@ class AnalysisView(View):
         second_file_id = request.POST.get('second_file_id')
 
         if file_id and not algorithm_id:
-            # Caso: vengo de /files solo con file_id para preselección
+            # Case: coming from /files with only file_id for pre-selection
             request.session['selected_file_id'] = file_id
             return redirect('analysis')
 
-        # Caso: vengo de formulario análisis para ejecutar (file y algo)
+        # Case: coming from analysis form to execute (file and algo)
         if not file_id or not algorithm_id:
             messages.error(request, "Debes seleccionar archivo y algoritmo.")
             return redirect('analysis')
@@ -186,14 +186,14 @@ class AnalysisView(View):
         output_dir = os.path.join(media_root, 'outputs', user_id)
         os.makedirs(output_dir, exist_ok=True)
 
-        # Guardar selección para que persista si vuelves a analysis
+        # Save selection so it persists if you return to analysis
         request.session['selected_file_id'] = file_id
         request.session['selected_algorithm_id'] = algorithm_id
 
         supported_types = algorithm.supported_types.all()
         supported_names = ', '.join([str(ftype) for ftype in supported_types])
 
-        # Validar compatibilidad del archivo con el algoritmo
+        # Check compatibility of the file with the algorithm: if the file type is not in the supported types of the algorithm, show an error message and return
         if file.type not in supported_types:
             messages.error(
                 request,
@@ -201,7 +201,7 @@ class AnalysisView(View):
             )
             return redirect('analysis')
 
-        # Validación de segundo archivo si se requiere
+        # Check of second file is required and if it's compatible with the algorithm: if the algorithm requires a second file but it's not provided, or if the provided second file is not compatible with the algorithm, show an error message and return
         second_file = None
         if algorithm.requires_two_files:
             if not second_file_id:
@@ -223,7 +223,7 @@ class AnalysisView(View):
                 )
                 return redirect('analysis')
 
-        # Crear ejecución (pero no correrla aquí)
+        # Create execution (but don't run it here, just create the record in the database with status PENDING, the Celery task will update it when it starts and finishes)
         now = timezone.now()
         print(now)
         exec = Execution.objects.create(
@@ -268,17 +268,17 @@ class RenameFileView(CustomLoginRedirectMixin, View):
         original_filename = os.path.basename(file_obj.file.name)
         current_base_name, ext = os.path.splitext(original_filename)
 
-        # Extraemos solo la base del nuevo nombre, ignorando cualquier extensión que el usuario haya puesto
+        # We extract only the base of the new name, ignoring any extension the user may have added, to ensure that the file keeps its original extension and avoid confusion or errors that could arise from changing file extensions during renaming.
         base_name, _ = os.path.splitext(raw_input)
 
-        # Validar nombre base: no vacío y que no empiece con punto
+        # We check base name is not empty and doesn't start with a dot to prevent issues with hidden files or files without a proper name, which could lead to confusion or problems when managing files in the system.
         if not base_name or base_name.startswith('.'):
-            # Se mantiene el nombre actual
+            # We keep actual name
             return JsonResponse({'new_name': current_base_name})
 
         new_filename = f"{base_name}{ext}"
 
-        # Si el nuevo nombre es igual al actual, no hacer nada
+        # If new name is the same as current, do nothing to avoid unnecessary file operations and potential issues with timestamps or file metadata that could arise from renaming a file to the same name.
         if new_filename == original_filename:
             return JsonResponse({'new_name': base_name})
 
@@ -334,13 +334,13 @@ class ResultsView(CustomLoginRedirectMixin, View):
                 execution = Execution.objects.get(
                     pk=execution_id, user=request.user)
                 output = Output.objects.filter(execution=execution).first()
-                # Eliminar archivo del sistema de archivos
+                # We delete file from filesystem if it exists and then delete the Output record, to ensure that we don't leave orphaned files taking up space on the server after an execution is deleted, while also keeping the database clean by removing the corresponding Output record.
                 if output and output.file and os.path.isfile(output.file.path):
                     os.remove(output.file.path)
                     output.delete()
                 execution.delete()
             except Execution.DoesNotExist:
-                pass  # Silenciar si no se encuentra
+                pass  # Silence if not found
         return redirect("results")
 
 
@@ -381,7 +381,7 @@ class ManageRequirementsView(CustomLoginRedirectMixin, UserPassesTestMixin, View
             with open(LOG_PATH, 'r') as f:
                 logs = f.read()
 
-        # Soporta solo logs si se llama con ?logs_only=1
+        # It only supports logs if called with ?logs_only=1, to allow fetching logs separately via AJAX without needing to load the whole page, which can be useful for real-time log updates during installation or debugging without refreshing the entire requirements management interface.
         if request.GET.get('logs_only') == '1':
             from django.http import HttpResponse
             return HttpResponse(logs)
@@ -392,26 +392,25 @@ class ManageRequirementsView(CustomLoginRedirectMixin, UserPassesTestMixin, View
         })
 
     def post(self, request):
-        # Recolectar filas enviadas
+        # Recollect submitted rows
         package_names = request.POST.getlist('package_name')
         package_versions = request.POST.getlist('package_version')
 
         lines = []
         for name, version in zip(package_names, package_versions):
             name = name.strip()
-            version = version.strip() or ''  # si no hay version, se instala latest
+            version = version.strip() or ''  # No version? Install latest
             if name:
                 if version:
                     lines.append(f"{name}=={version}")
                 else:
                     lines.append(name)
 
-        # Guardar en requirements_global.txt
         os.makedirs(os.path.dirname(REQUIREMENTS_PATH), exist_ok=True)
         with open(REQUIREMENTS_PATH, 'w') as f:
             f.write("\n".join(lines) + "\n")
 
-        # Lanzar instalación via Celery
+        # Run installation via Celery to avoid blocking the request and allow it to run in the background, which is especially important since installing packages can take a long time and we don't want the user to have to wait for the installation to complete before they can continue using the application or see any feedback on the installation process.
         install_requirements_task.delay()
 
         messages.success(
@@ -422,8 +421,7 @@ class ManageRequirementsView(CustomLoginRedirectMixin, UserPassesTestMixin, View
         return self.request.user.is_superuser
 
 
-# Guardamos un timestamp global en memoria para simplicidad
-# Cada vez que se actualiza requirements_global.txt se cambia
+# We save a global timestamp in memory for simplicity. It changes every time requirements_global.txt is updated, allowing us to track the last modification time of the requirements file without needing to read the file's metadata from disk every time we want to check for updates, which can improve performance when checking for changes frequently, such as during development or when monitoring the file for changes in real-time.
 REQUIREMENTS_LAST_MOD = 0
 
 
@@ -433,10 +431,10 @@ class RequirementsJSONView(CustomLoginRedirectMixin, UserPassesTestMixin, View):
         packages = []
 
         if REQUIREMENTS_PATH.exists():
-            # timestamp de modificación del archivo
+            # Modification timestamp of the file
             ts = int(REQUIREMENTS_PATH.stat().st_mtime)
 
-            # solo actualizamos el hash si cambió
+            # We only update the hash if the file has changed
             if ts != REQUIREMENTS_LAST_MOD:
                 REQUIREMENTS_LAST_MOD = ts
 
@@ -472,7 +470,6 @@ class UploadRequirementsView(View):
         if not file.name.endswith('.txt'):
             return JsonResponse({'status': 'error', 'message': 'Solo se permiten archivos .txt.'}, status=400)
 
-        # Guardar archivo
         with open(REQUIREMENTS_PATH, 'wb+') as dest:
             for chunk in file.chunks():
                 dest.write(chunk)
@@ -490,7 +487,6 @@ class CreateAlgorithmView(CustomLoginRedirectMixin, UserPassesTestMixin, CreateV
     model = Algorithm
     form_class = AlgorithmForm
     template_name = "algorithms/create_algorithm.html"
-    # Ajusta a tu vista de listado
     success_url = reverse_lazy("manage_algorithms")
 
     def test_func(self):
@@ -544,18 +540,18 @@ class UpdateAlgorithmView(CustomLoginRedirectMixin, UserPassesTestMixin, UpdateV
         obj: Any | None = self.get_object()
         new_archive = form.cleaned_data.get('archive')
 
-        # Verificamos si el archivo ha cambiado
+        # Check if file has changed
         if new_archive and new_archive != obj.archive:
-            # Ruta del archivo anterior
+            # Old file path
             old_file_path = obj.archive.path
-            # Carpeta asociada (sin la extensión .zip)
+            # Associated folder (without the .zip extension)
             old_folder_path = os.path.splitext(old_file_path)[0]
 
-            # Eliminar el archivo anterior si existe
+            # Delete old file if exists
             if os.path.isfile(old_file_path):
                 os.remove(old_file_path)
 
-            # Eliminar la carpeta asociada si existe
+            # Delete old associated folder if exists
             if os.path.isdir(old_folder_path):
                 shutil.rmtree(old_folder_path)
 
@@ -580,7 +576,7 @@ class DeleteAlgorithmView(CustomLoginRedirectMixin, UserPassesTestMixin, DeleteV
             if os.path.isfile(file_path):
                 os.remove(file_path)
 
-            # Ruta a la carpeta con el mismo nombre (sin extensión .zip)
+            # Path to the folder with the same name (without .zip extension)
             folder_path = os.path.splitext(file_path)[0]
             if os.path.isdir(folder_path):
                 shutil.rmtree(folder_path)

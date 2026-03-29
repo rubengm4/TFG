@@ -17,7 +17,7 @@ class Command(BaseCommand):
         file_path = input(
             "Ruta del archivo (relativa a MEDIA_ROOT/algorithms, o dejar vacío si no tiene archivo): ").strip()
 
-        # Listar proyectos disponibles
+        # Lists available projects
         proyectos = Project.objects.all()
         if not proyectos.exists():
             self.stderr.write(
@@ -35,7 +35,7 @@ class Command(BaseCommand):
             self.stderr.write("Proyecto no encontrado. Abortando.")
             return
 
-        # Crear el algoritmo
+        # Creates the algorithm with the provided data, associating the file if a path is given (but not uploading it, just associating its relative path to MEDIA_ROOT)
         algo = Algorithm(
             name=name,
             version=version,
@@ -49,7 +49,7 @@ class Command(BaseCommand):
             if not os.path.exists(full_path):
                 self.stderr.write(
                     f"Advertencia: el archivo '{full_path}' no existe en el sistema.")
-            # Esto no sube el archivo, solo asocia su ruta relativa a MEDIA_ROOT
+            # This doesn't upload the file, it just associates its relative path to MEDIA_ROOT
             algo.file.name = f"algorithms/{file_path}"
 
         algo.save()

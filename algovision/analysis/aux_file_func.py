@@ -10,7 +10,7 @@ from .models import FileType
 
 
 def is_size_valid(file: Any, max_size: int, request: HttpRequest):
-    # Validar tamaño
+    # Check size is not None and less than max_size (converted to bytes)
     if file.size == None:
         messages.error(
             request,
@@ -26,7 +26,7 @@ def is_size_valid(file: Any, max_size: int, request: HttpRequest):
 
 
 def is_type_valid(file: Any, request: HttpRequest):
-    # Validar tipo
+    # Check if content_type is available and starts with 'image/' or 'video/', or if the file name ends with '.csv'
     file_type = getattr(file, 'content_type', None)
     if not file_type or not (
         file_type.startswith('image/') or

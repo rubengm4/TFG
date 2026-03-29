@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import Project, UserProject, File, Algorithm, Execution, Output, FileType
 
-# ModelAdmin para personalizar la vista de administración de Project
+# ModelAdmin to customize the admin view of Project
 
 
 class ProjectAdmin(admin.ModelAdmin):
@@ -9,21 +9,22 @@ class ProjectAdmin(admin.ModelAdmin):
     search_fields = ('title',)
     list_filter = ('start_date',)
 
-# ModelAdmin para personalizar la vista de administración de User
+# ModelAdmin to customize the admin view of User (Django's built-in User model is not registered here, but if you have a custom user model, you can register it similarly)
 
 
 class UserAdmin(admin.ModelAdmin):
     list_display = ('id', 'username', 'email', 'joined_date')
     search_fields = ('username', 'email')
 
-# ModelAdmin para personalizar la vista de administración de UserProject
+# ModelAdmin to customize the admin view of UserProject
 
 
 class UserProjectAdmin(admin.ModelAdmin):
     list_display = ('project', 'user', 'joined_at')
     list_filter = ('project', 'user')
+    search_fields = ('project__title', 'user__username')
 
-# ModelAdmin para personalizar la vista de administración de File
+# ModelAdmin to customize the admin view of File, showing the file type and allowing filtering by type and upload date
 
 
 class FileAdmin(admin.ModelAdmin):
@@ -31,7 +32,7 @@ class FileAdmin(admin.ModelAdmin):
     list_filter = ('type', 'upload_date', 'user')
     search_fields = ('name',)
 
-# ModelAdmin para personalizar la vista de administración de Algorithm
+# ModelAdmin to customize the admin view of Algorithm, showing the project it belongs to and allowing filtering by project and version
 
 
 class AlgorithmAdmin(admin.ModelAdmin):
@@ -40,7 +41,7 @@ class AlgorithmAdmin(admin.ModelAdmin):
                     'archive', 'project', 'entrypoint')
     search_fields = ('name', 'version', 'project')
 
-# ModelAdmin para personalizar la vista de administración de Execution
+# ModelAdmin to customize the admin view of Execution, showing the user, algorithm, status, execution date, and allowing filtering by status and execution date. Also show the name of the snapshot file if it exists.
 
 
 class ExecutionAdmin(admin.ModelAdmin):
@@ -49,12 +50,14 @@ class ExecutionAdmin(admin.ModelAdmin):
     list_filter = ('status', 'execution_date')
     search_fields = ('user__username', 'algorithm__name', 'status')
 
-# ModelAdmin para personalizar la vista de administración de Report
+# ModelAdmin to customize the admin view of Output, showing the execution it belongs to, the output date, and allowing filtering by execution and output date. Also show the name of the output file if it exists.
 
 
 class OutputAdmin(admin.ModelAdmin):
     list_display = ('id', 'execution', 'output_date', 'file')
     search_fields = ('file',)
+
+# ModelAdmin to customize the admin view of FileType, showing the code and name, and allowing searching by code and name
 
 
 class FileTypeAdmin(admin.ModelAdmin):
@@ -62,7 +65,7 @@ class FileTypeAdmin(admin.ModelAdmin):
     search_fields = ('code', 'name')
 
 
-# Registro de los modelos con las clases de administración personalizadas
+# Registering the models with their respective custom ModelAdmin classes
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(UserProject, UserProjectAdmin)
 admin.site.register(FileType, FileTypeAdmin)

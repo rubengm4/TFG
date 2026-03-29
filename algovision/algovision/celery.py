@@ -8,8 +8,8 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'algovision.settings')
 
 app = Celery('algovision')
 
-# Usamos el archivo de configuración de Django
+# We use the Django settings file for Celery configuration
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
-# Autodiscover tasks.py en todas las apps
+# Autodiscover tasks.py in all apps
 app.autodiscover_tasks()

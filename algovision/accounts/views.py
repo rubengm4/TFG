@@ -40,7 +40,7 @@ class CustomUserCreationForm(UserCreationForm):
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
-        # Aplicamos clases Tailwind directamente
+        # Tailwind classes applied directly
         tailwind_class = (
             'w-full px-3 py-2 rounded border border-gray-300 bg-white text-gray-900 '
             'focus:outline-none focus:ring-2 focus:ring-blue-500'
@@ -84,7 +84,7 @@ class CustomAuthenticationForm(AuthenticationForm):
 
     def __init__(self, *args: Any, **kwargs: Any):
         self.request = kwargs.pop('request', None)
-        # Pasa request explícitamente a super
+        # Sends request explicitly to the parent class for use in confirm_login_allowed
         super().__init__(request=self.request, *args, **kwargs)
 
         for field in self.fields.values():
@@ -127,7 +127,7 @@ class SetSourceAndRedirectToLogin(View):
         if not source:
             return redirect('index')
 
-        # Guardar en sesión el login_source y project_id si existe
+        # Save in session for later use in login and registration
         request.session['login_source'] = source
         request.session['source'] = source
 
@@ -137,7 +137,7 @@ class SetSourceAndRedirectToLogin(View):
         except Project.DoesNotExist:
             request.session['project_id'] = None
 
-        # Redirigir a la pantalla de login del proyecto seleccionado
+        # Redirect to login screen based on source
         if source == 'pv-analysis':
             return redirect('pv_analysis_home')
         elif source == 'people-analysis':
@@ -145,7 +145,7 @@ class SetSourceAndRedirectToLogin(View):
         elif source == 'stats-analysis':
             return redirect('stats_analysis_home')
 
-        # Si no se reconoce, volver al inicio
+        # Go to index if source is unrecognized or default
         return redirect('index')
 
 
@@ -211,15 +211,15 @@ class CustomLoginView(LoginView):
         source = request.session.get('login_source')
         project_id = request.session.get('project_id')
 
-        # Si el usuario ya está autenticado, ir al dashboard
+        # If user is authenticated, go to dashboard
         if request.user.is_authenticated:
             return redirect('dashboard')
 
-        # Si no hay contexto válido, volver al index
+        # If no valid context, go back to index
         if not source and not project_id:
             return redirect('index')
 
-        # Si el proyecto no existe, volver al index
+        # If project doesn't exist, go back to index
         try:
             if project_id:
                 Project.objects.get(id=project_id)
@@ -276,7 +276,7 @@ class DashboardView(CustomLoginRedirectMixin, View):
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any):
         project_slug = request.session.get('login_source')
 
-        # Validar proyecto
+        # Check project existence
         if not project_slug or project_slug == 'Sin proyecto':
             return redirect('index')
 
@@ -285,23 +285,23 @@ class DashboardView(CustomLoginRedirectMixin, View):
         except Project.DoesNotExist:
             return redirect('index')
 
-        # Validar pertenencia usuario al proyecto
+        # Check if user is linked to the project, otherwise redirect to index
         if not UserProject.objects.filter(user=request.user, project=project).exists():
             return redirect('index')
 
-        # Contar archivos subidos por usuario en el proyecto
+        # Count files linked to the project through executions
         files_count = File.objects.filter(
             user=request.user).count()
 
-        # Contar análisis realizados por usuario en el proyecto
+        # Count executions for this user and project
         analysis_count = Execution.objects.filter(
             user=request.user).count()
 
-        # Obtener últimos 5 resultados
+        # Get last 5 executions for this user and project, ordered by execution date
         recent_results = Execution.objects.filter(
             user=request.user).order_by('-execution_date')[:5]
 
-        # Contar algoritmos totales
+        # Get number of algorithms linked to the project
         algorithms_count = Algorithm.objects.filter(project=project).count()
 
         context: dict[str, Any] = {
@@ -349,10 +349,11 @@ class UserUpdateView(CustomLoginRedirectMixin, UpdateView):
     model = User
     form_class = CustomUserChangeForm
     template_name = "accounts/manage_user.html"
-    success_url = reverse_lazy("dashboard")  # o donde quieras redirigir
+    # Wherever you want to redirect after successful update
+    success_url = reverse_lazy("dashboard")
 
     def get_object(self):
-        # Solo permite editar su propio usuario
+        # Only allows editing their own user
         return self.request.user
 
 
@@ -361,7 +362,7 @@ class CustomPasswordChangeView(auth_views.PasswordChangeView):
     success_url = reverse_lazy("dashboard")
 
     def form_valid(self, form):
-        # Comprobar que la nueva contraseña no sea igual a la actual
+        # Check that the new password is not the same as the current one
         if form.cleaned_data['new_password1'] == form.cleaned_data['old_password']:
             form.add_error(
                 'new_password1', "La nueva contraseña no puede ser igual a la actual.")
@@ -371,7 +372,7 @@ class CustomPasswordChangeView(auth_views.PasswordChangeView):
             self.request, "✅ Tu contraseña se ha cambiado correctamente.")
         return super().form_valid(form)
 
-# Formulario para escribir "DELETE"
+# Form to write "DELETE" to confirm account deletion
 
 
 class DeleteUserForm(forms.Form):
@@ -384,7 +385,7 @@ class DeleteUserForm(forms.Form):
         })
     )
 
-# Step 2: Confirmación de escritura
+# Step 2: Writing confirmation form to ensure user types "DELETE" before final confirmation
 
 
 class DeleteUserConfirmView(CustomLoginRedirectMixin, FormView):
@@ -398,17 +399,17 @@ class DeleteUserConfirmView(CustomLoginRedirectMixin, FormView):
         form.add_error('confirm_text', 'Debes escribir DELETE exactamente.')
         return self.form_invalid(form)
 
-# Step 3: Confirmación final y borrado
+# Step 3: Final confirmation and deletion
 
 
 class DeleteUserView(CustomLoginRedirectMixin, View):
     def get(self, request: HttpRequest):
-        # Mostrar confirmación final
+        # Show final confirmation page before deletion, explaining consequences and asking for final confirmation
         return render(request, 'accounts/delete_user_final.html')
 
     def post(self, request: HttpRequest):
         user = request.user
-        # Aquí podrías eliminar archivos y ejecuciones asociados
+        # Here, you could delete associated files and executions if you want to ensure complete cleanup of user data
         user.delete()
         messages.success(request, "Usuario eliminado correctamente.")
         return redirect('accounts:login')
