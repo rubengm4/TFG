@@ -5,9 +5,8 @@ from datetime import timedelta
 
 
 class Command(BaseCommand):
-    help = 'Marca como FAILED las ejecuciones que llevan demasiado tiempo PENDING'
+    help = 'It deletes from the database the executions which have been on PENDING for too long'
 
-    # TODO: We should also delete these failed executions? Maybe another script which is clear stuck and remove?
     def handle(self, *args, **options):
         timeout = timedelta(minutes=30)
         now = timezone.now()
@@ -19,7 +18,7 @@ class Command(BaseCommand):
 
         count = stuck_executions.count()
         ids = list(stuck_executions.values_list('id', flat=True))
-        stuck_executions.update(status="FAILED")
+        stuck_executions.delete()
 
         if ids:
             self.stdout.write(
