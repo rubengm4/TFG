@@ -99,4 +99,4 @@ def run_benchmark(algorithm_id: int, num_images: int = 50):
 if __name__ == "__main__":
     # Update this ID to match your YOLO or MobileNet ID in the DB
     TARGET_ALGO_ID = 18
-    run_benchmark(TARGET_ALGO_ID, 5)
+    run_benchmark(TARGET_ALGO_ID, 10)
