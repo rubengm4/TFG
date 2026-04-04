@@ -1,5 +1,5 @@
 - [ ] TODO: I should do two tests (hotspot and panel detector) and compare results. Also, write it in the memory.
 - [ ] TODO: Script to delete pending tasks directly (and failed ones just to delete the testing ones -> Nah, SQL query and we are OK I think)
 - [x] TODO: Improve much the panel detector (pick another model), and hotspot detector (pick another model, but we have noted which model is that)
-  - [ ] TODO: Do the same for the other models (Hotspots + Panel And Hotspots)
+  - [x] TODO: Do the same for the other models (Hotspots + Panel And Hotspots)
 - [ ] TODO: Translate EVERYTHING
