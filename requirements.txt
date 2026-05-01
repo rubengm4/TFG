@@ -1,0 +1,6 @@
+Django==4.2.21
+python-decouple
+mysqlclient
+celery
+redis
+gunicorn

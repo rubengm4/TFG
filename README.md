@@ -4,6 +4,31 @@ Trabajo de Fin de Grado
 
 ## Author: Rubén Argenta García
 
+## Docker Setup
+
+This repository now includes a Docker setup for the Django application using `Dockerfile` and `docker-compose.yml`.
+
+To build and run the application in Docker:
+
+1. Install Docker and Docker Compose.
+2. Run:
+
+```bash
+docker compose build
+docker compose up
+```
+
+3. The web application will be available at `http://localhost:8000/`.
+
+The compose stack includes:
+
+- `web`: Django + Gunicorn
+- `celery`: Celery worker for asynchronous tasks
+- `redis`: broker for Celery
+- `db`: MySQL database
+
+Media files use a Docker named volume and are stored in `/app/media` inside the container.
+
 ## ¿How to add a new project?
 
 1. Make sure to have a administrator account created in a project, with created permissions for every project (TODO: Make script)

@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 MEDIA_URL = '/media/'
 # MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Files are now saved in my OneDrive folder on my computer
-MEDIA_ROOT = os.path.expanduser(config('DJANGO_MEDIA_ROOT'))
+MEDIA_ROOT = config('DJANGO_MEDIA_ROOT', default='/app/media')
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_AGE = 1800  # 30 minutes
@@ -35,9 +35,10 @@ SESSION_SAVE_EVERY_REQUEST = True  # Reset timeout on activity
 SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = config(
+    'ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
 
 # Application definition
@@ -96,8 +97,8 @@ DATABASES = {
         'NAME': config('DATABASE_NAME'),
         'USER': config('DATABASE_USER'),
         'PASSWORD': config('DATABASE_PASSWORD'),
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'HOST': config('DATABASE_HOST', default='db'),
+        'PORT': config('DATABASE_PORT', default='3306'),
     }
 }
 
@@ -155,7 +156,8 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Celery settings
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = config('REDIS_URL', default='redis://redis:6379/0')
+# CELERY_BROKER_URL = 'redis://localhost:6379/0'
 # CELERY_BROKER_URL = config("REDIS_URL")
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
