@@ -1,11 +1,11 @@
 {
-  "name": "algovision",
-  "version": "1.0.0",
-  "scripts": {
-    "build-css": "tailwindcss -i ./algovision/static/css/input.css -o ./algovision/static/css/output.css"
-  },
-  "devDependencies": {
-    "tailwindcss": "^3.4.1",
-    "autoprefixer": "^10.4.17"
-  }
+    "name": "algovision",
+    "version": "1.0.0",
+    "scripts": {
+        "build-css": "tailwindcss -i ./algovision/static/css/input.css -o ./algovision/static/css/output.css"
+    },
+    "devDependencies": {
+        "tailwindcss": "^3.4.1",
+        "autoprefixer": "^10.4.17"
+    }
 }
