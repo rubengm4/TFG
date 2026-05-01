@@ -3,10 +3,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    working_dir: /app/algovision
     command: >
-      sh -c "python manage.py migrate &&
-             python manage.py collectstatic --noinput &&
-             gunicorn algovision.wsgi:application --bind 0.0.0.0:8000"
+      sh -c "until mysqladmin ping -h db -uroot -prootpassword --silent; do
+             echo 'waiting for db...'; sleep 2;
+           done &&
+           python manage.py migrate &&
+           python manage.py collectstatic --noinput &&
+           gunicorn algovision.wsgi:application --bind 0.0.0.0:8000"
     volumes:
       - .:/app
       - static_volume:/app/static
@@ -23,6 +27,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    working_dir: /app/algovision
     command: celery -A algovision worker -l info
     volumes:
       - .:/app
