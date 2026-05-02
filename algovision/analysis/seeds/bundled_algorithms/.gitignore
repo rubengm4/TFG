@@ -1,0 +1,2 @@
+# Large binaries: do not commit. Copy ZIPs here locally, or use Git LFS / CI artifacts.
+*.zip

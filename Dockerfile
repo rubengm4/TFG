@@ -10,11 +10,8 @@ RUN apt-get update && apt-get install -yq --no-install-recommends \
     default-libmysqlclient-dev \
     default-mysql-client \
     pkg-config \
-    curl \
     ca-certificates \
-    gnupg \
     python3-dev \
-    git \
     libgl1 \
     libsm6 \
     libxrender1 \
@@ -53,8 +50,12 @@ COPY --from=builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /usr/local/include /usr/local/include
 COPY --from=builder --chown=appuser:appuser /app /app
-USER appuser
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+USER root
 WORKDIR /app/algovision
 
 EXPOSE 8000
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["gunicorn", "algovision.wsgi:application", "--bind", "0.0.0.0:8000"]

@@ -158,16 +158,18 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Celery settings
-CELERY_BROKER_URL = config('REDIS_URL', default='redis://redis:6379/0')
-# CELERY_BROKER_URL = 'redis://localhost:6379/0'
-# CELERY_BROKER_URL = config("REDIS_URL")
-CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+_redis_url = config('REDIS_URL', default='redis://redis:6379/0')
+CELERY_BROKER_URL = _redis_url
+CELERY_RESULT_BACKEND = _redis_url
 
-CELERY_BROKER_TRANSPORT_OPTIONS = {
-    'ssl': {
-        'ssl_cert_reqs': ssl.CERT_NONE  # o ssl.CERT_REQUIRED si tienes el certificado
+if _redis_url.startswith('rediss://') or config('REDIS_SSL', default=False, cast=bool):
+    CELERY_BROKER_TRANSPORT_OPTIONS = {
+        'ssl': {
+            'ssl_cert_reqs': ssl.CERT_NONE  # o ssl.CERT_REQUIRED si tienes el certificado
+        }
     }
-}
+else:
+    CELERY_BROKER_TRANSPORT_OPTIONS = {}
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1

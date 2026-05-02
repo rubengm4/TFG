@@ -10,19 +10,20 @@ from .models import FileType
 
 
 def is_size_valid(file: Any, max_size: int, request: HttpRequest):
-    # Check size is not None and less than max_size (converted to bytes)
-    if file.size == None:
+    # max_size is in bytes (see FileManagerView)
+    if file.size is None:
         messages.error(
             request,
             f"El archivo '{file.name}' no es válido."
         )
         return False
     if file.size > max_size:
+        limit_mb = max_size / (1024 * 1024)
         messages.error(
             request,
-            f"El archivo '{file.name}' supera el límite de {max_size} MB."
+            f"El archivo '{file.name}' supera el límite de {limit_mb:g} MB."
         )
-        return True
+        return False
 
 
 def is_type_valid(file: Any, request: HttpRequest):

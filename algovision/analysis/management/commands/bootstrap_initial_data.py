@@ -4,17 +4,29 @@ from __future__ import annotations
 
 import logging
 import os
+import shutil
 from datetime import date
+from pathlib import Path
 from typing import Any
 
+import yaml
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.files import File
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 
-from analysis.models import Project, UserProject
+from analysis.models import Algorithm, FileType, Project, UserProject
 
 logger = logging.getLogger(__name__)
+
+# Codes must match analysis.aux_file_func.extension_getter (image/*, video/*, text/csv → csv)
+DEFAULT_FILE_TYPES: tuple[tuple[str, str], ...] = (
+    ("image", "Imagen"),
+    ("video", "Vídeo"),
+    ("csv", "CSV"),
+)
 
 # Titles must match session `login_source` / homepage form values in templates/index.html
 DEFAULT_PROJECTS: tuple[tuple[str, str, date], ...] = (
@@ -36,16 +48,41 @@ DEFAULT_PROJECTS: tuple[tuple[str, str, date], ...] = (
 )
 
 
+_MANIFEST_KEYS = frozenset({
+    "name",
+    "version",
+    "description",
+    "zip",
+    "project_title",
+    "entrypoint",
+    "supported_codes",
+    "requires_two_files",
+})
+
+
 class Command(BaseCommand):
     help = (
-        "Ensure default projects exist; create superuser if DB has no users and "
-        "DJANGO_SUPERUSER_* env vars are set; link all superusers to all default projects."
+        "Ensure default FileTypes, projects, and seed Algorithms "
+        "(MEDIA_ROOT/algorithms or bundled_algorithms/*.zip); optional superuser; project links."
     )
 
     def handle(self, *args: Any, **options: Any) -> None:
+        self._ensure_default_file_types()
         self._ensure_default_projects()
+        self._ensure_seed_algorithms()
         self._ensure_initial_superuser()
         self._ensure_superuser_project_memberships()
+
+    def _ensure_default_file_types(self) -> None:
+        for code, name in DEFAULT_FILE_TYPES:
+            _, created = FileType.objects.get_or_create(
+                code=code,
+                defaults={"name": name},
+            )
+            if created:
+                self.stdout.write(self.style.SUCCESS(f"Created FileType: {code}"))
+            else:
+                self.stdout.write(f"FileType already exists: {code}")
 
     def _ensure_default_projects(self) -> None:
         for title, description, start_date in DEFAULT_PROJECTS:
@@ -60,6 +97,141 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(f"Created project: {title}"))
             else:
                 self.stdout.write(f"Project already exists: {title}")
+
+    def _algorithm_manifest_path(self) -> Path:
+        return Path(settings.BASE_DIR) / "analysis" / "seeds" / "algorithms_manifest.yaml"
+
+    def _bundled_algorithms_dir(self) -> Path:
+        return Path(settings.BASE_DIR) / "analysis" / "seeds" / "bundled_algorithms"
+
+    def _load_seed_algorithms(self) -> tuple[dict[str, Any], ...]:
+        path = self._algorithm_manifest_path()
+        if not path.is_file():
+            self.stdout.write(
+                self.style.WARNING(
+                    f"No algorithm manifest at {path}; skipping algorithm seed."
+                )
+            )
+            return ()
+        with path.open(encoding="utf-8") as fh:
+            data = yaml.safe_load(fh)
+        if not data or not isinstance(data.get("algorithms"), list):
+            self.stdout.write(
+                self.style.WARNING(
+                    "Manifest missing top-level 'algorithms' list; skipping algorithm seed."
+                )
+            )
+            return ()
+        out: list[dict[str, Any]] = []
+        for i, row in enumerate(data["algorithms"]):
+            if not isinstance(row, dict):
+                self.stdout.write(
+                    self.style.WARNING(f"Manifest algorithms[{i}] is not a mapping; skip.")
+                )
+                continue
+            missing = _MANIFEST_KEYS - frozenset(row.keys())
+            if missing:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"Manifest algorithms[{i}] missing keys {sorted(missing)}; skip."
+                    )
+                )
+                continue
+            codes = row["supported_codes"]
+            if not isinstance(codes, list) or not all(isinstance(c, str) for c in codes):
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"Manifest algorithms[{i}] supported_codes must be a list of strings; skip."
+                    )
+                )
+                continue
+            out.append(
+                {
+                    "name": row["name"],
+                    "version": str(row["version"]),
+                    "description": str(row["description"]),
+                    "zip": row["zip"],
+                    "project_title": row["project_title"],
+                    "entrypoint": row["entrypoint"],
+                    "supported_codes": tuple(codes),
+                    "requires_two_files": bool(row["requires_two_files"]),
+                }
+            )
+        return tuple(out)
+
+    def _ensure_seed_algorithms(self) -> None:
+        alg_dir = Path(settings.MEDIA_ROOT) / "algorithms"
+        alg_dir.mkdir(parents=True, exist_ok=True)
+        bundled_dir = self._bundled_algorithms_dir()
+
+        for spec in self._load_seed_algorithms():
+            zip_name = spec["zip"]
+            zip_path = alg_dir / zip_name
+            try:
+                project = Project.objects.get(title=spec["project_title"])
+            except Project.DoesNotExist:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"bootstrap_initial_data: project {spec['project_title']!r} missing; "
+                        f"skip algorithm {spec['name']!r}"
+                    )
+                )
+                continue
+
+            exists = Algorithm.objects.filter(
+                name=spec["name"],
+                version=spec["version"],
+                project=project,
+            ).exists()
+            if exists:
+                self.stdout.write(f"Algorithm already exists: {spec['name']} ({spec['version']})")
+                continue
+
+            if not zip_path.is_file():
+                bundled_zip = bundled_dir / zip_name
+                if bundled_zip.is_file():
+                    shutil.copy2(bundled_zip, zip_path)
+                    self.stdout.write(
+                        f"Copied seed ZIP {zip_name} from bundled_algorithms → {zip_path}"
+                    )
+                else:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"No ZIP at {zip_path} and none at {bundled_zip}; "
+                            f"skip creating Algorithm {spec['name']!r}"
+                        )
+                    )
+                    continue
+
+            fts = list(FileType.objects.filter(code__in=spec["supported_codes"]))
+            if len(fts) != len(spec["supported_codes"]):
+                missing = set(spec["supported_codes"]) - {ft.code for ft in fts}
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"Missing FileType codes {missing}; skip {spec['name']!r}"
+                    )
+                )
+                continue
+
+            with transaction.atomic():
+                algo = Algorithm(
+                    name=spec["name"],
+                    version=spec["version"],
+                    description=spec["description"],
+                    project=project,
+                    entrypoint=spec["entrypoint"],
+                    requires_two_files=spec["requires_two_files"],
+                )
+                with zip_path.open("rb") as fh:
+                    algo.archive.save(zip_name, File(fh), save=False)
+                algo.save()
+                algo.supported_types.set(fts)
+
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Created Algorithm {spec['name']} from {zip_name}"
+                )
+            )
 
     def _ensure_initial_superuser(self) -> None:
         User = get_user_model()

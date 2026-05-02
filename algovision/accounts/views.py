@@ -15,6 +15,8 @@ from django.http import HttpRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy, reverse, resolve  # type: ignore
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 
 # Django views imports
 from django.views import View
@@ -272,7 +274,13 @@ class CustomLoginRedirectMixin(AccessMixin):
         return super().dispatch(request, *args, **kwargs)
 
 
-class DashboardView(CustomLoginRedirectMixin, View):
+class NeverCacheMixin:
+    @method_decorator(never_cache)
+    def dispatch(self, *args: Any, **kwargs: Any):
+        return super().dispatch(*args, **kwargs)
+
+
+class DashboardView(NeverCacheMixin, CustomLoginRedirectMixin, View):
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any):
         project_slug = request.session.get('login_source')
 

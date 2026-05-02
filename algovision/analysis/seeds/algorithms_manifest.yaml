@@ -1,0 +1,80 @@
+# Canonical algorithm ZIPs only (omit duplicates, e.g. my_faster_rcnn without suffix).
+# Bootstrap resolves each ZIP as:
+#   1) MEDIA_ROOT/algorithms/<zip> if present
+#   2) else copies from analysis/seeds/bundled_algorithms/<zip> (ZIPs gitignored / dockerignored for size)
+# supported_codes must match FileType.code (image, video, csv).
+
+algorithms:
+  - name: Thermal Video
+    version: "1.1"
+    description: >-
+      Análisis térmico de un video (Puede tardar hasta dos minutos)
+    zip: thermal_detection.zip
+    project_title: people-analysis
+    entrypoint: main.py
+    supported_codes:
+      - video
+    requires_two_files: false
+
+  - name: Tracking Video
+    version: "1.0"
+    description: Algoritmo para hacer tracking de un video
+    zip: tracking_video.zip
+    project_title: people-analysis
+    entrypoint: main.py
+    supported_codes:
+      - video
+    requires_two_files: false
+
+  - name: Compare CVS (Video)
+    version: "1.0"
+    description: >-
+      Ejecuta Tracking Video y Thermal Video, generando una carpeta con los incident_frames
+    zip: compare_cvs.zip
+    project_title: people-analysis
+    entrypoint: main.py
+    supported_codes:
+      - csv
+      - video
+    requires_two_files: true
+
+  - name: CSV simple
+    version: "1.0"
+    description: >-
+      Genera un reporte con estadísticas simple y gráficos con series temporales
+    zip: main.zip
+    project_title: stats-analysis
+    entrypoint: main.py
+    supported_codes:
+      - csv
+    requires_two_files: false
+
+  - name: Detección de Paneles
+    version: "1.0"
+    description: "Algoritmo de detección de paneles solares. Threshold: 0.3"
+    zip: panel_detector.zip
+    project_title: pv-analysis
+    entrypoint: main.py
+    supported_codes:
+      - image
+    requires_two_files: false
+
+  - name: my_ssd_mobilenet_v1_coco_L2_E1_M1
+    version: "1.0"
+    description: Analyzes hotspots
+    zip: my_ssd_mobilenet_v1_coco_L2_E1_M1.zip
+    project_title: pv-analysis
+    entrypoint: main.py
+    supported_codes:
+      - image
+    requires_two_files: false
+
+  - name: my_faster_rcnn_resnet101_L5_E1_M1
+    version: "1.0"
+    description: my_faster_rcnn_resnet101_L5_E1_M1
+    zip: my_faster_rcnn_resnet101_L5_E1_M1_UKUaXhQ.zip
+    project_title: pv-analysis
+    entrypoint: main.py
+    supported_codes:
+      - image
+    requires_two_files: false
