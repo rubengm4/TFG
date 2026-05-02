@@ -1,3 +1,5 @@
+# First boot with an empty DB: set in algovision/.env to auto-create Django superuser:
+#   DJANGO_SUPERUSER_USERNAME, DJANGO_SUPERUSER_EMAIL, DJANGO_SUPERUSER_PASSWORD
 services:
   web:
     build:
@@ -5,10 +7,11 @@ services:
       dockerfile: Dockerfile
     working_dir: /app/algovision
     command: >
-      sh -c "until mysqladmin ping -h db -uroot -prootpassword --silent; do
+      sh -c "until mysqladmin ping -h db -uroot -prootpassword --ssl=0 --silent; do
              echo 'waiting for db...'; sleep 2;
            done &&
            python manage.py migrate &&
+           python manage.py bootstrap_initial_data &&
            python manage.py collectstatic --noinput &&
            gunicorn algovision.wsgi:application --bind 0.0.0.0:8000"
     volumes:

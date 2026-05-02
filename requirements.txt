@@ -4,3 +4,4 @@ mysqlclient
 celery
 redis
 gunicorn
+whitenoise>=6.6,<7
