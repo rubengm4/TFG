@@ -23,6 +23,9 @@ from django.views.generic import TemplateView, CreateView, ListView, DeleteView,
 
 from typing import Any, List, Dict
 
+from pathlib import Path
+
+from .algorithm_paths import algorithm_pkg_disk_root, remove_legacy_extract_next_to_zip
 from .aux_file_func import is_size_valid, is_type_valid, extension_getter, name_change
 from .models import File, Algorithm, Project, Execution, Output, UserProject
 from .forms import AlgorithmForm, ProjectForm, UserProjectForm
@@ -540,21 +543,22 @@ class UpdateAlgorithmView(CustomLoginRedirectMixin, UserPassesTestMixin, UpdateV
     def form_valid(self, form: Any):
         obj: Any | None = self.get_object()
         new_archive = form.cleaned_data.get('archive')
+        media_root = Path(settings.MEDIA_ROOT)
 
-        # Check if file has changed
         if new_archive and new_archive != obj.archive:
-            # Old file path
-            old_file_path = obj.archive.path
-            # Associated folder (without the .zip extension)
-            old_folder_path = os.path.splitext(old_file_path)[0]
+            pkg_root = algorithm_pkg_disk_root(media_root, obj.pk)
+            extract_dir = pkg_root / "extract"
+            if extract_dir.is_dir():
+                shutil.rmtree(extract_dir, ignore_errors=True)
 
-            # Delete old file if exists
-            if os.path.isfile(old_file_path):
-                os.remove(old_file_path)
-
-            # Delete old associated folder if exists
-            if os.path.isdir(old_folder_path):
-                shutil.rmtree(old_folder_path)
+            if obj.archive and obj.archive.name:
+                try:
+                    old_fp = Path(obj.archive.path)
+                except (NotImplementedError, ValueError):
+                    old_fp = None
+                if old_fp is not None and old_fp.is_file():
+                    remove_legacy_extract_next_to_zip(media_root, old_fp)
+                    old_fp.unlink()
 
         messages.success(self.request, "Algoritmo editado correctamente.")
         return super().form_valid(form)
@@ -568,21 +572,21 @@ class DeleteAlgorithmView(CustomLoginRedirectMixin, UserPassesTestMixin, DeleteV
         return self.request.user.is_superuser
 
     def form_valid(self, form: Any) -> Any:
-        # Access the object to be deleted
         obj: Any = self.get_object()
+        media_root = Path(settings.MEDIA_ROOT)
 
-        # Delete the associated file if it exists
-        if obj.archive:
-            file_path = obj.archive.path
-            if os.path.isfile(file_path):
-                os.remove(file_path)
+        pkg_root = algorithm_pkg_disk_root(media_root, obj.pk)
+        if pkg_root.is_dir():
+            shutil.rmtree(pkg_root, ignore_errors=True)
+        elif obj.archive and obj.archive.name:
+            try:
+                fp = Path(obj.archive.path)
+            except (NotImplementedError, ValueError):
+                fp = None
+            if fp is not None and fp.is_file():
+                remove_legacy_extract_next_to_zip(media_root, fp)
+                fp.unlink()
 
-            # Path to the folder with the same name (without .zip extension)
-            folder_path = os.path.splitext(file_path)[0]
-            if os.path.isdir(folder_path):
-                shutil.rmtree(folder_path)
-
-        # Proceed with the usual deletion (calls obj.delete())
         return super().form_valid(form)
 
 

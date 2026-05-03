@@ -15,7 +15,8 @@ from analysis.models import Algorithm
 
 class Command(BaseCommand):
     help = (
-        "Delete every Algorithm row and remove all files/directories under MEDIA_ROOT/algorithms/. "
+        "Delete every Algorithm row and remove all files/directories under MEDIA_ROOT/algorithms/ "
+        "(including algorithms/pkg/<pk>/ ZIPs and extract trees). "
         "Does not delete uploads, outputs, Execution, or Output rows "
         "(Execution.algorithm becomes NULL)."
     )

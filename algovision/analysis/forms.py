@@ -28,6 +28,26 @@ class AlgorithmForm(forms.ModelForm):
             'archive': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.zip'})
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        archive = cleaned_data.get("archive")
+        if self.instance.pk:
+            if archive is False:
+                raise forms.ValidationError(
+                    {
+                        "archive": (
+                            "No puedes eliminar el archivo ZIP del algoritmo; "
+                            "sube otro ZIP para reemplazarlo."
+                        )
+                    }
+                )
+        else:
+            if not archive:
+                raise forms.ValidationError(
+                    {"archive": "Debes adjuntar un archivo ZIP."}
+                )
+        return cleaned_data
+
     def clean_archive(self):
         archive = self.cleaned_data.get('archive')
         if archive:

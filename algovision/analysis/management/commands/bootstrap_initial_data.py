@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import os
-import shutil
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -63,7 +62,8 @@ _MANIFEST_KEYS = frozenset({
 class Command(BaseCommand):
     help = (
         "Ensure default FileTypes, projects, and seed Algorithms "
-        "(MEDIA_ROOT/algorithms or bundled_algorithms/*.zip); optional superuser; project links."
+        "(ZIPs saved as MEDIA_ROOT/algorithms/pkg/<pk>/archive.zip from media/ or bundled_algorithms); "
+        "optional superuser; project links."
     )
 
     def handle(self, *args: Any, **options: Any) -> None:
@@ -187,21 +187,19 @@ class Command(BaseCommand):
                 self.stdout.write(f"Algorithm already exists: {spec['name']} ({spec['version']})")
                 continue
 
-            if not zip_path.is_file():
-                bundled_zip = bundled_dir / zip_name
-                if bundled_zip.is_file():
-                    shutil.copy2(bundled_zip, zip_path)
-                    self.stdout.write(
-                        f"Copied seed ZIP {zip_name} from bundled_algorithms → {zip_path}"
+            bundled_zip = bundled_dir / zip_name
+            if zip_path.is_file():
+                source_zip = zip_path
+            elif bundled_zip.is_file():
+                source_zip = bundled_zip
+            else:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"No ZIP at {zip_path} and none at {bundled_zip}; "
+                        f"skip creating Algorithm {spec['name']!r}"
                     )
-                else:
-                    self.stdout.write(
-                        self.style.WARNING(
-                            f"No ZIP at {zip_path} and none at {bundled_zip}; "
-                            f"skip creating Algorithm {spec['name']!r}"
-                        )
-                    )
-                    continue
+                )
+                continue
 
             fts = list(FileType.objects.filter(code__in=spec["supported_codes"]))
             if len(fts) != len(spec["supported_codes"]):
@@ -222,14 +220,15 @@ class Command(BaseCommand):
                     entrypoint=spec["entrypoint"],
                     requires_two_files=spec["requires_two_files"],
                 )
-                with zip_path.open("rb") as fh:
-                    algo.archive.save(zip_name, File(fh), save=False)
                 algo.save()
+                with source_zip.open("rb") as fh:
+                    algo.archive.save("archive.zip", File(fh), save=True)
                 algo.supported_types.set(fts)
 
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Created Algorithm {spec['name']} from {zip_name}"
+                    f"Created Algorithm {spec['name']} → algorithms/pkg/{algo.pk}/archive.zip "
+                    f"(from {zip_name})"
                 )
             )
 

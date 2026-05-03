@@ -1,7 +1,11 @@
-from django.core.management.base import BaseCommand
-from analysis.models import Algorithm, Project
+from pathlib import Path
+
 from django.conf import settings
-import os
+from django.core.files import File as DjangoFile
+from django.core.management.base import BaseCommand
+
+from analysis.models import Algorithm, Project
+
 from typing import Any
 
 
@@ -35,7 +39,6 @@ class Command(BaseCommand):
             self.stderr.write("Proyecto no encontrado. Abortando.")
             return
 
-        # Creates the algorithm with the provided data, associating the file if a path is given (but not uploading it, just associating its relative path to MEDIA_ROOT)
         algo = Algorithm(
             name=name,
             version=version,
@@ -43,15 +46,14 @@ class Command(BaseCommand):
             project=project
         )
 
+        algo.save()
         if file_path:
-            full_path = os.path.join(
-                settings.MEDIA_ROOT, 'algorithms', file_path)
-            if not os.path.exists(full_path):
+            full_path = Path(settings.MEDIA_ROOT) / "algorithms" / file_path
+            if not full_path.is_file():
                 self.stderr.write(
                     f"Advertencia: el archivo '{full_path}' no existe en el sistema.")
-            # This doesn't upload the file, it just associates its relative path to MEDIA_ROOT
-            algo.file.name = f"algorithms/{file_path}"
-
-        algo.save()
+            else:
+                with full_path.open("rb") as fh:
+                    algo.archive.save("archive.zip", DjangoFile(fh), save=True)
         self.stdout.write(self.style.SUCCESS(
             f'\nAlgoritmo "{algo.name}" creado correctamente con ID {algo.id}.'))

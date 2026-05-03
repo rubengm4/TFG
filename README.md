@@ -31,9 +31,9 @@ Media files use a Docker named volume and are stored in `/app/media` inside the 
 
 ### Algorithm execution and media (Docker troubleshooting)
 
-- **Single source of truth:** `docker-compose.yml` mounts `media_volume` at `/app/media` for both `web` and `celery`. Algorithm ZIPs and uploads must exist **inside that volume** (or be copied into it). A folder under `algorithms/` without the matching `.zip` file will not allow re-extraction; the DB still points at `algorithms/<name>.zip` from Django’s `FileField`.
+- **Single source of truth:** `docker-compose.yml` mounts `media_volume` at `/app/media` for both `web` and `celery`. Each algorithm row stores exactly one ZIP at **`MEDIA_ROOT/algorithms/pkg/<algorithm_pk>/archive.zip`**. Celery extracts into **`algorithms/pkg/<pk>/extract/`** (refreshed when the ZIP changes). Legacy loose files (`algorithms/*.zip`, sibling folders named after an old ZIP stem) may remain until you delete them; run `check_algorithm_media` to list orphans.
 - **Entrypoint:** Configure the path to the main script **relative to the extracted archive root**, e.g. `main.py` or `src/main.py`. If the ZIP contains a single top-level folder, the app still resolves common layouts. Avoid duplicating the archive folder name in the entrypoint unless that matches your ZIP layout (see code in `analysis/tasks.py`).
-- **Working directory:** Celery runs the algorithm subprocess with **`cwd` set to the extracted algorithm directory** (`MEDIA_ROOT/algorithms/<zip_stem>/`). Scripts that rely on relative paths should assume that folder as the current working directory.
+- **Working directory:** Celery runs the algorithm subprocess with **`cwd` set to the extracted directory** (`MEDIA_ROOT/algorithms/pkg/<pk>/extract/`). Scripts that rely on relative paths should assume that folder as the current working directory.
 - **Protobuf / TensorFlow Object Detection:** If you see `Descriptors cannot be created directly` when importing vendored `*_pb2.py`, `ejecutar_algoritmo_task` sets **`PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python`** for the algorithm subprocess when unset (pure-Python protobuf parsing). Override via env if needed.
 - **Preflight check:** From the project directory (with containers up or using `docker compose run web …`):
 
@@ -43,16 +43,18 @@ docker compose exec web python manage.py check_algorithm_media --zip-probe
 docker compose exec web python manage.py check_algorithm_media --list-bundle
 ```
 
-This lists each algorithm row and whether the archive file exists on disk (optionally validates ZIP headers). `--list-bundle` shows which `.zip` files are present under `analysis/seeds/bundled_algorithms` (for comparison with the manifest).
+This lists each algorithm row and whether the archive file exists on disk (optionally validates ZIP headers), then prints a short **orphans** section (leftover `algorithms/` paths not referenced as an archive). `--list-bundle` shows which `.zip` files are present under `analysis/seeds/bundled_algorithms` (for comparison with the manifest).
 
-**Repair seed ZIPs** after clearing `media_volume` but keeping the MySQL database: copy from `bundled_algorithms` into `MEDIA_ROOT/algorithms/` and re-save the `FileField` for every row that matches `algorithms_manifest.yaml`:
+**Repair seed ZIPs** after clearing `media_volume` but keeping the MySQL database: for each row that matches `algorithms_manifest.yaml`, load the ZIP from `bundled_algorithms` and save it as **`algorithms/pkg/<pk>/archive.zip`** (no duplicate random filenames on disk):
 
 ```bash
 docker compose exec web python manage.py sync_missing_seed_archives --dry-run
 docker compose exec web python manage.py sync_missing_seed_archives
 ```
 
-Only algorithms defined in the manifest are updated; ad‑hoc uploads (other filenames) are unchanged.
+Only algorithms defined in the manifest are updated; ad‑hoc algorithms you created in the UI already use `algorithms/pkg/<pk>/archive.zip`.
+
+**Migrate existing media:** run `python manage.py migrate` so analysis `0002` moves any old `algorithms/*.zip` paths into `pkg/<pk>/archive.zip`. Afterward, remove any files or directories flagged as orphans if you need space.
 
 ## ¿How to add a new project?
 

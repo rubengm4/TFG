@@ -2,6 +2,20 @@ from django.contrib.auth.models import User
 from django.db import models
 import os
 
+
+def algorithm_archive_upload_to(instance: "Algorithm", filename: str) -> str:
+    """One ZIP per algorithm under ``algorithms/pkg/<pk>/archive.zip``.
+
+    Callers that assign ``archive`` before the row has a primary key must save the
+    instance first with ``archive`` empty (see bootstrap / sync commands).
+    """
+    if instance.pk is None:
+        raise ValueError(
+            "algorithm_archive_upload_to requires Algorithm.pk; save the row before "
+            "assigning the ZIP file."
+        )
+    return f"algorithms/pkg/{instance.pk}/archive.zip"
+
 # Model: Project
 
 
@@ -57,7 +71,12 @@ class Algorithm(models.Model):
     project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True)
     version = models.CharField(max_length=50)
     description = models.TextField()
-    archive = models.FileField(upload_to='algorithms/')
+    archive = models.FileField(
+        upload_to=algorithm_archive_upload_to,
+        max_length=512,
+        blank=True,
+        null=True,
+    )
     entrypoint = models.CharField(
         max_length=255, help_text="Archivo principal a ejecutar, por ejemplo: main.py")
     supported_types = models.ManyToManyField(FileType, blank=True)

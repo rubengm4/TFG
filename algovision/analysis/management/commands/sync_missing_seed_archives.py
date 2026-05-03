@@ -1,9 +1,7 @@
-"""Repair seed Algorithm archives by copying from bundled_algorithms when media is missing."""
+"""Repair seed Algorithm archives by loading bundled ZIPs into algorithms/pkg/<pk>/archive.zip."""
 
 from __future__ import annotations
 
-import shutil
-from pathlib import Path
 from typing import Any
 
 from django.conf import settings
@@ -19,9 +17,9 @@ from analysis.models import Algorithm, Project
 class Command(BaseCommand):
     help = (
         "For each algorithm defined in algorithms_manifest.yaml: if the matching DB row exists "
-        "but default_storage does not have the archive file, copy the ZIP from "
-        "analysis/seeds/bundled_algorithms/<zip> into MEDIA_ROOT/algorithms/ and re-save "
-        "the FileField. Does not affect algorithms not listed in the manifest."
+        "but default_storage does not have the archive file, load the ZIP from "
+        "analysis/seeds/bundled_algorithms/<zip> and save it as algorithms/pkg/<pk>/archive.zip. "
+        "Does not affect algorithms not listed in the manifest."
     )
 
     def add_arguments(self, parser):
@@ -37,8 +35,6 @@ class Command(BaseCommand):
         bootstrap.stdout = self.stdout
         specs = bootstrap._load_seed_algorithms()
         bundled_dir = bootstrap._bundled_algorithms_dir()
-        alg_dir = Path(settings.MEDIA_ROOT) / "algorithms"
-        alg_dir.mkdir(parents=True, exist_ok=True)
 
         repaired = 0
         skipped_ok = 0
@@ -87,24 +83,24 @@ class Command(BaseCommand):
                 skipped_no_bundle += 1
                 continue
 
-            dest_disk = alg_dir / zip_name
             self.stdout.write(
                 self.style.NOTICE(
-                    f"Repair {spec['name']!r}: copy {bundled_zip} -> {dest_disk}"
+                    f"Repair {spec['name']!r}: load {bundled_zip} → "
+                    f"algorithms/pkg/{algo.pk}/archive.zip"
                 )
             )
             if dry_run:
                 repaired += 1
                 continue
 
-            shutil.copy2(bundled_zip, dest_disk)
             with transaction.atomic():
-                with dest_disk.open("rb") as fh:
-                    algo.archive.save(zip_name, File(fh), save=False)
-                algo.save()
+                with bundled_zip.open("rb") as fh:
+                    algo.archive.save("archive.zip", File(fh), save=True)
             repaired += 1
             self.stdout.write(
-                self.style.SUCCESS(f"  saved FileField as algorithms/{zip_name}")
+                self.style.SUCCESS(
+                    f"  saved FileField as algorithms/pkg/{algo.pk}/archive.zip"
+                )
             )
 
         self.stdout.write(

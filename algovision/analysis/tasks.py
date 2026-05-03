@@ -9,6 +9,7 @@ import zipfile
 import platform
 import subprocess
 
+from .algorithm_paths import algorithm_extract_disk_path
 from .models import File, Algorithm, Execution, Output
 
 from django.conf import settings
@@ -24,6 +25,8 @@ def _wrap_single_image_input_as_dir(path_str: str, django_file: File) -> tuple[s
 
     TF Object Detection-style scripts often pass ``-i`` to ``os.listdir()`` (directory).
     Django supplies a single file path for image uploads — copy into a temp folder.
+
+    Algorithms expecting ``(N,H,W,3)`` tensors mis-feed grayscale uploads unless we convert to RGB.
     """
     cleanup_dirs: list[str] = []
     p = Path(path_str)
@@ -37,8 +40,22 @@ def _wrap_single_image_input_as_dir(path_str: str, django_file: File) -> tuple[s
         return path_str, cleanup_dirs
     td = tempfile.mkdtemp(prefix="algovision_img_input_")
     cleanup_dirs.append(td)
-    shutil.copy2(p, Path(td) / p.name)
-    logger.info("_wrap_single_image_input_as_dir: %s -> %s/", path_str, td)
+    dest = Path(td) / p.name
+    try:
+        from PIL import Image
+
+        with Image.open(p) as im:
+            im.convert("RGB").save(dest, format=None)
+    except Exception:
+        shutil.copy2(p, dest)
+        logger.warning(
+            "_wrap_single_image_input_as_dir: PIL failed, copied raw %s -> %s",
+            path_str,
+            dest,
+            exc_info=True,
+        )
+    else:
+        logger.info("_wrap_single_image_input_as_dir: %s -> %s/ (RGB)", path_str, td)
     return td, cleanup_dirs
 
 
@@ -55,7 +72,7 @@ def resolve_algorithm_script(base: Path, entrypoint: str) -> Optional[Path]:
     if not base.is_dir():
         return None
     rel = Path(entrypoint.strip().replace("\\", "/"))
-    # extract_path is often MEDIA/algorithms/<zip_stem>; entrypoint may wrongly repeat that folder.
+    # extract_path is MEDIA/algorithms/pkg/<pk>/extract; entrypoint may wrongly repeat that folder.
     if len(rel.parts) > 1 and rel.parts[0] == base.name:
         rel = Path(*rel.parts[1:])
 
@@ -97,6 +114,11 @@ def resolve_algorithm_script(base: Path, entrypoint: str) -> Optional[Path]:
             )
         return chosen.resolve()
     return None
+
+
+def _zip_signature(zip_path: Path) -> str:
+    st = zip_path.stat()
+    return f"{st.st_mtime_ns}:{st.st_size}"
 
 
 @shared_task
@@ -147,8 +169,8 @@ def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, secon
         output_zip = os.path.join(output_dir, output_filename)
 
         algorithm_zip_path = Path(algorithm.archive.path)
-        algorithm_stem = algorithm_zip_path.stem
-        extract_path = Path(settings.MEDIA_ROOT) / "algorithms" / algorithm_stem
+        extract_path = algorithm_extract_disk_path(settings.MEDIA_ROOT, algorithm.pk)
+        sig_path = extract_path / ".archive_sig"
 
         logger.info(
             "ejecutar_algoritmo_task: exec_id=%s algorithm_id=%s zip=%s exists=%s extract=%s",
@@ -159,34 +181,49 @@ def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, secon
             extract_path,
         )
 
-        script_path = resolve_algorithm_script(extract_path, algorithm.entrypoint)
-        if script_path is None:
-            if algorithm_zip_path.is_file():
-                if extract_path.exists():
-                    shutil.rmtree(extract_path)
-                extract_path.mkdir(parents=True, exist_ok=True)
-                try:
-                    with zipfile.ZipFile(algorithm_zip_path, "r") as zip_ref:
-                        zip_ref.extractall(extract_path)
-                except zipfile.BadZipFile as e:
-                    raise RuntimeError(
-                        f"ZIP del algoritmo corrupto o no es un archivo ZIP válido: "
-                        f"{algorithm_zip_path}"
-                    ) from e
-                script_path = resolve_algorithm_script(extract_path, algorithm.entrypoint)
-            else:
-                hint = (
-                    f"No existe el archivo ZIP del algoritmo ({algorithm_zip_path}). "
-                    "En Docker, web y celery comparten el volumen media: el .zip debe estar ahí; "
-                    "si solo ves una carpeta bajo algorithms/, sube de nuevo el ZIP o copia el .zip "
-                    "junto a esa carpeta con el nombre que guarda Django."
+        if not algorithm_zip_path.is_file():
+            hint = (
+                f"No existe el archivo ZIP del algoritmo ({algorithm_zip_path}). "
+                "En Docker, web y celery comparten el volumen media: el .zip debe estar en "
+                f"algorithms/pkg/{algorithm.pk}/archive.zip."
+            )
+            if extract_path.is_dir():
+                hint += (
+                    f" Carpeta extraída en {extract_path}: revisa que "
+                    f"{algorithm.entrypoint!r} coincida con la ruta real dentro del proyecto."
                 )
-                if extract_path.is_dir():
-                    hint += (
-                        f" Carpeta encontrada en {extract_path}: revisa que "
-                        f"{algorithm.entrypoint!r} coincida con la ruta real dentro del proyecto."
-                    )
-                raise FileNotFoundError(hint)
+            raise FileNotFoundError(hint)
+
+        sig = _zip_signature(algorithm_zip_path)
+        stored_sig = ""
+        if sig_path.is_file():
+            try:
+                stored_sig = sig_path.read_text().strip()
+            except OSError:
+                stored_sig = ""
+
+        script_path = (
+            resolve_algorithm_script(extract_path, algorithm.entrypoint)
+            if extract_path.is_dir()
+            else None
+        )
+        needs_refresh = stored_sig != sig or script_path is None
+
+        if needs_refresh:
+            if extract_path.exists():
+                shutil.rmtree(extract_path)
+            extract_path.mkdir(parents=True, exist_ok=True)
+            try:
+                with zipfile.ZipFile(algorithm_zip_path, "r") as zip_ref:
+                    zip_ref.extractall(extract_path)
+            except zipfile.BadZipFile as e:
+                raise RuntimeError(
+                    f"ZIP del algoritmo corrupto o no es un archivo ZIP válido: "
+                    f"{algorithm_zip_path}"
+                ) from e
+            sig_path.write_text(sig)
+            script_path = resolve_algorithm_script(extract_path, algorithm.entrypoint)
+
         if script_path is None:
             raise FileNotFoundError(
                 f"No se encontró {algorithm.entrypoint!r} tras extraer el algoritmo en {extract_path}."

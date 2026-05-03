@@ -96,3 +96,47 @@ class Command(BaseCommand):
             f"Summary: missing_or_empty={missing} bad_zip_probe={bad_zip} "
             f"total_rows={total_rows}"
         )
+
+        alg_root = Path(settings.MEDIA_ROOT) / "algorithms"
+        if not alg_root.is_dir():
+            return
+
+        alive_pk = set(Algorithm.objects.values_list("pk", flat=True))
+        referenced_zips = set()
+        for algo in Algorithm.objects.all():
+            if algo.archive and algo.archive.name:
+                try:
+                    referenced_zips.add(Path(algo.archive.path).resolve())
+                except OSError:
+                    pass
+
+        self.stdout.write("")
+        self.stdout.write("Orphans (best-effort; not referenced as an Algorithm archive file):")
+        n_orphans = 0
+        pkg_root = alg_root / "pkg"
+        if pkg_root.is_dir():
+            for sub in sorted(pkg_root.iterdir(), key=lambda p: p.name):
+                if sub.name.isdigit() and int(sub.name) in alive_pk:
+                    continue
+                self.stdout.write(self.style.WARNING(f"  under pkg/: {sub}"))
+                n_orphans += 1
+
+        for child in sorted(alg_root.iterdir(), key=lambda p: p.name):
+            if child.name == "pkg":
+                continue
+            try:
+                resolved = child.resolve()
+            except OSError:
+                continue
+            if child.is_file():
+                if resolved not in referenced_zips:
+                    self.stdout.write(self.style.WARNING(f"  loose file: {child}"))
+                    n_orphans += 1
+            elif child.is_dir():
+                self.stdout.write(
+                    self.style.WARNING(f"  loose directory (often legacy extract): {child}")
+                )
+                n_orphans += 1
+
+        if n_orphans == 0:
+            self.stdout.write("  (none detected under this heuristic)")

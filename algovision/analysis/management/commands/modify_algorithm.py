@@ -1,7 +1,10 @@
-from django.core.management.base import BaseCommand
-from analysis.models import Algorithm, Project
+from pathlib import Path
+
 from django.conf import settings
-import os
+from django.core.files import File as DjangoFile
+from django.core.management.base import BaseCommand
+
+from analysis.models import Algorithm, Project
 
 
 class Command(BaseCommand):
@@ -21,16 +24,19 @@ class Command(BaseCommand):
             return
 
         self.stdout.write(
-            f'\nModificando algoritmo "{algo.name}" (ID: {algo.id}). Dejar vacío para mantener valor actual.\n')
+            f'\nModificando algoritmo "{algo.name}" (ID: {algo.id}). '
+            "Dejar vacío para mantener valor actual.\n")
 
         name = input(f"Nuevo nombre [{algo.name}]: ").strip()
         version = input(f"Nueva versión [{algo.version}]: ").strip()
         description = input(
             f"Nueva descripción [{algo.description}]: ").strip()
+        default_archive = (
+            algo.archive.name if algo.archive and algo.archive.name else "sin archivo"
+        )
         file_path = input(
-            f"Nuevo archivo (relativa a MEDIA_ROOT/algorithms) [{algo.file.name if algo.file else 'sin archivo'}]: ").strip()
+            f"Nuevo archivo (relativo a MEDIA_ROOT/algorithms) [{default_archive}]: ").strip()
 
-        # Show projects
         proyectos = Project.objects.all()
         self.stdout.write("\nProyectos disponibles:")
         for proyecto in proyectos:
@@ -46,13 +52,6 @@ class Command(BaseCommand):
             algo.version = version
         if description:
             algo.description = description
-        if file_path:
-            full_path = os.path.join(
-                settings.MEDIA_ROOT, 'algorithms', file_path)
-            if not os.path.exists(full_path):
-                self.stderr.write(
-                    f"Advertencia: el archivo '{full_path}' no existe en el sistema.")
-            algo.file.name = f"algorithms/{file_path}"
 
         if project_id:
             try:
@@ -62,6 +61,17 @@ class Command(BaseCommand):
                 self.stderr.write(
                     "ID de proyecto no válido. Se mantendrá el proyecto actual.")
 
-        algo.save()
+        if file_path:
+            full_path = Path(settings.MEDIA_ROOT) / "algorithms" / file_path
+            if full_path.is_file():
+                with full_path.open("rb") as fh:
+                    algo.archive.save("archive.zip", DjangoFile(fh), save=True)
+            else:
+                self.stderr.write(
+                    f"Advertencia: el archivo '{full_path}' no existe en el sistema.")
+                algo.save()
+        else:
+            algo.save()
+
         self.stdout.write(self.style.SUCCESS(
             f'\nAlgoritmo "{algo.name}" (ID: {algo.id}) actualizado correctamente.'))
