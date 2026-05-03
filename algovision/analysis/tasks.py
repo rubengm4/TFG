@@ -1,7 +1,10 @@
 # analysis/tasks.py
 
 from celery import shared_task  # type: ignore
+import logging
 import os
+import shutil
+import tempfile
 import zipfile
 import platform
 import subprocess
@@ -12,6 +15,88 @@ from django.conf import settings
 from django.utils import timezone
 from pathlib import Path
 from typing import Optional
+
+logger = logging.getLogger(__name__)
+
+
+def _wrap_single_image_input_as_dir(path_str: str, django_file: File) -> tuple[str, list[str]]:
+    """Return a path suitable for argv and temp dirs to delete after the subprocess.
+
+    TF Object Detection-style scripts often pass ``-i`` to ``os.listdir()`` (directory).
+    Django supplies a single file path for image uploads — copy into a temp folder.
+    """
+    cleanup_dirs: list[str] = []
+    p = Path(path_str)
+    if not p.is_file():
+        return path_str, cleanup_dirs
+    try:
+        code = django_file.type.code
+    except Exception:
+        return path_str, cleanup_dirs
+    if code != "image":
+        return path_str, cleanup_dirs
+    td = tempfile.mkdtemp(prefix="algovision_img_input_")
+    cleanup_dirs.append(td)
+    shutil.copy2(p, Path(td) / p.name)
+    logger.info("_wrap_single_image_input_as_dir: %s -> %s/", path_str, td)
+    return td, cleanup_dirs
+
+
+def _algorithm_visible_children(base: Path) -> list[Path]:
+    skip = frozenset({"__MACOSX", ".DS_Store"})
+    return [p for p in base.iterdir() if p.name not in skip]
+
+
+def resolve_algorithm_script(base: Path, entrypoint: str) -> Optional[Path]:
+    """Locate entrypoint under extracted algorithm folder.
+
+    Supports ZIPs that wrap files in a single top-level directory (common layout).
+    """
+    if not base.is_dir():
+        return None
+    rel = Path(entrypoint.strip().replace("\\", "/"))
+    # extract_path is often MEDIA/algorithms/<zip_stem>; entrypoint may wrongly repeat that folder.
+    if len(rel.parts) > 1 and rel.parts[0] == base.name:
+        rel = Path(*rel.parts[1:])
+
+    direct = base / rel
+    if direct.is_file():
+        return direct.resolve()
+
+    visible = _algorithm_visible_children(base)
+    dirs_only = [p for p in visible if p.is_dir()]
+    files_only = [p for p in visible if p.is_file()]
+    if len(dirs_only) == 1 and len(files_only) == 0:
+        nested = dirs_only[0] / rel
+        if nested.is_file():
+            return nested.resolve()
+
+    matches = [
+        p for p in base.rglob(rel.name)
+        if p.is_file() and "__MACOSX" not in p.parts
+    ]
+    rel_norm = rel.as_posix()
+    for m in sorted(matches, key=lambda p: len(p.parts)):
+        try:
+            if m.relative_to(base).as_posix() == rel_norm:
+                return m.resolve()
+        except ValueError:
+            continue
+    if len(matches) == 1:
+        return matches[0].resolve()
+    if matches:
+        chosen = min(matches, key=lambda p: len(p.parts))
+        if len(matches) > 1:
+            logger.warning(
+                "resolve_algorithm_script: varios candidatos para %r en %s; "
+                "usando %s (otros: %s)",
+                rel.name,
+                base,
+                chosen,
+                [str(m) for m in matches if m != chosen],
+            )
+        return chosen.resolve()
+    return None
 
 
 @shared_task
@@ -26,10 +111,30 @@ def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, secon
             second_input_path = second_file.file.path
         algorithm = Algorithm.objects.get(id=algorithm_id)
 
+        if not algorithm.archive or not algorithm.archive.name:
+            raise ValueError(
+                "El algoritmo no tiene archivo ZIP asociado en la base de datos."
+            )
+
         input_file = file.file.path
         exec = Execution.objects.get(id=exec_id)
+        if not Path(input_file).is_file():
+            raise FileNotFoundError(
+                f"No existe el archivo de entrada del usuario: {input_file}"
+            )
+        if second_file_id and second_input_path is not None:
+            if not Path(second_input_path).is_file():
+                raise FileNotFoundError(
+                    f"No existe el segundo archivo de entrada: {second_input_path}"
+                )
+
         rel_path = os.path.relpath(input_file, settings.MEDIA_ROOT)
         parts = rel_path.split(os.sep)
+        if len(parts) < 2:
+            raise ValueError(
+                f"Ruta de archivo inesperada respecto a MEDIA_ROOT (se esperaba "
+                f"al menos dos segmentos): {rel_path!r}"
+            )
         user_id_folder = parts[1]
 
         filename, _ = os.path.splitext(parts[-1])
@@ -41,31 +146,115 @@ def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, secon
         output_filename = f"{filename}_{algorithm.name}_{timestamp}_out.zip"
         output_zip = os.path.join(output_dir, output_filename)
 
-        # Decompress algorithm ZIP if not already done
-        algorithm_zip = algorithm.archive.path
-        algorithm_stem = Path(algorithm_zip).stem
-        extract_path = os.path.join(
-            settings.MEDIA_ROOT, 'algorithms', algorithm_stem)
+        algorithm_zip_path = Path(algorithm.archive.path)
+        algorithm_stem = algorithm_zip_path.stem
+        extract_path = Path(settings.MEDIA_ROOT) / "algorithms" / algorithm_stem
 
-        if not os.path.exists(extract_path):
-            os.makedirs(extract_path, exist_ok=True)
-            with zipfile.ZipFile(algorithm_zip, 'r') as zip_ref:
-                zip_ref.extractall(extract_path)
+        logger.info(
+            "ejecutar_algoritmo_task: exec_id=%s algorithm_id=%s zip=%s exists=%s extract=%s",
+            exec_id,
+            algorithm_id,
+            algorithm_zip_path,
+            algorithm_zip_path.is_file(),
+            extract_path,
+        )
 
-        script_path = os.path.join(extract_path, algorithm.entrypoint)
-        shared_venv = Path(script_path).parents[2] / "envs" / ".algenv"
-        python_exec = shared_venv / \
-            ("Scripts/python.exe" if platform.system()
-             == "Windows" else "bin/python")
+        script_path = resolve_algorithm_script(extract_path, algorithm.entrypoint)
+        if script_path is None:
+            if algorithm_zip_path.is_file():
+                if extract_path.exists():
+                    shutil.rmtree(extract_path)
+                extract_path.mkdir(parents=True, exist_ok=True)
+                try:
+                    with zipfile.ZipFile(algorithm_zip_path, "r") as zip_ref:
+                        zip_ref.extractall(extract_path)
+                except zipfile.BadZipFile as e:
+                    raise RuntimeError(
+                        f"ZIP del algoritmo corrupto o no es un archivo ZIP válido: "
+                        f"{algorithm_zip_path}"
+                    ) from e
+                script_path = resolve_algorithm_script(extract_path, algorithm.entrypoint)
+            else:
+                hint = (
+                    f"No existe el archivo ZIP del algoritmo ({algorithm_zip_path}). "
+                    "En Docker, web y celery comparten el volumen media: el .zip debe estar ahí; "
+                    "si solo ves una carpeta bajo algorithms/, sube de nuevo el ZIP o copia el .zip "
+                    "junto a esa carpeta con el nombre que guarda Django."
+                )
+                if extract_path.is_dir():
+                    hint += (
+                        f" Carpeta encontrada en {extract_path}: revisa que "
+                        f"{algorithm.entrypoint!r} coincida con la ruta real dentro del proyecto."
+                    )
+                raise FileNotFoundError(hint)
+        if script_path is None:
+            raise FileNotFoundError(
+                f"No se encontró {algorithm.entrypoint!r} tras extraer el algoritmo en {extract_path}."
+            )
 
-        command = [str(python_exec), str(script_path), input_file]
+        shared_venv = Path(settings.MEDIA_ROOT) / "envs" / ".algenv"
+        python_exec = shared_venv / (
+            "Scripts/python.exe" if platform.system() == "Windows" else "bin/python"
+        )
+        if not python_exec.is_file():
+            raise FileNotFoundError(
+                f"No existe el intérprete del entorno de algoritmos ({python_exec}). "
+                "Comprueba que algenv se instaló (docker-entrypoint / install_requirements_task)."
+            )
+
+        cleanup_input_dirs: list[str] = []
+        primary_argv, c1 = _wrap_single_image_input_as_dir(input_file, file)
+        cleanup_input_dirs.extend(c1)
+
+        command = [str(python_exec), str(script_path), primary_argv]
 
         if second_file and second_input_path is not None:
-            command.append(second_input_path)
+            sec_argv, c2 = _wrap_single_image_input_as_dir(
+                second_input_path, second_file
+            )
+            cleanup_input_dirs.extend(c2)
+            command.append(sec_argv)
 
         command.append(output_zip)
 
-        subprocess.run(command, check=True)
+        logger.info(
+            "ejecutar_algoritmo_task: running script=%s cwd=%s",
+            script_path,
+            extract_path,
+        )
+        # TF Object Detection vendored *_pb2.py often breaks with protobuf>=4 unless protos are regenerated.
+        algo_env = os.environ.copy()
+        algo_env.setdefault("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", "python")
+        try:
+            proc = subprocess.run(
+                command,
+                check=False,
+                cwd=str(extract_path),
+                capture_output=True,
+                text=True,
+                env=algo_env,
+            )
+        finally:
+            for td in cleanup_input_dirs:
+                shutil.rmtree(td, ignore_errors=True)
+
+        if proc.returncode != 0:
+            err_tail = (proc.stderr or "")[-4000:]
+            out_tail = (proc.stdout or "")[-2000:]
+            logger.error(
+                "ejecutar_algoritmo_task: script failed rc=%s stderr_tail=%r stdout_tail=%r",
+                proc.returncode,
+                err_tail,
+                out_tail,
+            )
+            raise subprocess.CalledProcessError(
+                proc.returncode,
+                command,
+                output=proc.stdout,
+                stderr=proc.stderr,
+            )
+
+        logger.info("ejecutar_algoritmo_task: finished OK exec_id=%s", exec_id)
 
         exec.status = "FINISHED"
         exec.save(update_fields=['status'])
@@ -95,9 +284,68 @@ def log_debug(msg: str):
         logf.write(f"[{timestamp}] {msg}\n")
 
 
+TF_MODELS_OBJECT_DETECTION_REV = "971ded9e166816d6172cdec474b6bffc5f0cc0ec"
+
+TF_MODELS_OBJECT_DETECTION_VCS_LINE = (
+    f"git+https://github.com/tensorflow/models.git@{TF_MODELS_OBJECT_DETECTION_REV}"
+    "#egg=object_detection&subdirectory=research/object_detection/packages/tf2"
+)
+
 GIT_REQUIREMENTS = {
-    "object-detection": "git+https://github.com/tensorflow/models.git@master#egg=models"
+    "object-detection": TF_MODELS_OBJECT_DETECTION_VCS_LINE,
 }
+
+ALGENV_SEED_DIR = Path(settings.BASE_DIR) / "analysis" / "seeds" / "algenv"
+ALGENV_BASE_SEED = ALGENV_SEED_DIR / "base.txt"
+ALGENV_OD_SEED = ALGENV_SEED_DIR / "object_detection.txt"
+ALGENV_YOLO_SEED = ALGENV_SEED_DIR / "yolo.txt"
+
+
+def algenv_seed_paths() -> tuple[Path, Path, Path] | None:
+    trio = (ALGENV_BASE_SEED, ALGENV_OD_SEED, ALGENV_YOLO_SEED)
+    if all(p.is_file() for p in trio):
+        return trio
+    return None
+
+
+def sync_requirements_global_from_algenv() -> bool:
+    """Merge algenv seeds into MEDIA_ROOT (parity with docker-entrypoint merged view)."""
+    got = algenv_seed_paths()
+    if not got:
+        return False
+    REQUIREMENTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    merged = "\n".join(p.read_text(encoding="utf-8").rstrip() for p in got) + "\n"
+    REQUIREMENTS_PATH.write_text(merged, encoding="utf-8")
+    return True
+
+
+def _torch_pins_from_base_seed() -> list[str]:
+    if not ALGENV_BASE_SEED.is_file():
+        return []
+    pins: list[str] = []
+    for line in ALGENV_BASE_SEED.read_text(encoding="utf-8").splitlines():
+        s = line.strip()
+        if s.startswith(("torch==", "torchvision==", "triton==")):
+            pins.append(s)
+    return pins
+
+
+def _run_pip(python_exec: Path, args: list[str]) -> None:
+    cmd = [str(python_exec), "-m", "pip"] + args
+    log_debug(f"Ejecutando: {' '.join(cmd)}")
+    subprocess.run(cmd, check=True, text=True)
+
+
+def _pip_check_and_log(python_exec: Path) -> None:
+    result = subprocess.run(
+        [str(python_exec), "-m", "pip", "check"],
+        capture_output=True,
+        text=True,
+    )
+    log_debug(
+        "pip check "
+        f"(código {result.returncode})\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+    )
 
 
 def append_git_requirements():
@@ -165,6 +413,8 @@ def actualizar_requirements_global():
 @shared_task
 def install_requirements_task():
     # Resets the debug log at the start of each run to avoid confusion with old logs
+    REQUIREMENTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    DEBUG_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(DEBUG_LOG_PATH, 'w', encoding='utf-8') as logf:
         logf.write("=== NUEVA EJECUCIÓN install_requirements_task ===\n")
 
@@ -180,69 +430,110 @@ def install_requirements_task():
         log_debug(f"ERROR: No se encontró Python en {python_exec}")
         return
 
-    # Read requirements_global.txt and separate object-detection
-    normal_requirements = []
-    special_packages = {}
-    if REQUIREMENTS_PATH.exists():
-        for line in REQUIREMENTS_PATH.read_text().splitlines():
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            if "object-detection" in line:
-                special_packages["object-detection"] = "https://github.com/tensorflow/models.git"
-            else:
-                normal_requirements.append(line)
-
-    # Overwrite temporary requirements file with normal packages (excluding object-detection) to ensure pip doesn't try to install it from PyPI
-    tmp_requirements_path = REQUIREMENTS_PATH.parent / "tmp_requirements.txt"
-    tmp_requirements_path.write_text("\n".join(normal_requirements))
-
-    # Installs normal packages and always writes to log (even if it fails) to ensure we have a record of what happened during installation, especially since Object Detection API installation can be tricky and we want to capture any issues that arise.
-    try:
+    seeds = algenv_seed_paths()
+    if not seeds:
         log_debug(
-            f"Instalando paquetes normales: {python_exec} -m pip install -r {tmp_requirements_path}")
-        subprocess.run(
-            [str(python_exec), "-m", "pip", "install",
-             "--upgrade", "-r", str(tmp_requirements_path)],
-            check=True, text=True
+            "ERROR: Faltan seeds en analysis/seeds/algenv/ "
+            "(base.txt, object_detection.txt, yolo.txt)."
         )
-        log_debug("Paquetes normales instalados correctamente.")
-    except Exception as e:
-        log_debug(f"ERROR al instalar paquetes normales: {str(e)}")
+        return
 
-    # Installs Object Detection API separately due to its complexity and the fact that it needs to be installed in editable mode from a local path after cloning, which is different from normal pip installations. This also allows us to handle any specific issues that arise during its installation and log them properly.
+    base_p, od_p, yolo_p = seeds
+    sync_requirements_global_from_algenv()
+    log_debug(
+        "requirements_global.txt sincronizado desde "
+        "analysis/seeds/algenv/*.txt"
+    )
+
     try:
-        if "object-detection" in special_packages:
-            # Make sure gitpython is installed, as it's required for cloning repositories in Python
-            log_debug("Instalando gitpython...")
-            subprocess.run([str(python_exec), "-m", "pip",
-                           "install", "gitpython"], text=True)
+        _run_pip(
+            python_exec,
+            [
+                "install",
+                "--no-cache-dir",
+                "--upgrade",
+                "pip",
+                "setuptools",
+                "wheel",
+                "Cython>=3.0",
+            ],
+        )
+        torch_pins = _torch_pins_from_base_seed()
+        if torch_pins:
+            _run_pip(
+                python_exec,
+                [
+                    "install",
+                    "--no-cache-dir",
+                    "--retries",
+                    "5",
+                    "--timeout",
+                    "180",
+                    *torch_pins,
+                ],
+            )
+        _run_pip(
+            python_exec,
+            [
+                "install",
+                "--no-cache-dir",
+                "--no-build-isolation",
+                "--retries",
+                "5",
+                "--timeout",
+                "180",
+                "-r",
+                str(base_p),
+            ],
+        )
+        _run_pip(
+            python_exec,
+            [
+                "install",
+                "--no-cache-dir",
+                "--retries",
+                "5",
+                "--timeout",
+                "180",
+                "-r",
+                str(od_p),
+            ],
+        )
+        _run_pip(
+            python_exec,
+            [
+                "install",
+                "--no-cache-dir",
+                "--no-build-isolation",
+                "--retries",
+                "5",
+                "--timeout",
+                "180",
+                "-r",
+                str(yolo_p),
+            ],
+        )
+        _run_pip(
+            python_exec,
+            [
+                "install",
+                "--no-cache-dir",
+                "--no-build-isolation",
+                "--retries",
+                "5",
+                "--timeout",
+                "300",
+                "--no-deps",
+                "yolox @ git+https://github.com/Megvii-BaseDetection/YOLOX.git@0.3.0",
+            ],
+        )
+        log_debug("Instalación por fases (algenv) correcta.")
+    except subprocess.CalledProcessError as e:
+        log_debug(f"ERROR durante pip install por fases: {e}")
 
-            tf_models_dir = Path(settings.MEDIA_ROOT) / "envs" / "models"
-            if not tf_models_dir.exists():
-                log_debug("Clonando TensorFlow Models...")
-                subprocess.run(
-                    [str(python_exec), "-m", "git", "clone",
-                     special_packages["object-detection"], str(tf_models_dir)],
-                    check=True, text=True
-                )
+    _pip_check_and_log(python_exec)
 
-            research_dir = tf_models_dir / "research"
-            if research_dir.exists():
-                log_debug("Instalando Object Detection API (editable)...")
-                subprocess.run([str(python_exec), "-m", "pip", "install", "-e", str(research_dir)],
-                               check=True, text=True)
-                log_debug("Object Detection API instalada correctamente.")
-            else:
-                log_debug(
-                    "ERROR: No se encontró la carpeta research en tensorflow/models")
-    except Exception as e:
-        log_debug(f"EXCEPCIÓN al instalar Object Detection API: {str(e)}")
-
-    # Update requirements_global.txt after installation to reflect the actual installed packages, which is especially important for the Object Detection API since it has many dependencies that may not be captured correctly if we just rely on pip freeze before installation. This also ensures that any manual edits to requirements_global.txt (like adding Git packages) are preserved while still keeping an accurate list of installed packages.
     actualizar_requirements_global.delay()
-
-    # Make sure Git packages are present in requirements_global.txt after installation, as they are crucial for the functionality of the algorithms and may not be automatically added by pip freeze if they were installed in editable mode or from a local path. This is a safeguard to ensure that even if something goes wrong during installation, we still have a record of the required Git packages in our requirements file.
     append_git_requirements()
     log_debug("Git packages asegurados en requirements_global.txt")
-    log_debug("Instalación completada correctamente.")
+    log_debug("Instalación completada.")

@@ -1,0 +1,5 @@
+# Deprecated monolith — canonical pins live in:
+#   analysis/seeds/algenv/base.txt
+#   analysis/seeds/algenv/object_detection.txt
+#   analysis/seeds/algenv/yolo.txt
+# docker-entrypoint.sh merges them into MEDIA_ROOT/envs/requirements_global.txt before pip install.

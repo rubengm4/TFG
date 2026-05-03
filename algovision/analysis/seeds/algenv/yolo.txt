@@ -1,0 +1,8 @@
+supervision==0.25.1
+ultralytics==8.3.152
+ultralytics-thop==2.0.14
+# PyPI yolox==0.3.0 requires onnxruntime==1.8.0 (no Python 3.11 wheels). YOLOX is installed
+# from Git after this file in docker-entrypoint.sh and install_requirements_task (no-deps).
+onnx>=1.14.0
+onnxruntime>=1.15.0
+onnx-simplifier>=0.4.36

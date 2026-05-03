@@ -50,11 +50,13 @@ services:
     env_file:
       - ./algovision/.env
     depends_on:
+      web:
+        condition: service_started
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-    mem_limit: 2g
+    # No mem_limit: resolving/installing TF+CUDA via pip can spike RAM; cgroup caps caused SIGKILL (137).
     cpus: "2"
     healthcheck:
       test:

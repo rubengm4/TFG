@@ -72,7 +72,7 @@ algorithms:
   - name: my_faster_rcnn_resnet101_L5_E1_M1
     version: "1.0"
     description: my_faster_rcnn_resnet101_L5_E1_M1
-    zip: my_faster_rcnn_resnet101_L5_E1_M1_UKUaXhQ.zip
+    zip: my_faster_rcnn_resnet101_L5_E1_M1.zip
     project_title: pv-analysis
     entrypoint: main.py
     supported_codes:

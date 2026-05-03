@@ -91,12 +91,3 @@ urllib3==2.2.3
 werkzeug==3.0.6
 wrapt==1.14.1
 zipp==3.20.2
-git+https://github.com/tensorflow/models.git@971ded9e166816d6172cdec474b6bffc5f0cc0ec#egg=object_detection&subdirectory=research/object_detection/packages/tf2
-supervision==0.25.1
-ultralytics==8.3.152
-ultralytics-thop==2.0.14
-onnx>=1.14.0
-onnxruntime>=1.15.0
-onnx-simplifier>=0.4.36
-# yolox: PyPI 0.3.0 pins onnxruntime==1.8.0 (no cp311). Install with:
-#   pip install --no-deps "yolox @ git+https://github.com/Megvii-BaseDetection/YOLOX.git@0.3.0"

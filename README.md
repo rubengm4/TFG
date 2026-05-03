@@ -29,6 +29,31 @@ The compose stack includes:
 
 Media files use a Docker named volume and are stored in `/app/media` inside the container.
 
+### Algorithm execution and media (Docker troubleshooting)
+
+- **Single source of truth:** `docker-compose.yml` mounts `media_volume` at `/app/media` for both `web` and `celery`. Algorithm ZIPs and uploads must exist **inside that volume** (or be copied into it). A folder under `algorithms/` without the matching `.zip` file will not allow re-extraction; the DB still points at `algorithms/<name>.zip` from Django’s `FileField`.
+- **Entrypoint:** Configure the path to the main script **relative to the extracted archive root**, e.g. `main.py` or `src/main.py`. If the ZIP contains a single top-level folder, the app still resolves common layouts. Avoid duplicating the archive folder name in the entrypoint unless that matches your ZIP layout (see code in `analysis/tasks.py`).
+- **Working directory:** Celery runs the algorithm subprocess with **`cwd` set to the extracted algorithm directory** (`MEDIA_ROOT/algorithms/<zip_stem>/`). Scripts that rely on relative paths should assume that folder as the current working directory.
+- **Protobuf / TensorFlow Object Detection:** If you see `Descriptors cannot be created directly` when importing vendored `*_pb2.py`, `ejecutar_algoritmo_task` sets **`PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python`** for the algorithm subprocess when unset (pure-Python protobuf parsing). Override via env if needed.
+- **Preflight check:** From the project directory (with containers up or using `docker compose run web …`):
+
+```bash
+docker compose exec web python manage.py check_algorithm_media
+docker compose exec web python manage.py check_algorithm_media --zip-probe
+docker compose exec web python manage.py check_algorithm_media --list-bundle
+```
+
+This lists each algorithm row and whether the archive file exists on disk (optionally validates ZIP headers). `--list-bundle` shows which `.zip` files are present under `analysis/seeds/bundled_algorithms` (for comparison with the manifest).
+
+**Repair seed ZIPs** after clearing `media_volume` but keeping the MySQL database: copy from `bundled_algorithms` into `MEDIA_ROOT/algorithms/` and re-save the `FileField` for every row that matches `algorithms_manifest.yaml`:
+
+```bash
+docker compose exec web python manage.py sync_missing_seed_archives --dry-run
+docker compose exec web python manage.py sync_missing_seed_archives
+```
+
+Only algorithms defined in the manifest are updated; ad‑hoc uploads (other filenames) are unchanged.
+
 ## ¿How to add a new project?
 
 1. Make sure to have a administrator account created in a project, with created permissions for every project (TODO: Make script)

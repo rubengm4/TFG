@@ -240,19 +240,20 @@ class AnalysisView(View):
         results_url: str = reverse('results')
         if algorithm.requires_two_files:
             ejecutar_algoritmo_task.delay(
-                file_id, algorithm_id, exec.id, second_file.id)
+                file_id, algorithm_id, exec.id, int(second_file_id))
         else:
             ejecutar_algoritmo_task.delay(
                 file_id, algorithm_id, exec.id)
 
-            messages.success(
-                request,
-                mark_safe(
-                    f"Se ha iniciado el análisis con <strong>{algorithm.name}</strong> sobre <strong>{file.filename()}</strong>. "
-                    f"Puedes consultar su estado en la pestaña de "
-                    f"<a href='{results_url}' style='font-weight:700; text-decoration:none; color:inherit;'>Mis Resultados</a>"
-                )
+        messages.success(
+            request,
+            mark_safe(
+                f"Se ha iniciado el análisis con <strong>{algorithm.name}</strong> sobre <strong>{file.filename()}</strong>"
+                f"{f' y un segundo archivo' if algorithm.requires_two_files else ''}. "
+                f"Puedes consultar su estado en la pestaña de "
+                f"<a href='{results_url}' style='font-weight:700; text-decoration:none; color:inherit;'>Mis Resultados</a>"
             )
+        )
 
         return redirect('analysis')
 

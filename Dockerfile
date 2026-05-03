@@ -35,6 +35,11 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 RUN apt-get update && apt-get install -yq --no-install-recommends \
+    build-essential \
+    cmake \
+    ninja-build \
+    python3-dev \
+    git \
     default-libmysqlclient-dev \
     default-mysql-client \
     libgl1 \
