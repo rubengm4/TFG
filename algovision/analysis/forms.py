@@ -2,6 +2,12 @@ from django import forms
 from .models import Algorithm, Project, UserProject
 
 
+class AlgorithmArchiveWidget(forms.ClearableFileInput):
+    """Same as Django’s clearable file input but without the “clear” checkbox."""
+
+    template_name = "analysis/widgets/algorithm_archive_input.html"
+
+
 class AlgorithmForm(forms.ModelForm):
     class Meta:
         model = Algorithm
@@ -25,7 +31,9 @@ class AlgorithmForm(forms.ModelForm):
             # This doesn't need a 'form-control' class, as it's a different widget
             'supported_types': forms.CheckboxSelectMultiple(),
             'requires_two_files': forms.CheckboxInput(),
-            'archive': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.zip'})
+            'archive': AlgorithmArchiveWidget(
+                attrs={'class': 'form-control', 'accept': '.zip'}
+            ),
         }
 
     def clean(self):

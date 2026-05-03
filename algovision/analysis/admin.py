@@ -1,4 +1,6 @@
 from django.contrib import admin
+
+from .forms import AlgorithmArchiveWidget
 from .models import Project, UserProject, File, Algorithm, Execution, Output, FileType
 
 # ModelAdmin to customize the admin view of Project
@@ -36,10 +38,14 @@ class FileAdmin(admin.ModelAdmin):
 
 
 class AlgorithmAdmin(admin.ModelAdmin):
-    readonly_fields = ('archive',)  # file field is read-only
     list_display = ('id', 'name', 'version',
                     'archive', 'project', 'entrypoint')
     search_fields = ('name', 'version', 'project')
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == "archive":
+            kwargs["widget"] = AlgorithmArchiveWidget(attrs={"accept": ".zip"})
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
 
 # ModelAdmin to customize the admin view of Execution, showing the user, algorithm, status, execution date, and allowing filtering by status and execution date. Also show the name of the snapshot file if it exists.
 
