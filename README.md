@@ -58,40 +58,52 @@ Only algorithms defined in the manifest are updated; ad‑hoc algorithms you cre
 
 ## ¿How to add a new project?
 
-1. Make sure to have a administrator account created in a project, with created permissions for every project (TODO: Make script)
-2. Log in with this administrator account in a project (obviously, one with permissions)
-3. Click Manage Projects on the initial dashboard.
-4. Click Add Project (name, description and start date) to add a project to the database.
-5. Once it has been added, go to Manage Projects again and then to Manage Permissions from Projects.
-6. There, you can manage the permissions for every user. It is not recommended to add a user to more than one project: (1 User - 1 Project). The exception would be the administrators, which should have access for every project.
-7. In _accounts/views.py_, you need to add this text to the clase **SetSourceAndRedirectToLogin** (inside the function _post(self, request: HttpRequest):_). You need to substitute _example_project_ by the new project name (**maintaining the _-home_ suffix**):
+1. Make sure you have an administrator account with access to manage projects (and ideally a `UserProject` row per project they must administer—see step 5).
+2. Log in with that administrator account (within a project context they already have).
+3. From the dashboard, open **Manage Projects**.
+4. Use **Add Project** (title, description, start date). The **title** you save becomes the canonical **`Project.title`** in the database. Every homepage card uses `<input type="hidden" name="source" value="…">`; that value must match **`Project.title`** (comparison is case-insensitive when resolving the project). Seed data uses slug-like titles such as `pv-analysis`, `people-analysis`, and `stats-analysis`.
+5. Open **Manage Projects** again → **Manage Permissions** and attach users to the new project via `UserProject`. Prefer **one non-admin user ↔ one project**; admins are the usual exception and should have membership on every project they administer.
+6. **Routing before login (required for landing-page selection):** [`SetSourceAndRedirectToLogin`](algovision/accounts/views.py) stores `login_source` / `project_id` in the session, then redirects. If your new `source` is **not** handled and the view falls through to `redirect('index')`, the next GET `/` runs [`HomepageView`](algovision/analysis/views.py), which **clears** those session keys for anonymous users—so the project choice is lost. You must therefore add a branch that sends the user to **`accounts:login`** or to a dedicated `LoginHomeView` URL **before** they hit `/` as a guest.
+
+   **Option A — same pattern as existing menus (`*-home/` page):**
+
+   In [`algovision/accounts/views.py`](algovision/accounts/views.py), inside class **`SetSourceAndRedirectToLogin`** → **`post`**, add (adjust slug and URL name):
 
    ```python
-    elif source == 'example-project':
-        return redirect('example_project_home')
+   elif source == 'example-project':
+       return redirect('example_project_home')
    ```
 
-8. In _algovision/urls.py_, add the following line, substituting _example_project_ by the new project name (**maintaining the _-home_ suffix**):
+   In [`algovision/algovision/urls.py`](algovision/algovision/urls.py), register the route (keep the `-home` segment in the URL path; Django’s `name` uses underscores):
+
    ```python
    path('example-project-home/', LoginHomeView.as_view(), name='example_project_home'),
    ```
-9. In _analysis/templates/index.html_, add a similar element to the following to create a button with a link to the new project, changing Example and _value="example-project"_ by the new project's name.
+
+   **Option B — skip extra URL:** redirect straight to login:
+
+   ```python
+   elif source == 'example-project':
+       return redirect('accounts:login')
+   ```
+
+7. In [`algovision/templates/index.html`](algovision/templates/index.html), add a card (grid) and, optionally, a sidebar form—copy an existing block and set **`value="<your Project.title>"`** so it matches the database and your `elif source == …` branch.
 
    ```html
-   <!-- Análisis FV Card -->
+   <!-- Example card -->
    <form
      method="post"
      action="{% url 'accounts:set_source' %}"
      class="bg-gradient-to-br from-teal-100 to-teal-300 shadow-lg rounded-xl p-8 flex flex-col items-center hover:shadow-teal-400/50 hover:scale-[1.02] transition-all w-full max-w-sm md:max-w-md"
    >
      {% csrf_token %}
-     <input type="hidden" name="source" value="pv-analysis" />
+     <input type="hidden" name="source" value="example-project" />
      <i class="fas fa-solar-panel text-6xl md:text-7xl text-teal-600 mb-6"></i>
      <h3 class="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-3">
        Example
      </h3>
      <p class="text-gray-600 text-center mb-6 text-center text-sm md:text-lg">
-       Lorem ipsum sit dolor amet
+       Short description for users
      </p>
      <button
        type="submit"
@@ -102,24 +114,24 @@ Only algorithms defined in the manifest are updated; ad‑hoc algorithms you cre
    </form>
    ```
 
-10. (Optional but recommended) Add the project to the sidebar in _analysis/templates/index.html_. The icon is modified by editing th class of element _<i>_, and it would be needed to modify the _value_ attribute, by putting the project name instead of _example_analysis_, and changing Example also (this last one is a visual change)
+   Optional sidebar entry (same `source` value); change the `<i>` icon class if you want a different glyph:
 
-    ```html
-    <li>
-      <form method="post" action="{% url 'accounts:set_source' %}">
-        {% csrf_token %}
-        <input type="hidden" name="source" value="example-analysis" />
-        <button
-          type="submit"
-          class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white text-left w-full"
-        >
-          <i class="fas fa-solar-panel text-teal-600"></i> Example
-        </button>
-      </form>
-    </li>
-    ```
+   ```html
+   <li>
+     <form method="post" action="{% url 'accounts:set_source' %}">
+       {% csrf_token %}
+       <input type="hidden" name="source" value="example-project" />
+       <button
+         type="submit"
+         class="block py-2.5 px-4 rounded-lg transition-all hover:bg-gray-800 hover:text-white text-left w-full"
+       >
+         <i class="fas fa-solar-panel text-teal-600"></i> Example
+       </button>
+     </form>
+   </li>
+   ```
 
-11. Now our project will be configured correctly and appearing in the frontend, so we can now access with our administrator or create a new user. But the project can be accessed from now on.
+8. After deployment, choose the new card, complete login/register, and confirm `/dashboard/` loads. If you later **rename** the project title in the admin UI, update the matching `source` values in the template (or rely on session refresh rules described under **Web app: project session, dashboard, and homepage** in Troubleshooting below).
 
 ---
 

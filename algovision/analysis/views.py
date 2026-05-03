@@ -3,7 +3,11 @@ import os
 import json
 import shutil
 
-from accounts.views import CustomLoginRedirectMixin
+from accounts.views import (
+    CustomLoginRedirectMixin,
+    resolve_project_from_session,
+    user_has_dashboard_project_access,
+)
 
 from django import forms
 from django.conf import settings
@@ -47,8 +51,11 @@ class HomepageView(NoCacheMixin, TemplateView):
             for key in ['login_source', 'project_id', 'source']:
                 request.session.pop(key, None)
         else:
-            # Auth user? Go to dashboard directly
-            return redirect('dashboard')
+            project = resolve_project_from_session(request)
+            if project is not None and user_has_dashboard_project_access(
+                request.user, project
+            ):
+                return redirect('dashboard')
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -654,8 +661,23 @@ class UpdateProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, UpdateVie
         return self.request.user.is_superuser
 
     def form_valid(self, form: Any):
+        old_title = Project.objects.values_list('title', flat=True).get(
+            pk=self.object.pk
+        )
         messages.success(self.request, "Proyecto actualizado correctamente.")
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        sess = self.request.session
+        raw_pid = sess.get('project_id')
+        try:
+            session_pid = int(raw_pid) if raw_pid is not None else None
+        except (TypeError, ValueError):
+            session_pid = None
+        login_src = (sess.get('login_source') or '')
+        if session_pid == self.object.pk or old_title.lower() == login_src.lower():
+            sess['login_source'] = self.object.title
+            sess['source'] = self.object.title
+            sess['project_id'] = self.object.pk
+        return response
 
     def form_invalid(self, form):
         error_messages = []
@@ -682,9 +704,21 @@ class DeleteProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, DeleteVie
 
     def form_valid(self, form: Any):
         project = self.get_object()
+        pk, title = project.pk, project.title
         messages.success(
-            self.request, f"Proyecto '{project.title}' eliminado correctamente.")
-        return super().form_valid(form)
+            self.request, f"Proyecto '{title}' eliminado correctamente.")
+        response = super().form_valid(form)
+        sess = self.request.session
+        raw_pid = sess.get('project_id')
+        try:
+            session_pid = int(raw_pid) if raw_pid is not None else None
+        except (TypeError, ValueError):
+            session_pid = None
+        login_src = (sess.get('login_source') or '')
+        if session_pid == pk or login_src.lower() == title.lower():
+            for key in ('login_source', 'project_id', 'source'):
+                sess.pop(key, None)
+        return response
 
 
 class CreateUserProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, CreateView):

@@ -1,5 +1,5 @@
 from django import forms
-from typing import Any
+from typing import Any, Optional
 
 # Django contrib imports
 from django.contrib import messages
@@ -250,6 +250,33 @@ class LoginHomeView(TemplateView):
         return context
 
 
+def resolve_project_from_session(request: HttpRequest) -> Optional[Project]:
+    raw_id = request.session.get('project_id')
+    if raw_id is not None:
+        try:
+            pid = int(raw_id)
+        except (TypeError, ValueError):
+            pid = None
+        if pid is not None:
+            project = Project.objects.filter(pk=pid).first()
+            if project is not None:
+                return project
+    slug = request.session.get('login_source')
+    if not slug or slug == 'Sin proyecto':
+        return None
+    return Project.objects.filter(title__iexact=slug).first()
+
+
+def user_has_dashboard_project_access(user: Any, project: Project) -> bool:
+    return UserProject.objects.filter(user=user, project=project).exists()
+
+
+def sync_session_project(request: HttpRequest, project: Project) -> None:
+    request.session['login_source'] = project.title
+    request.session['source'] = project.title
+    request.session['project_id'] = project.pk
+
+
 class CustomLoginRedirectMixin(AccessMixin):
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any):
         try:
@@ -282,20 +309,15 @@ class NeverCacheMixin:
 
 class DashboardView(NeverCacheMixin, CustomLoginRedirectMixin, View):
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any):
-        project_slug = request.session.get('login_source')
-
-        # Check project existence
-        if not project_slug or project_slug == 'Sin proyecto':
+        project = resolve_project_from_session(request)
+        if project is None:
             return redirect('index')
 
-        try:
-            project = Project.objects.get(title=project_slug)
-        except Project.DoesNotExist:
+        if not user_has_dashboard_project_access(request.user, project):
             return redirect('index')
 
-        # Check if user is linked to the project, otherwise redirect to index
-        if not UserProject.objects.filter(user=request.user, project=project).exists():
-            return redirect('index')
+        sync_session_project(request, project)
+        project_slug = project.title
 
         # Count files linked to the project through executions
         files_count = File.objects.filter(
