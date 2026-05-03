@@ -42,6 +42,16 @@ class AlgorithmAdmin(admin.ModelAdmin):
                     'archive', 'project', 'entrypoint')
     search_fields = ('name', 'version', 'project')
 
+    def save_model(self, request, obj, form, change):
+        if not change:
+            uploaded = form.cleaned_data.get("archive")
+            obj.archive = None
+            super().save_model(request, obj, form, change)
+            if uploaded:
+                obj.archive.save(uploaded.name, uploaded, save=True)
+        else:
+            super().save_model(request, obj, form, change)
+
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         if db_field.name == "archive":
             kwargs["widget"] = AlgorithmArchiveWidget(attrs={"accept": ".zip"})

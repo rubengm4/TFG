@@ -496,6 +496,19 @@ class CreateAlgorithmView(CustomLoginRedirectMixin, UserPassesTestMixin, CreateV
     def test_func(self):
         return self.request.user.is_superuser
 
+    def form_valid(self, form: Any):
+        # algorithm_archive_upload_to needs instance.pk; save other fields first (see bootstrap_initial_data).
+        algorithm = form.save(commit=False)
+        uploaded_zip = form.cleaned_data.get("archive")
+        algorithm.archive = None
+        algorithm.save()
+        form.save_m2m()
+        if uploaded_zip:
+            algorithm.archive.save(uploaded_zip.name, uploaded_zip, save=True)
+        self.object = algorithm
+        messages.success(self.request, "Algoritmo creado correctamente.")
+        return redirect(self.get_success_url())
+
 
 class ManageAlgorithmsView(CustomLoginRedirectMixin, UserPassesTestMixin, ListView):
     model = Algorithm

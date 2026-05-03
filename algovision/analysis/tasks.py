@@ -23,10 +23,13 @@ logger = logging.getLogger(__name__)
 def _wrap_single_image_input_as_dir(path_str: str, django_file: File) -> tuple[str, list[str]]:
     """Return a path suitable for argv and temp dirs to delete after the subprocess.
 
-    TF Object Detection-style scripts often pass ``-i`` to ``os.listdir()`` (directory).
-    Django supplies a single file path for image uploads — copy into a temp folder.
+    Django supplies a single file path for image uploads. We copy into a temp folder,
+    normalize to RGB when possible (helps models expecting ``(N,H,W,3)``), and pass the
+    **image file path** on argv — matching ``main.py`` contracts like ``Path(sys.argv[1])``
+    passed to ``Image.open`` / ``-i``. The temp directory is still tracked for cleanup.
 
-    Algorithms expecting ``(N,H,W,3)`` tensors mis-feed grayscale uploads unless we convert to RGB.
+    Algorithms that batch over a folder should resolve argv with ``Path``: if it is a file,
+    process that path only; if a directory, use ``os.listdir`` / glob as needed.
     """
     cleanup_dirs: list[str] = []
     p = Path(path_str)
@@ -55,8 +58,8 @@ def _wrap_single_image_input_as_dir(path_str: str, django_file: File) -> tuple[s
             exc_info=True,
         )
     else:
-        logger.info("_wrap_single_image_input_as_dir: %s -> %s/ (RGB)", path_str, td)
-    return td, cleanup_dirs
+        logger.info("_wrap_single_image_input_as_dir: %s -> %s (RGB)", path_str, dest)
+    return str(dest), cleanup_dirs
 
 
 def _algorithm_visible_children(base: Path) -> list[Path]:
