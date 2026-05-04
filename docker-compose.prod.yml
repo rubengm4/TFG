@@ -51,11 +51,13 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    # SECURE_PROXY_SSL + SECURE_SSL_REDIRECT: probe must look like HTTPS (Caddy sets
+    # X-Forwarded-Proto); plain HTTP is redirected to https://127.0.0.1:8000/ and breaks urllib.
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          'python -c "import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8000/\", timeout=5)"',
+          "python -c \"import urllib.request; r=urllib.request.Request('http://127.0.0.1:8000/', headers={'X-Forwarded-Proto': 'https'}); urllib.request.urlopen(r, timeout=5)\"",
         ]
       interval: 30s
       timeout: 10s
