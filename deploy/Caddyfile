@@ -1,0 +1,22 @@
+# Production TLS and routing. Use with docker-compose.prod.yml.
+# Requires CADDY_DOMAIN (and CADDY_ACME_EMAIL for Let's Encrypt).
+# Run: docker compose --env-file algovision/.env -f docker-compose.prod.yml up -d
+#
+# Caddy expands {$VAR} from the process environment (see algovision/.env.example).
+# Optional: add a global block with your ACME contact email, e.g.
+#   { email you@example.com }
+
+{$CADDY_DOMAIN} {
+	encode gzip
+
+	# Same tree as Django MEDIA_ROOT (/app/media in web/celery).
+	handle_path /media/* {
+		root * /srv/media
+		file_server
+	}
+
+	reverse_proxy web:8000 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+}

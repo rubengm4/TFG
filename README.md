@@ -29,6 +29,26 @@ The compose stack includes:
 
 Media files use a Docker named volume and are stored in `/app/media` inside the container.
 
+## Production deployment (VPS)
+
+Use **`docker-compose.prod.yml`** for a production-style stack: the app image has **no** bind-mounted source tree, **MySQL** and **Redis** are not published to the host, **Caddy** terminates TLS and serves **`/media/`** from the same volume as Django (`MEDIA_ROOT`), and **Gunicorn** runs with configurable workers/timeouts.
+
+1. Point **DNS** `A`/`AAAA` records for your domain to the VPS public IP. Open host firewall ports **80** and **443** (and **22** for SSH). Do **not** expose MySQL or Redis publicly.
+2. Copy [`algovision/.env.example`](algovision/.env.example) to **`algovision/.env`**. Set a strong **`SECRET_KEY`**, **`DEBUG=False`**, **`ALLOWED_HOSTS`**, **`CSRF_TRUSTED_ORIGINS`** (`https://your.domain`), **`SECURE_PROXY_SSL=True`**, matching **`DATABASE_*`** and **`MYSQL_*`** credentials, **`CADDY_DOMAIN`** (same hostname as in DNS), and **`REDIS_URL=redis://redis:6379/0`**.
+3. Build and start (from the repository root):
+
+```bash
+docker compose --env-file algovision/.env -f docker-compose.prod.yml build
+docker compose --env-file algovision/.env -f docker-compose.prod.yml up -d
+```
+
+4. **First boot** can take a long time: the entrypoint may install algorithm dependencies into `/app/media/envs/.algenv`. Ensure enough **RAM** and **disk** (see Celery / ML notes in dev compose).
+5. **Smoke tests:** open `https://your.domain/`, log in, confirm static assets load, upload a file, run a seed algorithm, and open a URL under `/media/` that should be served by Caddy. After a reboot, `docker compose ... up -d` should restore services (`restart: unless-stopped`).
+
+**Backups:** on a schedule, dump MySQL (e.g. `docker compose ... exec db mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" --all-databases`) and archive the **`media_volume`** contents (algorithm archives, outputs, `.algenv`). Test a restore on a spare machine or VM periodically.
+
+**Operations note:** `migrate` and `bootstrap_initial_data` run on each **`web`** container start; this is intended for a **single** `web` replica. If you scale to multiple web containers, run migrations/bootstrap once via a one-off `docker compose ... run --rm web python manage.py migrate` (and bootstrap) before scaling.
+
 ### Algorithm execution and media (Docker troubleshooting)
 
 - **Single source of truth:** `docker-compose.yml` mounts `media_volume` at `/app/media` for both `web` and `celery`. Each algorithm row stores exactly one ZIP at **`MEDIA_ROOT/algorithms/pkg/<algorithm_pk>/archive.zip`**. Celery extracts into **`algorithms/pkg/<pk>/extract/`** (refreshed when the ZIP changes). Legacy loose files (`algorithms/*.zip`, sibling folders named after an old ZIP stem) may remain until you delete them; run `check_algorithm_media` to list orphans.

@@ -265,6 +265,9 @@ def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, secon
         # TF Object Detection vendored *_pb2.py often breaks with protobuf>=4 unless protos are regenerated.
         algo_env = os.environ.copy()
         algo_env.setdefault("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", "python")
+        timeout_sec = settings.ALGORITHM_SUBPROCESS_TIMEOUT
+        if timeout_sec is not None and timeout_sec <= 0:
+            timeout_sec = None
         try:
             proc = subprocess.run(
                 command,
@@ -273,7 +276,20 @@ def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, secon
                 capture_output=True,
                 text=True,
                 env=algo_env,
+                timeout=timeout_sec,
             )
+        except subprocess.TimeoutExpired as exc:
+            logger.error(
+                "ejecutar_algoritmo_task: timeout after %ss script=%s",
+                settings.ALGORITHM_SUBPROCESS_TIMEOUT,
+                script_path,
+            )
+            if exec:
+                exec.status = "FAILED"
+                exec.save(update_fields=['status'])
+            raise RuntimeError(
+                f"Algoritmo excedió el tiempo límite ({settings.ALGORITHM_SUBPROCESS_TIMEOUT}s)"
+            ) from exc
         finally:
             for td in cleanup_input_dirs:
                 shutil.rmtree(td, ignore_errors=True)
