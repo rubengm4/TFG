@@ -29,16 +29,18 @@ services:
       dockerfile: Dockerfile
     working_dir: /app/algovision
     restart: unless-stopped
+    # Gunicorn 25+: options must come before the WSGI module; otherwise --bind is ignored
+    # and the default 127.0.0.1:8000 breaks reverse_proxy from the Caddy container.
     command: >
       sh -c "python manage.py migrate &&
              python manage.py bootstrap_initial_data &&
              python manage.py collectstatic --noinput &&
-             gunicorn algovision.wsgi:application
-             --bind 0.0.0.0:8000
+             gunicorn --bind 0.0.0.0:8000
              --workers ${GUNICORN_WORKERS:-3}
              --timeout ${GUNICORN_TIMEOUT:-300}
              --graceful-timeout 30
-             --access-logfile -"
+             --access-logfile -
+             algovision.wsgi:application"
     volumes:
       - static_volume:/app/static
       - media_volume:/app/media
