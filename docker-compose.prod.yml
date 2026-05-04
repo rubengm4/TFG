@@ -1,0 +1,124 @@
+# Production stack: immutable app image, internal DB/Redis, Caddy (TLS + /media).
+#
+# From repo root (after copying algovision/.env.example → algovision/.env and filling values):
+#   docker compose --env-file algovision/.env -f docker-compose.prod.yml build
+#   docker compose --env-file algovision/.env -f docker-compose.prod.yml up -d
+#
+# Set CADDY_DOMAIN to your public hostname (DNS A/AAAA → this host). Open 80/443.
+
+services:
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - media_volume:/srv/media:ro
+    env_file:
+      - ./algovision/.env
+    depends_on:
+      web:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app/algovision
+    restart: unless-stopped
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py bootstrap_initial_data &&
+             python manage.py collectstatic --noinput &&
+             gunicorn algovision.wsgi:application
+             --bind 0.0.0.0:8000
+             --workers ${GUNICORN_WORKERS:-3}
+             --timeout ${GUNICORN_TIMEOUT:-300}
+             --graceful-timeout 30
+             --access-logfile -"
+    volumes:
+      - static_volume:/app/static
+      - media_volume:/app/media
+    env_file:
+      - ./algovision/.env
+    expose:
+      - "8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'python -c "import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8000/\", timeout=5)"',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 300s
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app/algovision
+    restart: unless-stopped
+    command: celery -A algovision worker -l info
+    volumes:
+      - media_volume:/app/media
+    env_file:
+      - ./algovision/.env
+    depends_on:
+      web:
+        condition: service_started
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        ["CMD-SHELL", "celery -A algovision inspect ping -t 10 || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 300s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    env_file:
+      - ./algovision/.env
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-algovision}
+      MYSQL_USER: ${MYSQL_USER:?Set MYSQL_USER in algovision/.env}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in algovision/.env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in algovision/.env}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+volumes:
+  mysql_data:
+  static_volume:
+  media_volume:
+  caddy_data:
