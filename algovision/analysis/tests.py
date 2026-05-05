@@ -1,6 +1,7 @@
 import shutil
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -161,6 +162,85 @@ class MediaForwardAuthTests(SimpleTestCase):
     def test_forwarded_uri_without_media_prefix(self):
         r = self._get(f"/uploads/{self.user_a.pk}/x.png", self.user_a)
         self.assertEqual(r.status_code, 200)
+
+
+class RequirementsEndpointsAuthTests(TestCase):
+    """requirements/download and /upload must be superuser-only (not public)."""
+
+    def setUp(self):
+        req_root = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: shutil.rmtree(req_root, ignore_errors=True))
+        self._requirements_path = req_root / "envs" / "requirements_global.txt"
+        self._requirements_path.parent.mkdir(parents=True, exist_ok=True)
+        self._requirements_path.write_text("pkg==1.0\n", encoding="utf-8")
+        patcher = patch("analysis.views.REQUIREMENTS_PATH", self._requirements_path)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_download_anonymous_redirects(self):
+        r = self.client.get(reverse("download_requirements"))
+        self.assertRedirects(
+            r,
+            reverse("index"),
+            status_code=302,
+            target_status_code=200,
+            fetch_redirect_response=False,
+        )
+
+    def test_download_staff_forbidden(self):
+        u = User.objects.create_user(
+            "req_dl_staff", "req_dl_staff@test.com", "pw", is_staff=True
+        )
+        self.client.force_login(u)
+        r = self.client.get(reverse("download_requirements"))
+        self.assertEqual(r.status_code, 403)
+
+    def test_download_superuser_ok(self):
+        u = User.objects.create_superuser("req_dl_su", "req_dl_su@test.com", "pw")
+        self.client.force_login(u)
+        r = self.client.get(reverse("download_requirements"))
+        self.assertEqual(r.status_code, 200)
+        self.assertIn(b"pkg==1.0", r.content)
+
+    @patch("analysis.views.install_requirements_task.delay")
+    def test_upload_anonymous_redirects(self, mock_delay):
+        r = self.client.post(
+            reverse("upload_requirements"),
+            {"requirements_file": SimpleUploadedFile("req.txt", b"evil")},
+        )
+        self.assertRedirects(
+            r,
+            reverse("index"),
+            status_code=302,
+            target_status_code=200,
+            fetch_redirect_response=False,
+        )
+        mock_delay.assert_not_called()
+
+    @patch("analysis.views.install_requirements_task.delay")
+    def test_upload_staff_forbidden(self, mock_delay):
+        u = User.objects.create_user(
+            "req_ul_staff", "req_ul_staff@test.com", "pw", is_staff=True
+        )
+        self.client.force_login(u)
+        r = self.client.post(
+            reverse("upload_requirements"),
+            {"requirements_file": SimpleUploadedFile("req.txt", b"x")},
+        )
+        self.assertEqual(r.status_code, 403)
+        mock_delay.assert_not_called()
+
+    @patch("analysis.views.install_requirements_task.delay")
+    def test_upload_superuser_ok(self, mock_delay):
+        u = User.objects.create_superuser("req_ul_su", "req_ul_su@test.com", "pw")
+        self.client.force_login(u)
+        r = self.client.post(
+            reverse("upload_requirements"),
+            {"requirements_file": SimpleUploadedFile("req.txt", b"foo==2\n")},
+        )
+        self.assertEqual(r.status_code, 200)
+        mock_delay.assert_called_once()
+        self.assertEqual(self._requirements_path.read_text(), "foo==2\n")
 
 
 class FileOwnershipAccessTests(TestCase):

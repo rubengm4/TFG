@@ -560,14 +560,17 @@ class RequirementsJSONView(CustomLoginRedirectMixin, UserPassesTestMixin, View):
         return self.request.user.is_superuser
 
 
-class DownloadRequirementsView(View):
+class DownloadRequirementsView(CustomLoginRedirectMixin, UserPassesTestMixin, View):
     def get(self, request: HttpRequest):
         if not os.path.exists(REQUIREMENTS_PATH):
             raise Http404("El archivo requirements_global.txt no existe.")
         return FileResponse(open(REQUIREMENTS_PATH, 'rb'), as_attachment=True, filename='requirements_global.txt')
 
+    def test_func(self):
+        return self.request.user.is_superuser
 
-class UploadRequirementsView(View):
+
+class UploadRequirementsView(CustomLoginRedirectMixin, UserPassesTestMixin, View):
     def post(self, request: HttpRequest):
         file = request.FILES.get('requirements_file')
         if not file:
@@ -587,6 +590,9 @@ class UploadRequirementsView(View):
             'message': f'Archivo {file.name} subido correctamente.',
             'installation_started': True
         })
+
+    def test_func(self):
+        return self.request.user.is_superuser
 
 
 class CreateAlgorithmView(CustomLoginRedirectMixin, UserPassesTestMixin, CreateView):
