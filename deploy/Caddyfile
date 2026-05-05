@@ -3,6 +3,9 @@
 # Run: docker compose --env-file algovision/.env -f docker-compose.prod.yml up -d
 #
 # Caddy expands {$VAR} from the process environment (see algovision/.env.example).
+# Multiple hostnames in CADDY_DOMAIN: use a comma then a space, e.g.
+#   example.com, www.example.com
+# (comma-without-space is rejected by the Caddyfile adapter.)
 # Optional: add a global block with your ACME contact email, e.g.
 #   { email you@example.com }
 

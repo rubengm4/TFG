@@ -5,6 +5,7 @@
 #   docker compose --env-file algovision/.env -f docker-compose.prod.yml up -d
 #
 # Set CADDY_DOMAIN to your public hostname (DNS A/AAAA → this host). Open 80/443.
+# For apex + www, use a comma and a space: example.com, www.example.com
 
 services:
   proxy:
