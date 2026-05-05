@@ -171,7 +171,7 @@ class FileManagerView(CustomLoginRedirectMixin, View):
     def post(self, request: HttpRequest):
         if 'delete_file' in request.POST:
             file_id = request.POST.get('delete_file')
-            file_obj = get_object_or_404(File, id=file_id)
+            file_obj = get_object_or_404(File, id=file_id, user=request.user)
             file_name = os.path.basename(file_obj.file.name)
 
             file_path = file_obj.file.path
@@ -271,10 +271,10 @@ class AnalysisView(View):
             messages.error(request, "Debes seleccionar archivo y algoritmo.")
             return redirect('analysis')
 
+        file = get_object_or_404(File, id=file_id, user=request.user)
         try:
-            file = File.objects.get(id=file_id)
             algorithm = Algorithm.objects.get(id=algorithm_id)
-        except (File.DoesNotExist, Algorithm.DoesNotExist):
+        except Algorithm.DoesNotExist:
             messages.error(request, "Archivo o algoritmo no válido.")
             return redirect('analysis')
 
@@ -313,7 +313,8 @@ class AnalysisView(View):
                     request, "Este algoritmo requiere un segundo archivo.")
                 return redirect('analysis')
             try:
-                second_file = File.objects.get(id=second_file_id)
+                second_file = File.objects.get(
+                    id=second_file_id, user=request.user)
             except File.DoesNotExist:
                 messages.error(
                     request, "El segundo archivo seleccionado no existe.")

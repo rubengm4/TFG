@@ -1,8 +1,14 @@
+import shutil
 import tempfile
 from pathlib import Path
 
 from django.contrib.auth.models import AnonymousUser, User
-from django.test import RequestFactory, SimpleTestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import RequestFactory, SimpleTestCase, TestCase
+from django.urls import reverse
+from django.utils import timezone
+
+from analysis.models import Algorithm, File, FileType
 
 from analysis.tasks import resolve_algorithm_script
 from analysis.views import MediaForwardAuthView, _media_rel_path_from_forwarded_uri
@@ -155,3 +161,58 @@ class MediaForwardAuthTests(SimpleTestCase):
     def test_forwarded_uri_without_media_prefix(self):
         r = self._get(f"/uploads/{self.user_a.pk}/x.png", self.user_a)
         self.assertEqual(r.status_code, 200)
+
+
+class FileOwnershipAccessTests(TestCase):
+    """File delete and analysis must not access other users' rows (IDOR)."""
+
+    def test_cannot_delete_another_users_file(self):
+        media = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(media, ignore_errors=True))
+        with self.settings(MEDIA_ROOT=media):
+            ua = User.objects.create_user("idor_del_a", "idor_del_a@test.com", "pw")
+            ub = User.objects.create_user("idor_del_b", "idor_del_b@test.com", "pw")
+            ft = FileType.objects.create(code="idor_del_csv", name="CSV")
+            f_b = File.objects.create(
+                user=ub,
+                file=SimpleUploadedFile("b.txt", b"x"),
+                type=ft,
+                upload_date=timezone.now(),
+            )
+            self.client.force_login(ua)
+            r = self.client.post(
+                reverse("file_manager"),
+                {"delete_file": str(f_b.pk)},
+            )
+            self.assertEqual(r.status_code, 404)
+            self.assertTrue(File.objects.filter(pk=f_b.pk).exists())
+
+    def test_cannot_run_analysis_on_another_users_file(self):
+        media = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(media, ignore_errors=True))
+        with self.settings(MEDIA_ROOT=media):
+            ua = User.objects.create_user("idor_an_a", "idor_an_a@test.com", "pw")
+            ub = User.objects.create_user("idor_an_b", "idor_an_b@test.com", "pw")
+            ft = FileType.objects.create(code="idor_an_csv", name="CSV")
+            f_b = File.objects.create(
+                user=ub,
+                file=SimpleUploadedFile("b.txt", b"y"),
+                type=ft,
+                upload_date=timezone.now(),
+            )
+            algo = Algorithm.objects.create(
+                name="idor_algo",
+                project=None,
+                version="1",
+                description="t",
+            )
+            algo.supported_types.add(ft)
+            self.client.force_login(ua)
+            r = self.client.post(
+                reverse("analysis"),
+                {
+                    "file_id": str(f_b.pk),
+                    "algorithm": str(algo.pk),
+                },
+            )
+            self.assertEqual(r.status_code, 404)
