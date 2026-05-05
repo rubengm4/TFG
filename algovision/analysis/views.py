@@ -329,7 +329,6 @@ class AnalysisView(View):
 
         # Create execution (but don't run it here, just create the record in the database with status PENDING, the Celery task will update it when it starts and finishes)
         now = timezone.now()
-        print(now)
         exec = Execution.objects.create(
             execution_date=now,
             status="PENDING",

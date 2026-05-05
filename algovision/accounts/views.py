@@ -1,3 +1,4 @@
+import logging
 from django import forms
 from typing import Any, Optional
 
@@ -282,7 +283,7 @@ class CustomLoginRedirectMixin(AccessMixin):
         try:
             _ = resolve(request.path)
         except Exception as e:
-            print(f"resolve error: {e}")
+            logging.getLogger(__name__).exception(f"resolve error: {e}")
 
         login_source = request.session.get('login_source')
 
