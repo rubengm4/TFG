@@ -31,7 +31,7 @@ Media files use a Docker named volume and are stored in `/app/media` inside the 
 
 ## Production deployment (VPS)
 
-Use **`docker-compose.prod.yml`** for a production-style stack: the app image has **no** bind-mounted source tree, **MySQL** and **Redis** are not published to the host, **Caddy** terminates TLS and serves **`/media/`** from the same volume as Django (`MEDIA_ROOT`), and **Gunicorn** runs with configurable workers/timeouts.
+Use **`docker-compose.prod.yml`** for a production-style stack: the app image has **no** bind-mounted source tree, **MySQL** and **Redis** are not published to the host, **Caddy** terminates TLS and serves **`/media/`** from the same volume as Django (`MEDIA_ROOT`) **after** a `forward_auth` check to Django (`/_caddy/media-auth`), and **Gunicorn** runs with configurable workers/timeouts.
 
 1. Point **DNS** `A`/`AAAA` records for your domain to the VPS public IP. Open host firewall ports **80** and **443** (and **22** for SSH). Do **not** expose MySQL or Redis publicly.
 2. Copy [`algovision/.env.example`](algovision/.env.example) to **`algovision/.env`**. Set a strong **`SECRET_KEY`**, **`DEBUG=False`**, **`ALLOWED_HOSTS`**, **`CSRF_TRUSTED_ORIGINS`** (`https://your.domain`), **`SECURE_PROXY_SSL=True`**, matching **`DATABASE_*`** and **`MYSQL_*`** credentials, **`CADDY_DOMAIN`** (same hostname as in DNS), and **`REDIS_URL=redis://redis:6379/0`**.
@@ -43,7 +43,7 @@ docker compose --env-file algovision/.env -f docker-compose.prod.yml up -d
 ```
 
 4. **First boot** can take a long time: the entrypoint may install algorithm dependencies into `/app/media/envs/.algenv`. Ensure enough **RAM** and **disk** (see Celery / ML notes in dev compose).
-5. **Smoke tests:** open `https://your.domain/`, log in, confirm static assets load, upload a file, run a seed algorithm, and open a URL under `/media/` that should be served by Caddy. After a reboot, `docker compose ... up -d` should restore services (`restart: unless-stopped`).
+5. **Smoke tests:** open `https://your.domain/`, log in, confirm static assets load, upload a file, run a seed algorithm, and open a real file URL under `/media/` (for example `/media/uploads/<your_user_id>/<filename>` from the app or admin). The response should be served by **Caddy** (`Server: Caddy`, with `Accept-Ranges` / `ETag` on GET). In a **private window** (logged out), the same URL must **not** be downloadable: expect **403** (you are not relying on Django login for a secret that is actually public). Staff can fetch algorithm ZIPs at `/media/algorithms/pkg/<pk>/<name>.zip`; paths under `extract/`, `envs/`, or another user’s `uploads/` / `outputs/` stay forbidden. In development with `DEBUG=True`, Django may still attach `static(MEDIA_URL, …)` for convenience; in production only Caddy serves media bytes.
 
 **Backups:** on a schedule, dump MySQL (e.g. `docker compose ... exec db mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" --all-databases`) and archive the **`media_volume`** contents (algorithm archives, outputs, `.algenv`). Test a restore on a spare machine or VM periodically.
 

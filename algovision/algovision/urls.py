@@ -3,6 +3,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from analysis.views import (
+    MediaForwardAuthView,
     HomepageView,
     FileManagerView,
     AnalysisView,
@@ -31,6 +32,11 @@ from accounts.views import LoginHomeView, DashboardView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path(
+        '_caddy/media-auth',
+        MediaForwardAuthView.as_view(),
+        name='caddy_media_auth',
+    ),
     path('', HomepageView.as_view(), name='index'),
     path('accounts/', include('accounts.urls')),
     path('pv-analysis-home/', LoginHomeView.as_view(), name='pv_analysis_home'),

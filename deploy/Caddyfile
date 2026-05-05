@@ -10,7 +10,12 @@
 	encode gzip
 
 	# Same tree as Django MEDIA_ROOT (/app/media in web/celery).
+	# forward_auth checks session + path (see MediaForwardAuthView); then file_server serves bytes.
 	handle_path /media/* {
+		forward_auth web:8000 {
+			uri /_caddy/media-auth
+			header_up Host {http.request.host}
+		}
 		root * /srv/media
 		file_server
 	}

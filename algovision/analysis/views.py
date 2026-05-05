@@ -1,7 +1,10 @@
 from django.views.decorators.cache import never_cache
 import os
 import json
+import re
 import shutil
+import posixpath
+from urllib.parse import urlparse
 
 from accounts.views import (
     CustomLoginRedirectMixin,
@@ -14,7 +17,14 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.http import JsonResponse, HttpRequest, Http404, FileResponse
+from django.http import (
+    HttpResponse,
+    HttpResponseForbidden,
+    JsonResponse,
+    HttpRequest,
+    Http404,
+    FileResponse,
+)
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -40,6 +50,90 @@ class NoCacheMixin:
     @method_decorator(never_cache)
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
+
+
+_MEDIA_UPLOADS = re.compile(r"^uploads/(\d+)/(.+)$")
+_MEDIA_OUTPUTS = re.compile(r"^outputs/(\d+)/(.+)$")
+_MEDIA_ALGO_ZIP = re.compile(r"^algorithms/pkg/(\d+)/([^/]+\.zip)$")
+
+
+def _media_rel_path_from_forwarded_uri(forwarded_uri: str) -> str | None:
+    """Return path relative to MEDIA_ROOT, or None if invalid."""
+    if not forwarded_uri or not forwarded_uri.strip():
+        return None
+    path = urlparse(forwarded_uri.strip()).path
+    if not path:
+        return None
+    if path.startswith("/media/"):
+        rel = path[7:]
+    elif path.startswith("/"):
+        rel = path[1:]
+    else:
+        rel = path
+    if not rel or rel.endswith("/"):
+        return None
+    parts = rel.split("/")
+    if ".." in parts or "" in parts:
+        return None
+    norm = posixpath.normpath(rel)
+    if norm.startswith("..") or norm.startswith("/"):
+        return None
+    return rel
+
+
+class MediaForwardAuthView(View):
+    """Caddy forward_auth target: allow / deny /media/* based on X-Forwarded-Uri."""
+
+    http_method_names = ["get", "head", "options"]
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        return self._authorize(request)
+
+    def head(self, request: HttpRequest) -> HttpResponse:
+        return self._authorize(request)
+
+    def options(self, request: HttpRequest) -> HttpResponse:
+        return HttpResponse(status=200)
+
+    def _authorize(self, request: HttpRequest) -> HttpResponse:
+        rel = _media_rel_path_from_forwarded_uri(
+            request.META.get("HTTP_X_FORWARDED_URI", "")
+        )
+        if rel is None:
+            return HttpResponseForbidden()
+
+        if rel == "envs" or rel.startswith("envs/"):
+            return HttpResponseForbidden()
+
+        user = request.user
+
+        m = _MEDIA_UPLOADS.match(rel)
+        if m:
+            uid = int(m.group(1))
+            if not user.is_authenticated:
+                return HttpResponseForbidden()
+            if user.is_staff or user.id == uid:
+                return HttpResponse(status=200)
+            return HttpResponseForbidden()
+
+        m = _MEDIA_OUTPUTS.match(rel)
+        if m:
+            uid = int(m.group(1))
+            if not user.is_authenticated:
+                return HttpResponseForbidden()
+            if user.is_staff or user.id == uid:
+                return HttpResponse(status=200)
+            return HttpResponseForbidden()
+
+        m = _MEDIA_ALGO_ZIP.match(rel)
+        if m:
+            if not user.is_authenticated:
+                return HttpResponseForbidden()
+            if user.is_staff:
+                return HttpResponse(status=200)
+            return HttpResponseForbidden()
+
+        return HttpResponseForbidden()
 
 
 class HomepageView(NoCacheMixin, TemplateView):
