@@ -1,3 +1,4 @@
+import json
 import shutil
 import tempfile
 from pathlib import Path
@@ -5,7 +6,7 @@ from unittest.mock import patch
 
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import RequestFactory, SimpleTestCase, TestCase
+from django.test import Client, RequestFactory, SimpleTestCase, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
@@ -296,3 +297,46 @@ class FileOwnershipAccessTests(TestCase):
                 },
             )
             self.assertEqual(r.status_code, 404)
+
+
+class RenameFileCsrfTests(TestCase):
+    """POST /files/rename/<id>/ must validate CSRF (not csrf_exempt)."""
+
+    def test_post_without_csrf_token_returns_403(self):
+        client = Client(enforce_csrf_checks=True)
+        u = User.objects.create_user("rename_csrf_u", "rename_csrf_u@test.com", "pw")
+        client.force_login(u)
+        r = client.post(
+            reverse("rename_file", kwargs={"file_id": 1}),
+            data=json.dumps({"new_name": "x.txt"}),
+            content_type="application/json",
+        )
+        self.assertEqual(r.status_code, 403)
+
+    def test_post_with_csrf_header_renames_file(self):
+        media = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(media, ignore_errors=True))
+        client = Client(enforce_csrf_checks=True)
+        u = User.objects.create_user("rename_ok_u", "rename_ok_u@test.com", "pw")
+        ft = FileType.objects.create(code="rename_csrf_csv", name="CSV")
+        with self.settings(MEDIA_ROOT=media):
+            f = File.objects.create(
+                user=u,
+                file=SimpleUploadedFile("oldname.txt", b"content"),
+                type=ft,
+                upload_date=timezone.now(),
+            )
+            client.force_login(u)
+            client.get(reverse("file_manager"))
+            csrf = client.cookies["csrftoken"].value
+            r = client.post(
+                reverse("rename_file", kwargs={"file_id": f.pk}),
+                data=json.dumps({"new_name": "newname.txt"}),
+                content_type="application/json",
+                HTTP_X_CSRFTOKEN=csrf,
+            )
+        self.assertEqual(r.status_code, 200)
+        payload = json.loads(r.content.decode())
+        self.assertEqual(payload.get("new_name"), "newname")
+        f.refresh_from_db()
+        self.assertIn("newname.txt", f.file.name)

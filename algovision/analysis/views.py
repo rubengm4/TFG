@@ -32,7 +32,6 @@ from django.utils.html import format_html
 from django.utils.decorators import method_decorator
 from django.utils.safestring import mark_safe
 from django.views import View
-from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView, CreateView, ListView, DeleteView, UpdateView
 
 from typing import Any, List, Dict
@@ -363,7 +362,6 @@ class AnalysisView(View):
         return redirect('analysis')
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class RenameFileView(CustomLoginRedirectMixin, View):
     def post(self, request: HttpRequest, file_id: int):
         file_obj = get_object_or_404(File, id=file_id, user=request.user)
