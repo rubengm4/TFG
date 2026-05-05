@@ -73,7 +73,7 @@ algorithms:
     supported_codes:
       - image
     requires_two_files: false
-    input_is_dir: true
+    input_is_dir: false
 
   - name: my_faster_rcnn_resnet101_L5_E1_M1
     version: "1.0"
@@ -84,4 +84,4 @@ algorithms:
     supported_codes:
       - image
     requires_two_files: false
-    input_is_dir: true
+    input_is_dir: false

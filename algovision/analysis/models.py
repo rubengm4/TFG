@@ -83,11 +83,12 @@ class Algorithm(models.Model):
     requires_two_files = models.BooleanField(default=False)
     input_is_dir = models.BooleanField(
         default=False,
-        verbose_name="Imagen: pasar carpeta al script",
+        verbose_name="Pasar carpeta para imágenes",
         help_text=(
-            "Si está marcado, para entradas de tipo imagen el worker pasa la ruta de una carpeta "
-            "temporal que contiene el fichero (útil si el script hace os.listdir sobre el argumento). "
-            "Si no, se pasa la ruta del fichero de imagen."
+            "Si está activado y el usuario sube una imagen, Celery entrega al script la ruta de "
+            "una carpeta temporal que contiene ese archivo (útil cuando el script espera un "
+            "directorio y usa os.listdir). Si está desactivado, se entrega la ruta del archivo "
+            "de imagen. Para vídeo y CSV no aplica: siempre se pasa la ruta del archivo."
         ),
     )
 
