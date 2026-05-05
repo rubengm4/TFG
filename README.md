@@ -54,6 +54,10 @@ docker compose --env-file algovision/.env -f docker-compose.prod.yml up -d
 - **Single source of truth:** `docker-compose.yml` mounts `media_volume` at `/app/media` for both `web` and `celery`. Each algorithm row stores exactly one ZIP at **`MEDIA_ROOT/algorithms/pkg/<algorithm_pk>/archive.zip`**. Celery extracts into **`algorithms/pkg/<pk>/extract/`** (refreshed when the ZIP changes). Legacy loose files (`algorithms/*.zip`, sibling folders named after an old ZIP stem) may remain until you delete them; run `check_algorithm_media` to list orphans.
 - **Entrypoint:** Configure the path to the main script **relative to the extracted archive root**, e.g. `main.py` or `src/main.py`. If the ZIP contains a single top-level folder, the app still resolves common layouts. Avoid duplicating the archive folder name in the entrypoint unless that matches your ZIP layout (see code in `analysis/tasks.py`).
 - **Working directory:** Celery runs the algorithm subprocess with **`cwd` set to the extracted directory** (`MEDIA_ROOT/algorithms/pkg/<pk>/extract/`). Scripts that rely on relative paths should assume that folder as the current working directory.
+- **Image input: file vs folder:** Some algorithms expect a **single image file** (e.g. `Image.open(argv[1])`), while others expect a **directory** and do `os.listdir(argv[1])`. This is controlled **per Algorithm** via the checkbox **"Imagen: pasar carpeta al script"**:
+  - If unchecked (default): for image uploads, the worker passes the **image file path**.
+  - If checked: for image uploads, the worker creates a temp folder, copies the image into it, and passes the **folder path**.
+  - For non-image inputs (video/csv), the worker always passes the file path.
 - **Protobuf / TensorFlow Object Detection:** If you see `Descriptors cannot be created directly` when importing vendored `*_pb2.py`, `ejecutar_algoritmo_task` sets **`PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python`** for the algorithm subprocess when unset (pure-Python protobuf parsing). Override via env if needed.
 - **Preflight check:** From the project directory (with containers up or using `docker compose run web …`):
 

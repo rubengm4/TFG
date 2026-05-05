@@ -1,5 +1,7 @@
 # analysis/tasks.py
 
+from __future__ import annotations
+
 from celery import shared_task  # type: ignore
 import logging
 import os
@@ -20,16 +22,21 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 
-def _wrap_single_image_input_as_dir(path_str: str, django_file: File) -> tuple[str, list[str]]:
+def _wrap_single_image_input_as_dir(
+    path_str: str,
+    django_file: File,
+    *,
+    pass_dir: bool,
+) -> tuple[str, list[str]]:
     """Return a path suitable for argv and temp dirs to delete after the subprocess.
 
     Django supplies a single file path for image uploads. We copy into a temp folder,
     normalize to RGB when possible (helps models expecting ``(N,H,W,3)``), and pass the
-    **image file path** on argv — matching ``main.py`` contracts like ``Path(sys.argv[1])``
-    passed to ``Image.open`` / ``-i``. The temp directory is still tracked for cleanup.
+    **image file path** (default) or the **directory path** (when ``pass_dir=True``) on argv.
+    The temp directory is tracked for cleanup either way.
 
-    Algorithms that batch over a folder should resolve argv with ``Path``: if it is a file,
-    process that path only; if a directory, use ``os.listdir`` / glob as needed.
+    This exists because some bundled algorithms expect an image *folder* and call
+    ``os.listdir(input)``. Others expect an image *file* and call ``Image.open(input)``.
     """
     cleanup_dirs: list[str] = []
     p = Path(path_str)
@@ -59,7 +66,7 @@ def _wrap_single_image_input_as_dir(path_str: str, django_file: File) -> tuple[s
         )
     else:
         logger.info("_wrap_single_image_input_as_dir: %s -> %s (RGB)", path_str, dest)
-    return str(dest), cleanup_dirs
+    return (td if pass_dir else str(dest)), cleanup_dirs
 
 
 def _algorithm_visible_children(base: Path) -> list[Path]:
@@ -243,14 +250,31 @@ def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, secon
             )
 
         cleanup_input_dirs: list[str] = []
-        primary_argv, c1 = _wrap_single_image_input_as_dir(input_file, file)
+        pass_dir_primary = algorithm.input_is_dir
+        try:
+            code_primary = file.type.code
+        except Exception:
+            code_primary = ""
+        if code_primary != "image":
+            pass_dir_primary = False
+
+        primary_argv, c1 = _wrap_single_image_input_as_dir(
+            input_file, file, pass_dir=pass_dir_primary
+        )
         cleanup_input_dirs.extend(c1)
 
         command = [str(python_exec), str(script_path), primary_argv]
 
         if second_file and second_input_path is not None:
+            pass_dir_secondary = algorithm.input_is_dir
+            try:
+                code_secondary = second_file.type.code
+            except Exception:
+                code_secondary = ""
+            if code_secondary != "image":
+                pass_dir_secondary = False
             sec_argv, c2 = _wrap_single_image_input_as_dir(
-                second_input_path, second_file
+                second_input_path, second_file, pass_dir=pass_dir_secondary
             )
             cleanup_input_dirs.extend(c2)
             command.append(sec_argv)

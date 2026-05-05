@@ -19,7 +19,8 @@ class AlgorithmForm(forms.ModelForm):
             'archive',
             'entrypoint',
             'supported_types',
-            'requires_two_files'
+            'requires_two_files',
+            'input_is_dir',
         ]
 
         widgets = {
@@ -31,6 +32,7 @@ class AlgorithmForm(forms.ModelForm):
             # This doesn't need a 'form-control' class, as it's a different widget
             'supported_types': forms.CheckboxSelectMultiple(),
             'requires_two_files': forms.CheckboxInput(),
+            'input_is_dir': forms.CheckboxInput(),
             'archive': AlgorithmArchiveWidget(
                 attrs={'class': 'form-control', 'accept': '.zip'}
             ),

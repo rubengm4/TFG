@@ -81,6 +81,15 @@ class Algorithm(models.Model):
         max_length=255, help_text="Archivo principal a ejecutar, por ejemplo: main.py")
     supported_types = models.ManyToManyField(FileType, blank=True)
     requires_two_files = models.BooleanField(default=False)
+    input_is_dir = models.BooleanField(
+        default=False,
+        verbose_name="Imagen: pasar carpeta al script",
+        help_text=(
+            "Si está marcado, para entradas de tipo imagen el worker pasa la ruta de una carpeta "
+            "temporal que contiene el fichero (útil si el script hace os.listdir sobre el argumento). "
+            "Si no, se pasa la ruta del fichero de imagen."
+        ),
+    )
 
     def __str__(self):
         return self.name

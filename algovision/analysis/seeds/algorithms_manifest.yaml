@@ -15,6 +15,7 @@ algorithms:
     supported_codes:
       - video
     requires_two_files: false
+    input_is_dir: false
 
   - name: Tracking Video
     version: "1.0"
@@ -25,6 +26,7 @@ algorithms:
     supported_codes:
       - video
     requires_two_files: false
+    input_is_dir: false
 
   - name: Compare CVS (Video)
     version: "1.0"
@@ -37,6 +39,7 @@ algorithms:
       - csv
       - video
     requires_two_files: true
+    input_is_dir: false
 
   - name: CSV simple
     version: "1.0"
@@ -48,6 +51,7 @@ algorithms:
     supported_codes:
       - csv
     requires_two_files: false
+    input_is_dir: false
 
   - name: Detección de Paneles
     version: "1.0"
@@ -58,6 +62,7 @@ algorithms:
     supported_codes:
       - image
     requires_two_files: false
+    input_is_dir: true
 
   - name: my_ssd_mobilenet_v1_coco_L2_E1_M1
     version: "1.0"
@@ -68,6 +73,7 @@ algorithms:
     supported_codes:
       - image
     requires_two_files: false
+    input_is_dir: true
 
   - name: my_faster_rcnn_resnet101_L5_E1_M1
     version: "1.0"
@@ -78,3 +84,4 @@ algorithms:
     supported_codes:
       - image
     requires_two_files: false
+    input_is_dir: true

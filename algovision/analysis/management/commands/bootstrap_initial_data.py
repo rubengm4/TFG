@@ -56,6 +56,7 @@ _MANIFEST_KEYS = frozenset({
     "entrypoint",
     "supported_codes",
     "requires_two_files",
+    "input_is_dir",
 })
 
 
@@ -155,6 +156,7 @@ class Command(BaseCommand):
                     "entrypoint": row["entrypoint"],
                     "supported_codes": tuple(codes),
                     "requires_two_files": bool(row["requires_two_files"]),
+                    "input_is_dir": bool(row.get("input_is_dir", False)),
                 }
             )
         return tuple(out)
@@ -219,6 +221,7 @@ class Command(BaseCommand):
                     project=project,
                     entrypoint=spec["entrypoint"],
                     requires_two_files=spec["requires_two_files"],
+                    input_is_dir=spec["input_is_dir"],
                 )
                 algo.save()
                 with source_zip.open("rb") as fh:
