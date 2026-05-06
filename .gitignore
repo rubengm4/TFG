@@ -47,3 +47,6 @@ ehthumbs.db
 *.zip
 Algoritmos/
 docs/
+
+# Local scratch / secrets (not for repo)
+commands.txt

@@ -6,7 +6,7 @@ from django.http import HttpRequest
 
 from typing import Any, List
 
-from .models import FileType
+from .models import FileType, sanitize_uploaded_filename
 
 
 def is_size_valid(file: Any, max_size: int, request: HttpRequest):
@@ -55,6 +55,9 @@ def extension_getter(file: Any):
 
 
 def name_change(file: Any, existing_files: List[str]):
+    # Sanitize user-supplied name early to avoid storing unsafe names.
+    file.name = sanitize_uploaded_filename(getattr(file, "name", ""))
+
     base_name, ext = os.path.splitext(file.name)
     final_name = file.name
     was_renamed = False

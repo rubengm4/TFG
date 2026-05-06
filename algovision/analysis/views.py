@@ -28,9 +28,8 @@ from django.http import (
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
 from django.utils.decorators import method_decorator
-from django.utils.safestring import mark_safe
 from django.views import View
 from django.views.generic import TemplateView, CreateView, ListView, DeleteView, UpdateView
 
@@ -40,7 +39,7 @@ from pathlib import Path
 
 from .algorithm_paths import algorithm_pkg_disk_root, remove_legacy_extract_next_to_zip
 from .aux_file_func import is_size_valid, is_type_valid, extension_getter, name_change
-from .models import File, Algorithm, Project, Execution, Output, UserProject
+from .models import File, Algorithm, Project, Execution, Output, UserProject, sanitize_uploaded_filename
 from .forms import AlgorithmForm, ProjectForm, UserProjectForm
 from .tasks import ejecutar_algoritmo_task, install_requirements_task, REQUIREMENTS_PATH
 
@@ -350,12 +349,15 @@ class AnalysisView(View):
 
         messages.success(
             request,
-            mark_safe(
-                f"Se ha iniciado el análisis con <strong>{algorithm.name}</strong> sobre <strong>{file.filename()}</strong>"
-                f"{f' y un segundo archivo' if algorithm.requires_two_files else ''}. "
-                f"Puedes consultar su estado en la pestaña de "
-                f"<a href='{results_url}' style='font-weight:700; text-decoration:none; color:inherit;'>Mis Resultados</a>"
-            )
+            format_html(
+                "Se ha iniciado el análisis con <strong>{}</strong> sobre <strong>{}</strong>{}. "
+                "Puedes consultar su estado en la pestaña de "
+                "<a href='{}' style='font-weight:700; text-decoration:none; color:inherit;'>Mis Resultados</a>",
+                algorithm.name,
+                file.filename(),
+                " y un segundo archivo" if algorithm.requires_two_files else "",
+                results_url,
+            ),
         )
 
         return redirect('analysis')
@@ -367,6 +369,7 @@ class RenameFileView(CustomLoginRedirectMixin, View):
         data = json.loads(request.body)
 
         raw_input = data.get('new_name', '').strip()
+        raw_input = sanitize_uploaded_filename(raw_input)
 
         original_filename = os.path.basename(file_obj.file.name)
         current_base_name, ext = os.path.splitext(original_filename)
@@ -722,16 +725,17 @@ class CreateProjectView(CustomLoginRedirectMixin, UserPassesTestMixin, CreateVie
         return super().form_valid(form)
 
     def form_invalid(self, form):
-        error_messages = []
+        # Build HTML safely: each field name and error string is escaped.
+        rows = []
         for field, errors in form.errors.items():
-            # Join multiple errors for the same field
             error_list = ", ".join(errors)
-            error_messages.append(f"<strong>{field}:</strong> {error_list}")
+            rows.append((field, error_list))
 
-        # Join all fields' errors
-        full_message = format_html("<br>".join(error_messages))
-
-        # Display as a Django message (with HTML allowed)
+        full_message = format_html_join(
+            "<br>",
+            "<strong>{}:</strong> {}",
+            rows,
+        )
         messages.error(self.request, full_message)
 
         return super().form_invalid(form)

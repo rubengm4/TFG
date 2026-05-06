@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
 from django.db import models
 import os
+import re
+import uuid
 
 
 def algorithm_archive_upload_to(instance: "Algorithm", filename: str) -> str:
@@ -49,8 +51,34 @@ class UserProject(models.Model):
 # Model: File
 
 
+_FILENAME_ALLOWED = re.compile(r"[^A-Za-z0-9._-]+")
+
+
+def sanitize_uploaded_filename(filename: str) -> str:
+    """
+    Convert a user-supplied filename into a filesystem- and HTML-safe basename.
+
+    Policy: allow only [A-Za-z0-9._-], strip any path components, collapse other
+    characters to "_", and ensure we don't end up with an empty/hidden name.
+    """
+    base = os.path.basename(filename or "")
+    base = base.strip().replace(" ", "_")
+    base = _FILENAME_ALLOWED.sub("_", base)
+    base = base.lstrip("._-")
+    if not base:
+        base = f"file_{uuid.uuid4().hex}"
+
+    # Keep within common filesystem/UI limits while preserving extension.
+    if len(base) > 255:
+        root, ext = os.path.splitext(base)
+        base = f"{root[: max(1, 255 - len(ext))]}{ext}"
+
+    return base
+
+
 def user_directory_path(instance: 'File', filename: str):
-    return f'uploads/{instance.user.id}/{filename}'
+    safe = sanitize_uploaded_filename(filename)
+    return f'uploads/{instance.user.id}/{safe}'
 
 
 class File(models.Model):
