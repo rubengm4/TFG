@@ -53,6 +53,12 @@ class UserProject(models.Model):
 
 _FILENAME_ALLOWED = re.compile(r"[^A-Za-z0-9._-]+")
 
+# Stored upload basename: 32 hex chars + extension assigned from sniffed MIME type.
+_STORAGE_BASENAME_RE = re.compile(
+    r"^[0-9a-f]{32}\.(jpg|png|mp4|csv)$",
+    re.IGNORECASE,
+)
+
 
 def sanitize_uploaded_filename(filename: str) -> str:
     """
@@ -77,7 +83,12 @@ def sanitize_uploaded_filename(filename: str) -> str:
 
 
 def user_directory_path(instance: 'File', filename: str):
-    safe = sanitize_uploaded_filename(filename)
+    base = os.path.basename(filename or "")
+    if _STORAGE_BASENAME_RE.fullmatch(base):
+        root, ext = os.path.splitext(base)
+        safe = f"{root.lower()}{ext.lower()}"
+    else:
+        safe = sanitize_uploaded_filename(filename)
     return f'uploads/{instance.user.id}/{safe}'
 
 
@@ -87,8 +98,16 @@ class File(models.Model):
         upload_to=user_directory_path, null=True, blank=True)
     type = models.ForeignKey(FileType, on_delete=models.CASCADE)
     upload_date = models.DateTimeField()
+    display_name = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Nombre mostrado al usuario; el fichero en disco usa un nombre opaco.",
+    )
 
     def filename(self):
+        if self.display_name:
+            return self.display_name
         return os.path.basename(self.file.name)
 
 # Model: Algorithm

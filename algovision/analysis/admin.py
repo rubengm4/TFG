@@ -30,9 +30,9 @@ class UserProjectAdmin(admin.ModelAdmin):
 
 
 class FileAdmin(admin.ModelAdmin):
-    list_display = ('id', 'type', 'upload_date', 'user')
+    list_display = ('id', 'display_name', 'type', 'upload_date', 'user')
     list_filter = ('type', 'upload_date', 'user')
-    search_fields = ('name',)
+    search_fields = ('display_name',)
 
 # ModelAdmin to customize the admin view of Algorithm, showing the project it belongs to and allowing filtering by project and version
 

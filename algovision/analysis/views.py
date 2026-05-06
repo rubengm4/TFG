@@ -38,7 +38,15 @@ from typing import Any, List, Dict
 from pathlib import Path
 
 from .algorithm_paths import algorithm_pkg_disk_root, remove_legacy_extract_next_to_zip
-from .aux_file_func import is_size_valid, is_type_valid, extension_getter, name_change
+from .aux_file_func import (
+    MIME_TO_STORAGE_EXT,
+    display_name_for_new_upload,
+    file_type_for_mime,
+    is_size_valid,
+    storage_name_for_mime,
+    upload_client_filename_errors,
+    validate_upload_mime,
+)
 from .models import File, Algorithm, Project, Execution, Output, UserProject, sanitize_uploaded_filename
 from .forms import AlgorithmForm, ProjectForm, UserProjectForm
 from .tasks import ejecutar_algoritmo_task, install_requirements_task, REQUIREMENTS_PATH
@@ -170,7 +178,7 @@ class FileManagerView(CustomLoginRedirectMixin, View):
         if 'delete_file' in request.POST:
             file_id = request.POST.get('delete_file')
             file_obj = get_object_or_404(File, id=file_id, user=request.user)
-            file_name = os.path.basename(file_obj.file.name)
+            file_name = file_obj.filename()
 
             file_path = file_obj.file.path
             if os.path.exists(file_path):
@@ -190,42 +198,58 @@ class FileManagerView(CustomLoginRedirectMixin, View):
         # If there are uploaded files
         if uploaded_files:
             # Get names of every existing user file in the database
-            existing_names = File.objects.filter(
-                user=request.user).values_list('file', flat=True)
-            existing_file_names = [os.path.basename(n) for n in existing_names]
+            existing_file_names = list(
+                File.objects.filter(user=request.user).values_list(
+                    "display_name", flat=True
+                )
+            )
+            existing_file_names = [n for n in existing_file_names if n]
 
             # For every uploaded file
             for uploaded_file in uploaded_files:
-                # Size validator
-                if is_size_valid(uploaded_file, MAX_FILE_SIZE_BYTES, request) == False:
+                original_name = uploaded_file.name
+                name_err = upload_client_filename_errors(original_name)
+                if name_err:
+                    messages.error(
+                        request,
+                        f"Archivo '{original_name}': {name_err}",
+                    )
                     continue
 
-                # Type validator
-                if is_type_valid(uploaded_file, request) == False:
+                if not is_size_valid(uploaded_file, MAX_FILE_SIZE_BYTES, request):
                     continue
 
-                # Name setter
-                uploaded_file.name, was_renamed = name_change(
-                    uploaded_file, existing_file_names)
+                mime = validate_upload_mime(uploaded_file, request)
+                if not mime:
+                    continue
 
-                # Get extension
-                type = extension_getter(uploaded_file)
+                file_type = file_type_for_mime(mime)
+                storage_name = storage_name_for_mime(mime)
+                display_name, was_renamed = display_name_for_new_upload(
+                    original_name,
+                    MIME_TO_STORAGE_EXT[mime],
+                    existing_file_names,
+                )
+                uploaded_file.name = storage_name
 
-                # Create file in database
                 File.objects.create(
                     user=request.user,
                     file=uploaded_file,
-                    type=type,
-                    upload_date=timezone.now()
+                    type=file_type,
+                    upload_date=timezone.now(),
+                    display_name=display_name,
                 )
 
-                # If file was renamed
                 if was_renamed:
                     messages.info(
-                        request, f"Archivo {uploaded_file.name} renombrado por duplicado.")
+                        request,
+                        f"Archivo {display_name} renombrado por duplicado.",
+                    )
                 else:
                     messages.success(
-                        request, f"Archivo {uploaded_file.name} subido correctamente.")
+                        request,
+                        f"Archivo {display_name} subido correctamente.",
+                    )
         else:
             messages.error(request, "No se seleccionaron archivos.")
 
@@ -369,43 +393,42 @@ class RenameFileView(CustomLoginRedirectMixin, View):
         data = json.loads(request.body)
 
         raw_input = data.get('new_name', '').strip()
+        name_err = upload_client_filename_errors(raw_input)
+        if name_err:
+            return JsonResponse({'error': name_err}, status=400)
+
         raw_input = sanitize_uploaded_filename(raw_input)
 
-        original_filename = os.path.basename(file_obj.file.name)
-        current_base_name, ext = os.path.splitext(original_filename)
+        storage_basename = os.path.basename(file_obj.file.name)
+        _, ext = os.path.splitext(storage_basename)
 
-        # We extract only the base of the new name, ignoring any extension the user may have added, to ensure that the file keeps its original extension and avoid confusion or errors that could arise from changing file extensions during renaming.
+        current_full = file_obj.display_name or storage_basename
+        current_base_name, _ = os.path.splitext(current_full)
+
         base_name, _ = os.path.splitext(raw_input)
 
-        # We check base name is not empty and doesn't start with a dot to prevent issues with hidden files or files without a proper name, which could lead to confusion or problems when managing files in the system.
         if not base_name or base_name.startswith('.'):
-            # We keep actual name
             return JsonResponse({'new_name': current_base_name})
 
-        new_filename = f"{base_name}{ext}"
+        new_display = f"{base_name}{ext}"
 
-        # If new name is the same as current, do nothing to avoid unnecessary file operations and potential issues with timestamps or file metadata that could arise from renaming a file to the same name.
-        if new_filename == original_filename:
+        if new_display == current_full:
             return JsonResponse({'new_name': base_name})
 
-        user_folder = f"uploads/{request.user.pk}"
+        dup = (
+            File.objects.filter(user=request.user, display_name=new_display)
+            .exclude(pk=file_obj.pk)
+            .exists()
+        )
+        if dup:
+            return JsonResponse(
+                {'error': 'Ya existe un archivo con ese nombre.'},
+                status=400,
+            )
 
-        old_relative_path: str = file_obj.file.name
-        old_path = os.path.join(settings.MEDIA_ROOT, old_relative_path)
-
-        new_relative_path = f"{user_folder}/{new_filename}"
-        new_path = os.path.join(settings.MEDIA_ROOT, new_relative_path)
-
-        if os.path.exists(new_path):
-            return JsonResponse({'error': 'Ya existe un archivo con ese nombre.'}, status=400)
-
-        try:
-            os.rename(old_path, new_path)
-            file_obj.file.name = new_relative_path
-            file_obj.save()
-            return JsonResponse({'new_name': base_name})
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+        file_obj.display_name = new_display
+        file_obj.save(update_fields=['display_name'])
+        return JsonResponse({'new_name': base_name})
 
 
 class ResultsView(CustomLoginRedirectMixin, View):

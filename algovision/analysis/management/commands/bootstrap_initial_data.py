@@ -20,7 +20,7 @@ from analysis.models import Algorithm, FileType, Project, UserProject
 
 logger = logging.getLogger(__name__)
 
-# Codes must match analysis.aux_file_func.extension_getter (image/*, video/*, text/csv → csv)
+# Codes must match analysis.aux_file_func.MIME_TO_TYPE_CODE (image/jpeg|png, video/mp4, text/csv|plain)
 DEFAULT_FILE_TYPES: tuple[tuple[str, str], ...] = (
     ("image", "Imagen"),
     ("video", "Vídeo"),

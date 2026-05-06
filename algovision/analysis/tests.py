@@ -2,6 +2,7 @@ import json
 import shutil
 import tempfile
 from pathlib import Path
+from unittest import skipUnless
 from unittest.mock import patch
 
 from django.contrib.auth.models import AnonymousUser, User
@@ -14,6 +15,23 @@ from analysis.models import Algorithm, File, FileType
 
 from analysis.tasks import resolve_algorithm_script
 from analysis.views import MediaForwardAuthView, _media_rel_path_from_forwarded_uri
+
+
+# Minimal valid 1×1 PNG (libmagic identifies as image/png when complete).
+_MINI_PNG = (
+    b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+    b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01"
+    b"\x00\x00\x05\x00\x01\r\n-\xdb\x00\x00\x00\x00IEND\xaeB`\x82"
+)
+
+
+def _libmagic_available() -> bool:
+    try:
+        import magic
+
+        return magic.from_buffer(_MINI_PNG, mime=True) == "image/png"
+    except Exception:
+        return False
 
 
 class ResolveAlgorithmScriptTests(SimpleTestCase):
@@ -339,4 +357,62 @@ class RenameFileCsrfTests(TestCase):
         payload = json.loads(r.content.decode())
         self.assertEqual(payload.get("new_name"), "newname")
         f.refresh_from_db()
-        self.assertIn("newname.txt", f.file.name)
+        self.assertEqual(f.display_name, "newname.txt")
+        self.assertIn("oldname.txt", f.file.name)
+
+
+@skipUnless(_libmagic_available(), "requires python-magic and libmagic")
+class FileUploadContentSniffTests(TestCase):
+    """Uploads are validated by file content, not the browser Content-Type."""
+
+    def setUp(self):
+        self.media = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(self.media, ignore_errors=True))
+
+    def test_rejects_non_image_bytes_with_spoofed_image_content_type(self):
+        FileType.objects.get_or_create(code="image", defaults={"name": "Imagen"})
+        u = User.objects.create_user("up_spoof", "up_spoof@test.com", "pw")
+        before = File.objects.count()
+        body = b"<html><body>alert(1)</body></html>"
+        forged = SimpleUploadedFile(
+            "innocent.png",
+            body,
+            content_type="image/png",
+        )
+        with self.settings(MEDIA_ROOT=self.media):
+            self.client.force_login(u)
+            self.client.get(reverse("file_manager"))
+            csrf = self.client.cookies["csrftoken"].value
+            r = self.client.post(
+                reverse("file_manager"),
+                {"csrfmiddlewaretoken": csrf, "files": forged},
+            )
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(File.objects.count(), before)
+
+    def test_accepts_png_by_magic_even_if_content_type_is_wrong(self):
+        FileType.objects.get_or_create(code="image", defaults={"name": "Imagen"})
+        u = User.objects.create_user("up_ok", "up_ok@test.com", "pw")
+        honest = SimpleUploadedFile(
+            "data.bin",
+            _MINI_PNG,
+            content_type="application/octet-stream",
+        )
+        with self.settings(MEDIA_ROOT=self.media):
+            self.client.force_login(u)
+            self.client.get(reverse("file_manager"))
+            csrf = self.client.cookies["csrftoken"].value
+            r = self.client.post(
+                reverse("file_manager"),
+                {"csrfmiddlewaretoken": csrf, "files": honest},
+            )
+        self.assertEqual(r.status_code, 302)
+        f = File.objects.filter(user=u).order_by("-id").first()
+        self.assertIsNotNone(f)
+        assert f is not None
+        self.assertEqual(f.type.code, "image")
+        base = Path(self.media) / "uploads" / str(u.pk)
+        stored = list(base.glob("*.png"))
+        self.assertEqual(len(stored), 1)
+        self.assertRegex(stored[0].name, r"^[0-9a-f]{32}\.png$")
+

@@ -46,6 +46,7 @@ RUN apt-get update && apt-get install -yq --no-install-recommends \
     libsm6 \
     libxrender1 \
     libxext6 \
+    libmagic1 \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd -r appuser \
     && useradd -r -m -u 1000 -g appuser -d /home/appuser appuser
