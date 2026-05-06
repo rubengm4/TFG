@@ -2,6 +2,18 @@
 #   DJANGO_SUPERUSER_USERNAME, DJANGO_SUPERUSER_EMAIL, DJANGO_SUPERUSER_PASSWORD
 # REDIS_SSL=true only when using TLS (e.g. rediss://…).
 services:
+  web-init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["chown -R 1000:1000 /app/media /app/static"]
+    volumes:
+      - static_volume:/app/static
+      - media_volume:/app/media
+    restart: "no"
+
   web:
     build:
       context: .
@@ -21,6 +33,8 @@ services:
     ports:
       - "8000:8000"
     depends_on:
+      web-init:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
       redis:

@@ -58,7 +58,7 @@ COPY --from=builder --chown=appuser:appuser /app /app
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-USER root
+USER appuser
 WORKDIR /app/algovision
 
 EXPOSE 8000

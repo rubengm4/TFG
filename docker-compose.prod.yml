@@ -6,11 +6,32 @@
 #
 # Set CADDY_DOMAIN to your public hostname (DNS A/AAAA → this host). Open 80/443.
 # For apex + www, use a comma and a space: example.com, www.example.com
+#
+# security_opt: no-new-privileges is omitted: on common Docker/rootless setups it causes
+# "exec … operation not permitted" (exit 255) for mysql/caddy/python official images.
 
 services:
+  web-init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["chown -R 1000:1000 /app/media /app/static"]
+    volumes:
+      - static_volume:/app/static
+      - media_volume:/app/media
+    restart: "no"
+
   proxy:
     image: caddy:2-alpine
     restart: unless-stopped
+    # cap_drop: ALL breaks the Caddy binary here (exec … operation not permitted).
+    read_only: true
+    tmpfs:
+      - /tmp
+      # Caddy autosave under /config; root fs is read-only.
+      - /config
     ports:
       - "80:80"
       - "443:443"
@@ -30,6 +51,13 @@ services:
       dockerfile: Dockerfile
     working_dir: /app/algovision
     restart: unless-stopped
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      HOME: /tmp
     # Gunicorn 25+: put --bind before the WSGI module. Use exec form + folded scalar so the
     # shell script is one line (multiline sh -c "..." strings can inject newlines and break on --workers).
     command:
@@ -53,6 +81,8 @@ services:
     expose:
       - "8000"
     depends_on:
+      web-init:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
       redis:
@@ -76,6 +106,13 @@ services:
       dockerfile: Dockerfile
     working_dir: /app/algovision
     restart: unless-stopped
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      HOME: /tmp
     command: celery -A algovision worker -l info
     volumes:
       - media_volume:/app/media
@@ -109,6 +146,11 @@ services:
   db:
     image: mysql:8.0
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+      # MySQL needs a writable socket/pid dir when the root filesystem is read-only.
+      - /var/run/mysqld
     env_file:
       - ./algovision/.env
     environment:
