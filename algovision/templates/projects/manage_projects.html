@@ -100,20 +100,20 @@
   <div class="bg-gradient-to-br from-orange-100 to-orange-300 shadow-lg rounded-xl p-6 w-full max-w-6xl hover:shadow-orange-400/50 hover:scale-[1.01] transition-all">
     {% if projects %}
     <div class="overflow-x-auto rounded-xl border border-orange-200 shadow-inner">
-      <table class="min-w-full text-sm text-left">
+      <table class="min-w-full text-sm text-left" data-sortable="true" data-sort-initial-col="0" data-sort-initial-dir="asc">
         <thead class="bg-orange-600 text-white">
           <tr>
-            <th class="px-6 py-3 cursor-pointer" onclick="sortTableByColumn(0)">
+            <th class="px-6 py-3 cursor-pointer" data-sort-col="0" data-sort-type="text">
                 <span class="inline-flex items-center gap-1">
                     Título <span class="sort-arrow" data-index="0"></span>
                 </span>
             </th>
-            <th class="px-6 py-3 cursor-pointer" onclick="sortTableByColumn(1)">
+            <th class="px-6 py-3 cursor-pointer" data-sort-col="1" data-sort-type="text">
                 <span class="inline-flex items-center gap-1">
                     Descripción <span class="sort-arrow" data-index="1"></span>
                 </span>
             </th>
-            <th class="px-6 py-3 cursor-pointer" onclick="sortTableByColumn(2)">
+            <th class="px-6 py-3 cursor-pointer" data-sort-col="2" data-sort-type="date-iso">
                 <span class="inline-flex items-center gap-1">
                     Fecha de inicio <span class="sort-arrow" data-index="2"></span>
                 </span>
@@ -132,7 +132,7 @@
                 class="flex items-center gap-1 text-sm text-orange-600 hover:text-orange-700 font-semibold transition">
                 <i class="fa fa-pencil-alt"></i> Editar
               </a>
-              <form method="post" action="{% url 'delete_project' project.id %}" class="inline delete-form">
+              <form method="post" action="{% url 'delete_project' project.id %}" class="inline delete-form" data-confirm="¿Estás seguro de que quieres eliminar este proyecto?">
                 {% csrf_token %}
                 <button type="submit"
                         class="flex items-center gap-1 text-sm text-red-600 hover:text-red-700 font-semibold transition">
@@ -168,59 +168,4 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-let currentSort = { column: 0, ascending: true };
-
-function sortTableByColumn(colIndex, forceAscending = null) {
-  const tbody = document.querySelector("table tbody");
-  if (!tbody) return;
-  const rows = Array.from(tbody.querySelectorAll("tr"));
-  const isSameColumn = currentSort.column === colIndex;
-  const ascending = forceAscending !== null ? forceAscending : (isSameColumn ? !currentSort.ascending : true);
-  rows.sort((a, b) => {
-    const aText = (a.children[colIndex]?.textContent || "").trim().toLowerCase();
-    const bText = (b.children[colIndex]?.textContent || "").trim().toLowerCase();
-    const cmp = aText.localeCompare(bText, undefined, { numeric: true, sensitivity: 'base' });
-    return ascending ? cmp : -cmp;
-  });
-  rows.forEach(row => tbody.appendChild(row));
-  currentSort = { column: colIndex, ascending };
-  updateSortArrows();
-}
-
-function updateSortArrows() {
-  const arrows = document.querySelectorAll(".sort-arrow");
-  arrows.forEach(arrow => {
-    const index = parseInt(arrow.dataset.index);
-    arrow.textContent = (index === currentSort.column) ? (currentSort.ascending ? "↑" : "↓") : "";
-  });
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  sortTableByColumn(0, true);
-  document.querySelectorAll(".delete-form").forEach(form => {
-    form.addEventListener("submit", e => {
-      e.preventDefault();
-      if (!confirm("¿Estás seguro de que quieres eliminar este proyecto?")) return;
-      form.submit();
-    });
-  });
-});
-</script>
-
-<style>
-.sort-arrow {
-  display: inline-block;
-  margin-left: 2px;
-  color: rgba(255,255,255,0.9);
-  font-weight: 900;
-}
-@keyframes pulse-slow {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.85; transform: scale(1.05); }
-}
-.animate-pulse-slow {
-  animation: pulse-slow 2.5s ease-in-out infinite;
-}
-</style>
 {% endblock %}
