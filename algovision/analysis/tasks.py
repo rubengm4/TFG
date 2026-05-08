@@ -5,7 +5,9 @@ from __future__ import annotations
 from celery import shared_task  # type: ignore
 import logging
 import os
+import stat
 import shutil
+import sys
 import tempfile
 import zipfile
 import platform
@@ -208,6 +210,55 @@ def _zip_signature(zip_path: Path) -> str:
     return f"{st.st_mtime_ns}:{st.st_size}"
 
 
+def _zipinfo_is_symlink(info: zipfile.ZipInfo) -> bool:
+    # ZIP stores Unix mode bits in the top 16 bits of external_attr when created on Unix.
+    mode = (info.external_attr >> 16) & 0xFFFF
+    return stat.S_IFMT(mode) == stat.S_IFLNK
+
+
+def _safe_extract_zip(zip_ref: zipfile.ZipFile, dest_dir: Path) -> None:
+    """Extract ZIP safely (prevents path traversal and symlink attacks)."""
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest_real = dest_dir.resolve()
+
+    for info in zip_ref.infolist():
+        name = info.filename.replace("\\", "/")
+        if not name or name.endswith("/"):
+            continue
+
+        if name.startswith(("/", "../")) or "/../" in f"/{name}":
+            raise RuntimeError(f"ZIP entry path traversal detected: {info.filename!r}")
+
+        # Windows drive paths like C:... (also blocks "C:\\...")
+        if ":" in name.split("/", 1)[0]:
+            raise RuntimeError(f"ZIP entry absolute/drive path detected: {info.filename!r}")
+
+        if _zipinfo_is_symlink(info):
+            raise RuntimeError(f"ZIP entry symlink not allowed: {info.filename!r}")
+
+        target = dest_dir / name
+        try:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target_parent_real = target.parent.resolve()
+        except FileNotFoundError as e:
+            # Broken symlink somewhere in the parent chain (or similar); treat as unsafe.
+            raise RuntimeError(
+                f"ZIP entry parent path could not be resolved safely: {info.filename!r}"
+            ) from e
+
+        try:
+            target_real = target.resolve()
+        except FileNotFoundError:
+            # File doesn't exist yet; resolve parent and join basename.
+            target_real = target_parent_real / target.name
+
+        if dest_real not in (target_real, *target_real.parents):
+            raise RuntimeError(f"ZIP entry would write outside destination: {info.filename!r}")
+
+        with zip_ref.open(info, "r") as src, open(target_real, "wb") as dst:
+            shutil.copyfileobj(src, dst)
+
+
 @shared_task
 def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, second_file_id: Optional[int] = None) -> None:
     exec: Optional[Execution] = None
@@ -302,7 +353,10 @@ def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, secon
             extract_path.mkdir(parents=True, exist_ok=True)
             try:
                 with zipfile.ZipFile(algorithm_zip_path, "r") as zip_ref:
-                    zip_ref.extractall(extract_path)
+                    if sys.version_info >= (3, 12):
+                        zip_ref.extractall(extract_path, filter="data")
+                    else:
+                        _safe_extract_zip(zip_ref, extract_path)
             except zipfile.BadZipFile as e:
                 raise RuntimeError(
                     f"ZIP del algoritmo corrupto o no es un archivo ZIP válido: "
