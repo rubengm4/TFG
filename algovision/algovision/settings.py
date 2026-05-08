@@ -127,6 +127,7 @@ LOGGING = {
 # Application definition
 
 INSTALLED_APPS = [
+    'axes',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -144,6 +145,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'axes.middleware.AxesMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -186,6 +188,19 @@ DATABASES = {
     }
 }
 
+# Allow running management commands/tests without MySQL client libs installed.
+# Production (Docker/CI) should still provide mysqlclient + DB env vars.
+try:
+    import MySQLdb  # type: ignore  # noqa: F401
+except Exception:
+    if config("DJANGO_USE_SQLITE_FALLBACK", default=DEBUG, cast=bool):
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": str(BASE_DIR / "db.sqlite3"),
+            }
+        }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -197,7 +212,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
         'OPTIONS': {
-            'min_length': 8,
+            'min_length': 12,
         }
     },
     {
@@ -206,7 +221,30 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+    {
+        'NAME': 'accounts.password_validators.HaveIBeenPwnedPasswordValidator',
+        'OPTIONS': {
+            'enabled': config('HIBP_CHECK_ENABLED', default=True, cast=bool),
+            'timeout_seconds': config('HIBP_TIMEOUT_SECONDS', default=3, cast=int),
+            'hibp_api_base_url': config('HIBP_API_BASE_URL', default='https://api.pwnedpasswords.com'),
+        },
+    },
 ]
+
+# django-axes (login throttling)
+# Using defaults that are usually safe: lockout at limit, reset on success.
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+AXES_ENABLED = config('AXES_ENABLED', default=True, cast=bool)
+AXES_FAILURE_LIMIT = config('AXES_FAILURE_LIMIT', default=5, cast=int)
+AXES_COOLOFF_TIME = config('AXES_COOLOFF_TIME', default=1, cast=int)  # hours
+AXES_LOCK_OUT_AT_FAILURE = True
+AXES_RESET_ON_SUCCESS = True
+AXES_USERNAME_FORM_FIELD = 'username'
+AXES_VERBOSE = config('AXES_VERBOSE', default=False, cast=bool)
 
 
 # Internationalization
