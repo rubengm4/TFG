@@ -1,0 +1,19 @@
+## Development-only requirements
+##
+## This file intentionally omits `mysqlclient` because it requires system headers
+## (e.g. python3-dev + default-libmysqlclient-dev) to compile.
+##
+## For production/Docker builds, keep using `requirements.txt`.
+
+Django==4.2.21
+Pillow>=10.4,<11
+python-magic>=0.4.27
+python-decouple
+celery
+redis
+gunicorn
+whitenoise>=6.6,<7
+PyYAML>=6.0,<7
+django-axes>=8.3,<9
+django-csp>=4.0,<5
+
