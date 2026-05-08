@@ -480,7 +480,14 @@ class DownloadOutputView(CustomLoginRedirectMixin, View):
                 pk=output_id, execution__user=request.user)
             if not output.file:
                 raise Http404("Output sin archivo asociado.")
-            return FileResponse(output.file.open('rb'), as_attachment=True, filename=output.file.name)
+            try:
+                return FileResponse(
+                    output.file.open('rb'),
+                    as_attachment=True,
+                    filename=output.file.name,
+                )
+            except (FileNotFoundError, OSError):
+                raise Http404("El archivo de salida no existe en el servidor.")
         except Output.DoesNotExist:
             raise Http404("Output no encontrado.")
 

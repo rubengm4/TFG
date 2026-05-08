@@ -69,6 +69,32 @@ if SECURE_PROXY_SSL:
 ALGORITHM_SUBPROCESS_TIMEOUT = config(
     'ALGORITHM_SUBPROCESS_TIMEOUT', default=3600, cast=int)
 
+# When enabled, Celery logs will include a tail of algorithm stdout/stderr even on success.
+# Keep disabled in production unless needed (logs can contain user data).
+ALGORITHM_SUBPROCESS_LOG_TAILS = config(
+    'ALGORITHM_SUBPROCESS_LOG_TAILS', default=False, cast=bool)
+
+# Algorithm subprocess sandboxing (best-effort; Linux setrlimit only).
+# These limits mitigate fork-bombs / FD exhaustion / some OOM cases, but do not
+# provide filesystem or network isolation.
+ALGORITHM_SUBPROCESS_RLIMIT_CPU_SECONDS = config(
+    "ALGORITHM_SUBPROCESS_RLIMIT_CPU_SECONDS", default=500, cast=int
+)
+ALGORITHM_SUBPROCESS_RLIMIT_AS_MB = config(
+    "ALGORITHM_SUBPROCESS_RLIMIT_AS_MB", default=2048, cast=int
+)
+ALGORITHM_SUBPROCESS_RLIMIT_FSIZE_MB = config(
+    "ALGORITHM_SUBPROCESS_RLIMIT_FSIZE_MB", default=512, cast=int
+)
+ALGORITHM_SUBPROCESS_RLIMIT_NOFILE = config(
+    "ALGORITHM_SUBPROCESS_RLIMIT_NOFILE", default=256, cast=int
+)
+ALGORITHM_SUBPROCESS_RLIMIT_NPROC = config(
+    "ALGORITHM_SUBPROCESS_RLIMIT_NPROC", default=128, cast=int
+)
+# Positive values make the subprocess *less* CPU-favored.
+ALGORITHM_SUBPROCESS_NICE = config("ALGORITHM_SUBPROCESS_NICE", default=5, cast=int)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

@@ -10,6 +10,7 @@ import tempfile
 import zipfile
 import platform
 import subprocess
+import signal
 
 from .algorithm_paths import algorithm_extract_disk_path
 from .models import File, Algorithm, Execution, Output
@@ -20,6 +21,82 @@ from pathlib import Path
 from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+
+def _algo_subprocess_env(*, python_exec: Path) -> dict[str, str]:
+    """Build a minimal allowlisted environment for untrusted algorithm code."""
+    env: dict[str, str] = {}
+    venv_bin = str(python_exec.parent)
+    host_path = os.environ.get("PATH", "")
+    env["PATH"] = f"{venv_bin}:{host_path}" if host_path else venv_bin
+
+    # Avoid inheriting secrets from the worker container env.
+    env["HOME"] = "/tmp"
+    env["TMPDIR"] = "/tmp"
+    env["PYTHONNOUSERSITE"] = "1"
+    env["PYTHONUNBUFFERED"] = "1"
+    env["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
+
+    env["LANG"] = os.environ.get("LANG", "C.UTF-8")
+    env["LC_ALL"] = os.environ.get("LC_ALL", env["LANG"])
+    return env
+
+
+def _algo_preexec_fn() -> object | None:
+    """Linux-only resource sandboxing via setrlimit.
+
+    This is not a full security boundary (no filesystem/network isolation), but it
+    prevents common worker-killers like fork-bombs, FD exhaustion, and some OOM cases.
+    """
+    if platform.system() == "Windows":
+        return None
+    try:
+        import resource
+    except Exception:
+        return None
+
+    def _limit() -> None:
+        try:
+            os.setsid()
+        except Exception:
+            pass
+
+        cpu = getattr(settings, "ALGORITHM_SUBPROCESS_RLIMIT_CPU_SECONDS", None)
+        if isinstance(cpu, int) and cpu > 0:
+            resource.setrlimit(resource.RLIMIT_CPU, (cpu, cpu))
+
+        as_mb = getattr(settings, "ALGORITHM_SUBPROCESS_RLIMIT_AS_MB", None)
+        if isinstance(as_mb, int) and as_mb > 0:
+            v = as_mb * 1024 * 1024
+            resource.setrlimit(resource.RLIMIT_AS, (v, v))
+
+        fsize_mb = getattr(settings, "ALGORITHM_SUBPROCESS_RLIMIT_FSIZE_MB", None)
+        if isinstance(fsize_mb, int) and fsize_mb > 0:
+            v = fsize_mb * 1024 * 1024
+            resource.setrlimit(resource.RLIMIT_FSIZE, (v, v))
+
+        nofile = getattr(settings, "ALGORITHM_SUBPROCESS_RLIMIT_NOFILE", None)
+        if isinstance(nofile, int) and nofile > 0:
+            resource.setrlimit(resource.RLIMIT_NOFILE, (nofile, nofile))
+
+        nproc = getattr(settings, "ALGORITHM_SUBPROCESS_RLIMIT_NPROC", None)
+        if isinstance(nproc, int) and nproc > 0 and hasattr(resource, "RLIMIT_NPROC"):
+            resource.setrlimit(resource.RLIMIT_NPROC, (nproc, nproc))
+
+        # Never produce core dumps for untrusted code.
+        try:
+            resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+        except Exception:
+            pass
+
+        nice = getattr(settings, "ALGORITHM_SUBPROCESS_NICE", None)
+        if isinstance(nice, int):
+            try:
+                os.nice(nice)
+            except Exception:
+                pass
+
+    return _limit
 
 
 def _wrap_single_image_input_as_dir(
@@ -286,21 +363,26 @@ def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, secon
             script_path,
             extract_path,
         )
-        # TF Object Detection vendored *_pb2.py often breaks with protobuf>=4 unless protos are regenerated.
-        algo_env = os.environ.copy()
-        algo_env.setdefault("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", "python")
+        algo_env = _algo_subprocess_env(python_exec=python_exec)
         timeout_sec = settings.ALGORITHM_SUBPROCESS_TIMEOUT
         if timeout_sec is not None and timeout_sec <= 0:
             timeout_sec = None
+        popen = subprocess.Popen(
+            command,
+            cwd=str(extract_path),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            env=algo_env,
+            preexec_fn=_algo_preexec_fn(),
+        )
         try:
-            proc = subprocess.run(
-                command,
-                check=False,
-                cwd=str(extract_path),
-                capture_output=True,
-                text=True,
-                env=algo_env,
-                timeout=timeout_sec,
+            stdout, stderr = popen.communicate(timeout=timeout_sec)
+            proc = subprocess.CompletedProcess(
+                args=command,
+                returncode=popen.returncode or 0,
+                stdout=stdout,
+                stderr=stderr,
             )
         except subprocess.TimeoutExpired as exc:
             logger.error(
@@ -308,6 +390,14 @@ def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, secon
                 settings.ALGORITHM_SUBPROCESS_TIMEOUT,
                 script_path,
             )
+            # Ensure the entire process group is terminated (algorithms may spawn children).
+            try:
+                os.killpg(popen.pid, signal.SIGKILL)
+            except Exception:
+                try:
+                    popen.kill()
+                except Exception:
+                    pass
             if exec:
                 exec.status = "FAILED"
                 exec.save(update_fields=['status'])
@@ -317,6 +407,15 @@ def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, secon
         finally:
             for td in cleanup_input_dirs:
                 shutil.rmtree(td, ignore_errors=True)
+
+        if getattr(settings, "ALGORITHM_SUBPROCESS_LOG_TAILS", False):
+            out_tail = (proc.stdout or "")[-2000:]
+            err_tail = (proc.stderr or "")[-4000:]
+            logger.info(
+                "ejecutar_algoritmo_task: stdout_tail=%r stderr_tail=%r",
+                out_tail,
+                err_tail,
+            )
 
         if proc.returncode != 0:
             err_tail = (proc.stderr or "")[-4000:]
@@ -332,6 +431,19 @@ def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, secon
                 command,
                 output=proc.stdout,
                 stderr=proc.stderr,
+            )
+
+        if not Path(output_zip).is_file():
+            err_tail = (proc.stderr or "")[-4000:]
+            out_tail = (proc.stdout or "")[-2000:]
+            logger.error(
+                "ejecutar_algoritmo_task: finished rc=0 but output missing output_zip=%s stderr_tail=%r stdout_tail=%r",
+                output_zip,
+                err_tail,
+                out_tail,
+            )
+            raise FileNotFoundError(
+                f"El algoritmo terminó sin errores pero no generó el ZIP de salida esperado: {output_zip}"
             )
 
         logger.info("ejecutar_algoritmo_task: finished OK exec_id=%s", exec_id)

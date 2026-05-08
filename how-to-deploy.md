@@ -558,6 +558,7 @@ docker compose --env-file algovision/.env -f docker-compose.prod.yml restart
 ### Recreate containers after env/config changes (no rebuild)
 
 ```bash
+cp algovision/.env.example algovision/.env
 docker compose --env-file algovision/.env -f docker-compose.prod.yml up -d --force-recreate
 ```
 
