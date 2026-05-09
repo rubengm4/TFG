@@ -80,8 +80,11 @@ ALGORITHM_SUBPROCESS_LOG_TAILS = config(
 ALGORITHM_SUBPROCESS_RLIMIT_CPU_SECONDS = config(
     "ALGORITHM_SUBPROCESS_RLIMIT_CPU_SECONDS", default=500, cast=int
 )
+# Virtual memory cap for the algorithm child process (RLIMIT_AS). TensorFlow/Keras +
+# scipy/sklearn imports often need several GiB; 2GiB caused MemoryError on import.
+# Set to 0 in .env to disable this limit (rely on container cgroup / host RAM only).
 ALGORITHM_SUBPROCESS_RLIMIT_AS_MB = config(
-    "ALGORITHM_SUBPROCESS_RLIMIT_AS_MB", default=2048, cast=int
+    "ALGORITHM_SUBPROCESS_RLIMIT_AS_MB", default=8192, cast=int
 )
 ALGORITHM_SUBPROCESS_RLIMIT_FSIZE_MB = config(
     "ALGORITHM_SUBPROCESS_RLIMIT_FSIZE_MB", default=512, cast=int
