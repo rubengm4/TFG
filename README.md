@@ -4,7 +4,7 @@ Trabajo de Fin de Grado - Platform implementation for AI algorithms and its inte
 
 ## Author: Rubén Argenta García
 
-## Docker Setup
+## Docker Setup (Local Development)
 
 This repository includes a Docker setup for the Django application using `Dockerfile` and `docker-compose.yml`.
 
