@@ -1,12 +1,12 @@
 # TFG
 
-Trabajo de Fin de Grado
+Trabajo de Fin de Grado - Platform implementation for AI algorithms and its integration, deployment and management
 
 ## Author: Rubén Argenta García
 
 ## Docker Setup
 
-This repository now includes a Docker setup for the Django application using `Dockerfile` and `docker-compose.yml`.
+This repository includes a Docker setup for the Django application using `Dockerfile` and `docker-compose.yml`.
 
 To build and run the application in Docker:
 
