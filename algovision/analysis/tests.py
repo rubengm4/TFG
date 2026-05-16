@@ -11,9 +11,9 @@ from django.test import Client, RequestFactory, SimpleTestCase, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from analysis.models import Algorithm, File, FileType
+from analysis.models import Algorithm, Execution, File, FileType, Output, Project
 
-from analysis.tasks import resolve_algorithm_script
+from analysis.tasks import ejecutar_algoritmo_task, resolve_algorithm_script
 from analysis.views import MediaForwardAuthView, _media_rel_path_from_forwarded_uri
 
 
@@ -32,6 +32,51 @@ def _libmagic_available() -> bool:
         return magic.from_buffer(_MINI_PNG, mime=True) == "image/png"
     except Exception:
         return False
+
+
+class EjecutarAlgoritmoTaskIdempotencyTests(TestCase):
+    """Redelivered tasks must not duplicate Output rows after FINISHED."""
+
+    def test_skips_when_already_finished_with_output(self):
+        user = User.objects.create_user("idem", "idem@test.com", "pw")
+        ft, _ = FileType.objects.get_or_create(code="csv", defaults={"name": "CSV"})
+        project, _ = Project.objects.get_or_create(
+            title="stats-analysis",
+            defaults={
+                "description": "test",
+                "start_date": timezone.now().date(),
+            },
+        )
+        algo = Algorithm.objects.create(
+            name="CSV simple",
+            project=project,
+            version="1.0",
+            description="test",
+            entrypoint="main.py",
+        )
+        algo.supported_types.add(ft)
+        execution = Execution.objects.create(
+            user=user,
+            algorithm=algo,
+            file=None,
+            execution_date=timezone.now(),
+            status="FINISHED",
+            snapshot_file_name="sample.csv",
+            snapshot_alg_name="CSV simple",
+        )
+        Output.objects.create(
+            execution=execution,
+            file="outputs/1/sample_out.zip",
+            output_date=timezone.now(),
+        )
+        before = Output.objects.filter(execution=execution).count()
+        ejecutar_algoritmo_task(0, algo.pk, execution.pk)
+        self.assertEqual(Output.objects.filter(execution=execution).count(), before)
+        self.assertEqual(execution.status, "FINISHED")
+
+    def test_task_uses_late_ack(self):
+        self.assertTrue(ejecutar_algoritmo_task.acks_late)
+        self.assertTrue(getattr(ejecutar_algoritmo_task, "reject_on_worker_lost", False))
 
 
 class ResolveAlgorithmScriptTests(SimpleTestCase):

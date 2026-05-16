@@ -103,7 +103,7 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
           {% for result in results %}
-          <tr class="hover:bg-blue-50 transition">
+          <tr class="hover:bg-blue-50 transition" data-execution-id="{{ result.id }}" data-status="{{ result.status }}">
             <td class="px-6 py-4 font-medium">{{ result.original_filename }}</td>
             <td class="px-6 py-4">{{ result.algorithm_name }}</td>
             <td class="px-6 py-4">

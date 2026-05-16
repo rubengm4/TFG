@@ -296,14 +296,24 @@ _redis_url = config('REDIS_URL', default='redis://redis:6379/0')
 CELERY_BROKER_URL = _redis_url
 CELERY_RESULT_BACKEND = _redis_url
 
+_celery_visibility = config('CELERY_VISIBILITY_TIMEOUT', default=0, cast=int)
+if _celery_visibility <= 0:
+    _celery_visibility = max(int(ALGORITHM_SUBPROCESS_TIMEOUT) + 600, 7200)
+
 if _redis_url.startswith('rediss://') or config('REDIS_SSL', default=False, cast=bool):
     CELERY_BROKER_TRANSPORT_OPTIONS = {
         'ssl': {
             'ssl_cert_reqs': ssl.CERT_NONE  # o ssl.CERT_REQUIRED si tienes el certificado
-        }
+        },
+        'visibility_timeout': _celery_visibility,
     }
 else:
-    CELERY_BROKER_TRANSPORT_OPTIONS = {}
+    CELERY_BROKER_TRANSPORT_OPTIONS = {
+        'visibility_timeout': _celery_visibility,
+    }
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+# Re-queue tasks if a worker dies mid-run (thesis §4.4 / Fig 4.15).
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True

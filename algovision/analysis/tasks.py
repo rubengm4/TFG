@@ -259,10 +259,18 @@ def _safe_extract_zip(zip_ref: zipfile.ZipFile, dest_dir: Path) -> None:
             shutil.copyfileobj(src, dst)
 
 
-@shared_task
+@shared_task(acks_late=True, reject_on_worker_lost=True)
 def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, second_file_id: Optional[int] = None) -> None:
     exec: Optional[Execution] = None
     try:
+        exec = Execution.objects.get(id=exec_id)
+        if exec.status == "FINISHED" and Output.objects.filter(execution=exec).exists():
+            logger.info(
+                "ejecutar_algoritmo_task: skip redelivery exec_id=%s already FINISHED",
+                exec_id,
+            )
+            return
+
         file = File.objects.get(id=file_id)
         second_file: Optional[File] = None
         second_input_path: Optional[str] = None
@@ -277,7 +285,6 @@ def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, secon
             )
 
         input_file = file.file.path
-        exec = Execution.objects.get(id=exec_id)
         if not Path(input_file).is_file():
             raise FileNotFoundError(
                 f"No existe el archivo de entrada del usuario: {input_file}"
@@ -505,10 +512,13 @@ def ejecutar_algoritmo_task(file_id: int, algorithm_id: int, exec_id: int, secon
         exec.status = "FINISHED"
         exec.save(update_fields=['status'])
 
-        Output.objects.create(
+        rel_output = f"outputs/{user_id_folder}/{output_filename}"
+        Output.objects.get_or_create(
             execution=exec,
-            file=f"outputs/{user_id_folder}/{output_filename}",
-            output_date=now
+            defaults={
+                "file": rel_output,
+                "output_date": now,
+            },
         )
 
     except Exception as e:
